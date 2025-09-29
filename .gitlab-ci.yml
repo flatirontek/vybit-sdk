@@ -1,18 +1,67 @@
-# You can override the included template(s) by including variable overrides
-# SAST customization: https://docs.gitlab.com/ee/user/application_security/sast/#customizing-the-sast-settings
-# Secret Detection customization: https://docs.gitlab.com/user/application_security/secret_detection/pipeline/configure
-# Dependency Scanning customization: https://docs.gitlab.com/ee/user/application_security/dependency_scanning/#customizing-the-dependency-scanning-settings
-# Container Scanning customization: https://docs.gitlab.com/ee/user/application_security/container_scanning/#customizing-the-container-scanning-settings
-# Note that environment variables can be set in several places
-# See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
+# GitLab CI/CD Pipeline for Vybit SDK
+# Includes security scanning and Node.js testing
+
 stages:
-- test
-- secret-detection
-sast:
-  stage: test
+  - build
+  - test
+  - security
+
+# Include GitLab security templates
 include:
-- template: Security/Secret-Detection.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
+  - template: Security/SAST.gitlab-ci.yml
+
 variables:
+  # Enable security scanning
   SECRET_DETECTION_ENABLED: 'true'
-secret_detection:
-  stage: secret-detection
+  SAST_ENABLED: 'true'
+  # Node.js version
+  NODE_VERSION: "18"
+
+# Cache node_modules for faster builds
+cache:
+  key: "$CI_COMMIT_REF_SLUG"
+  paths:
+    - node_modules/
+    - packages/*/node_modules/
+
+# Install dependencies
+install:
+  stage: build
+  image: node:$NODE_VERSION
+  script:
+    - npm ci
+  artifacts:
+    paths:
+      - node_modules/
+      - packages/*/node_modules/
+    expire_in: 1 hour
+
+# Build TypeScript packages
+build:
+  stage: build
+  image: node:$NODE_VERSION
+  needs: ["install"]
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - packages/*/dist/
+    expire_in: 1 hour
+
+# Run tests
+test:
+  stage: test
+  image: node:$NODE_VERSION
+  needs: ["install", "build"]
+  script:
+    - npm run test
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+
+# Run linting
+lint:
+  stage: test
+  image: node:$NODE_VERSION
+  needs: ["install"]
+  script:
+    - npm run lint
