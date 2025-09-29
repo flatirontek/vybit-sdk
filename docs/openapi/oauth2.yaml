@@ -26,7 +26,7 @@ info:
     
   contact:
     name: Vybit Developer Support
-    url: https://gitlab.com/vybit/vybit-sdk
+    url: https://gitlab.com/flatirontek/vybit-sdk
     email: developer@vybit.net
   license:
     name: MIT
@@ -467,4 +467,4 @@ tags:
 
 externalDocs:
   description: Vybit OAuth2 SDK and Documentation
-  url: https://gitlab.com/vybit/vybit-sdk
+  url: https://gitlab.com/flatirontek/vybit-sdk

@@ -1,6 +1,6 @@
 {
   "name": "@vybit/core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Core utilities and types for Vybit SDKs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -8,7 +8,8 @@
     "build": "tsc",
     "clean": "rm -rf dist",
     "dev": "tsc --watch",
-    "test": "jest --config ../../jest.config.js --rootDir ../.."
+    "test": "jest --config ../../jest.config.js --rootDir ../..",
+    "lint": "echo 'Run lint from root: npm run lint'"
   },
   "keywords": [
     "vybit",
@@ -19,12 +20,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://gitlab.com/vybit/vybit-sdk.git",
+    "url": "https://gitlab.com/flatirontek/vybit-sdk.git",
     "directory": "packages/core"
   },
-  "homepage": "https://gitlab.com/vybit/vybit-sdk#readme",
+  "homepage": "https://gitlab.com/flatirontek/vybit-sdk#readme",
   "bugs": {
-    "url": "https://gitlab.com/vybit/vybit-sdk/-/issues"
+    "url": "https://gitlab.com/flatirontek/vybit-sdk/-/issues"
   },
   "publishConfig": {
     "access": "public"

@@ -9,7 +9,7 @@
   "scripts": {
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces",
-    "lint": "npm run lint --workspaces",
+    "lint": "eslint packages/*/src --ext .ts",
     "clean": "npm run clean --workspaces",
     "publish:all": "cd packages/core && npm publish --access public && cd ../oauth2 && npm publish --access public && cd ../api && npm publish --access public && cd ../..",
     "dev": "npm run dev --workspaces"
@@ -25,11 +25,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://gitlab.com/vybit/vybit-sdk.git"
+    "url": "https://gitlab.com/flatirontek/vybit-sdk.git"
   },
-  "homepage": "https://gitlab.com/vybit/vybit-sdk",
+  "homepage": "https://gitlab.com/flatirontek/vybit-sdk",
   "bugs": {
-    "url": "https://gitlab.com/vybit/vybit-sdk/-/issues"
+    "url": "https://gitlab.com/flatirontek/vybit-sdk/-/issues"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
