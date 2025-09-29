@@ -1,0 +1,470 @@
+openapi: 3.0.3
+info:
+  title: Vybit OAuth2 API
+  version: 1.0.0
+  description: |
+    OAuth2 authentication and API endpoints for the Vybit notification platform.
+    
+    This API provides secure authentication for third-party applications to access
+    Vybit user accounts and perform actions on their behalf, including retrieving
+    user's vybits and triggering notifications.
+    
+    ## Authentication Flow
+    
+    Vybit uses the standard OAuth2 Authorization Code flow:
+    
+    1. **Authorization Request**: Direct users to `https://app.vybit.net` with OAuth parameters
+    2. **Authorization Grant**: User authorizes your app and is redirected back
+    3. **Token Exchange**: Exchange authorization code for access token at `/service/token`
+    4. **API Access**: Use access token to make authenticated requests
+    
+    ## Getting Started
+    
+    1. Create a developer account at [app.vybit.net](https://app.vybit.net)
+    2. Register your application to get client credentials
+    3. Use the [@vybit/oauth2-sdk](https://www.npmjs.com/package/@vybit/oauth2-sdk) for easy integration
+    
+  contact:
+    name: Vybit Developer Support
+    url: https://gitlab.com/vybit/vybit-sdk
+    email: developer@vybit.net
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://vybit.net/terms
+
+servers:
+  - url: https://app.vybit.net
+    description: Production Vybit server
+
+paths:
+  /:
+    get:
+      summary: OAuth2 Authorization Endpoint
+      description: |
+        Initiates the OAuth2 authorization flow. Direct users to this endpoint
+        to request permission to access their Vybit account.
+        
+        After user authorization, they will be redirected to your `redirect_uri`
+        with an authorization code that can be exchanged for an access token.
+        
+        Note: This is the root domain with OAuth2 query parameters, not a separate
+        /oauth/authorize endpoint.
+        
+      operationId: authorize
+      tags:
+        - OAuth2 Authorization
+      parameters:
+        - name: client_id
+          in: query
+          required: true
+          description: Your application's client ID from Vybit developer console
+          schema:
+            type: string
+            example: "your-client-id-123"
+        - name: redirect_uri
+          in: query
+          required: true
+          description: URI to redirect to after authorization (must match registered URI)
+          schema:
+            type: string
+            format: uri
+            example: "https://yourapp.com/oauth/callback"
+        - name: response_type
+          in: query
+          required: true
+          description: Must be "code" for authorization code flow
+          schema:
+            type: string
+            enum: ["code"]
+            example: "code"
+        - name: state
+          in: query
+          required: false
+          description: Opaque value to maintain state between request and callback (recommended for security)
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 255
+            example: "random-state-string-123"
+      responses:
+        '302':
+          description: |
+            Redirect to authorization page or back to redirect_uri.
+            
+            **Success**: User is redirected to `redirect_uri` with authorization code:
+            `https://yourapp.com/callback?code=AUTHORIZATION_CODE&state=STATE_VALUE`
+            
+            **Denied**: User is redirected to `redirect_uri` with error:
+            `https://yourapp.com/callback?error=access_denied&state=STATE_VALUE`
+          headers:
+            Location:
+              description: Redirect URL
+              schema:
+                type: string
+                example: "https://yourapp.com/callback?code=abc123&state=xyz789"
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "invalid_request"
+                error_description: "Missing required parameter: client_id"
+
+  /service/token:
+    post:
+      summary: OAuth2 Token Exchange Endpoint
+      description: |
+        Exchange an authorization code for an access token.
+        
+        Call this endpoint after receiving an authorization code from the
+        authorization callback to get an access token for API requests.
+        
+      operationId: exchangeToken
+      tags:
+        - OAuth2 Token Exchange
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - grant_type
+                - code
+                - client_id
+                - client_secret
+              properties:
+                grant_type:
+                  type: string
+                  enum: ["authorization_code"]
+                  description: Must be "authorization_code"
+                  example: "authorization_code"
+                code:
+                  type: string
+                  description: Authorization code received from authorization callback
+                  example: "abc123def456"
+                client_id:
+                  type: string
+                  description: Your application's client ID
+                  example: "your-client-id-123"
+                client_secret:
+                  type: string
+                  description: Your application's client secret
+                  example: "your-client-secret-456"
+      responses:
+        '200':
+          description: Successful token exchange
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              example:
+                access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                token_type: "Bearer"
+        '400':
+          description: Invalid request or authorization code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthErrorResponse'
+              examples:
+                invalid_code:
+                  summary: Invalid authorization code
+                  value:
+                    error: "invalid_grant"
+                    error_description: "The authorization code is invalid or expired"
+                invalid_client:
+                  summary: Invalid client credentials
+                  value:
+                    error: "invalid_client"
+                    error_description: "Client authentication failed"
+
+  /service/test:
+    get:
+      summary: Token Validation Endpoint
+      description: |
+        Validate an access token and check if it's still active.
+        
+        Use this endpoint to verify that an access token is valid
+        before making API requests.
+        
+      operationId: validateToken
+      tags:
+        - Token Validation
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResponse'
+              example:
+                status: "ok"
+        '401':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "invalid_token"
+                error_description: "The access token is invalid or expired"
+
+  /rest/vybit_list:
+    get:
+      summary: Get User's Vybits
+      description: |
+        Retrieve a list of the authenticated user's vybits (notifications).
+        
+        Returns an array of vybit objects that the user has created and can
+        be triggered by your application.
+        
+      operationId: getVybitList
+      tags:
+        - Vybit Management
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of user's vybits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Vybit'
+              example:
+                - name: "My Alert"
+                  triggerKey: "abc123def456"
+                - name: "Notification Sound"
+                  triggerKey: "def456ghi789"
+                - name: "Status Update"
+                  triggerKey: "ghi789jkl012"
+        '401':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /fire/{triggerKey}:
+    post:
+      summary: Trigger Vybit Notification
+      description: |
+        Trigger a vybit notification for the authenticated user.
+        
+        Send a notification using the specified trigger key. Optionally include
+        custom content like messages, images, links, and log entries.
+        
+      operationId: triggerVybit
+      tags:
+        - Vybit Triggering
+      parameters:
+        - name: triggerKey
+          in: path
+          required: true
+          description: The trigger key of the vybit to fire
+          schema:
+            type: string
+            example: "abc123def456"
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: false
+        description: Optional parameters for the notification
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TriggerOptions'
+            example:
+              message: "Hello from your app!"
+              imageUrl: "https://example.com/image.jpg"
+              linkUrl: "https://example.com"
+              log: "Triggered from API integration"
+      responses:
+        '200':
+          description: Vybit triggered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TriggerResponse'
+              example:
+                result: 1
+                plk: "bbxope6xhryminef"
+        '401':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Trigger key not found or not accessible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Access token obtained from the token exchange endpoint.
+        
+        Include in the Authorization header as: `Bearer your_access_token`
+
+  schemas:
+    TokenResponse:
+      type: object
+      required:
+        - access_token
+        - token_type
+      properties:
+        access_token:
+          type: string
+          description: The JWT access token for authenticated API requests
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        token_type:
+          type: string
+          description: Type of token (always "Bearer")
+          example: "Bearer"
+
+    ValidationResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          description: Validation status
+          enum: ["ok"]
+          example: "ok"
+
+    Vybit:
+      type: object
+      required:
+        - name
+        - triggerKey
+      properties:
+        name:
+          type: string
+          description: Display name of the vybit
+          example: "My Alert"
+        triggerKey:
+          type: string
+          description: Unique trigger key for this vybit
+          example: "abc123def456"
+      description: A vybit notification configuration
+
+    TriggerOptions:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Optional message to display with notification
+          example: "Hello from your app!"
+          maxLength: 500
+        imageUrl:
+          type: string
+          format: uri
+          description: Optional image URL to attach to notification
+          example: "https://example.com/image.jpg"
+        linkUrl:
+          type: string
+          format: uri
+          description: Optional redirect URL when notification is tapped
+          example: "https://example.com"
+        log:
+          type: string
+          description: Optional content to append to the Vybit log (supports hyperlinks)
+          example: "Triggered from API integration"
+          maxLength: 1000
+      description: Optional parameters for triggering a vybit notification
+
+    TriggerResponse:
+      type: object
+      required:
+        - result
+        - plk
+      properties:
+        result:
+          type: integer
+          description: Result code (1 = success)
+          example: 1
+        plk:
+          type: string
+          description: Processing key for tracking the notification
+          example: "bbxope6xhryminef"
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error code
+          example: "invalid_request"
+        error_description:
+          type: string
+          description: Human-readable error description
+          example: "Missing required parameter: client_id"
+
+    OAuthErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: OAuth2 error code
+          enum:
+            - "invalid_request"
+            - "invalid_client"
+            - "invalid_grant"
+            - "unauthorized_client"
+            - "unsupported_grant_type"
+            - "invalid_scope"
+          example: "invalid_grant"
+        error_description:
+          type: string
+          description: Human-readable error description
+          example: "The authorization code is invalid or expired"
+        error_uri:
+          type: string
+          format: uri
+          description: URI identifying a human-readable web page with error information
+          example: "https://vybit.net/docs/oauth2/errors#invalid_grant"
+
+tags:
+  - name: OAuth2 Authorization
+    description: |
+      Endpoints for initiating the OAuth2 authorization flow.
+      Direct users to these endpoints to request access permissions.
+  - name: OAuth2 Token Exchange
+    description: |
+      Endpoints for exchanging authorization codes for access tokens.
+      Use these endpoints server-side with your client credentials.
+  - name: Token Validation
+    description: |
+      Endpoints for validating and checking access tokens.
+      Use these to verify tokens before making API requests.
+  - name: Vybit Management
+    description: |
+      Endpoints for retrieving user's vybit configurations.
+      Use these to list available notifications that can be triggered.
+  - name: Vybit Triggering
+    description: |
+      Endpoints for triggering vybit notifications.
+      Use these to send notifications to users with optional custom content.
+
+externalDocs:
+  description: Vybit OAuth2 SDK and Documentation
+  url: https://gitlab.com/vybit/vybit-sdk

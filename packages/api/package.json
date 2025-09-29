@@ -1,0 +1,43 @@
+{
+  "name": "@vybit/api-sdk",
+  "version": "1.0.0",
+  "description": "[PLACEHOLDER] API SDK for Vybit - Full implementation coming in future release",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "dev": "tsc --watch",
+    "test": "jest --config ../../jest.config.js --rootDir ../.."
+  },
+  "keywords": [
+    "vybit",
+    "api",
+    "rest",
+    "sdk"
+  ],
+  "author": "Vybit Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.com/vybit/vybit-sdk.git",
+    "directory": "packages/api"
+  },
+  "homepage": "https://gitlab.com/vybit/vybit-sdk#readme",
+  "bugs": {
+    "url": "https://gitlab.com/vybit/vybit-sdk/-/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "@vybit/core": "^1.0.0"
+  }
+}

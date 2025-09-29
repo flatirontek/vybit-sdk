@@ -1,0 +1,46 @@
+{
+  "name": "vybit-sdk",
+  "version": "1.0.0",
+  "description": "Vybit SDKs for JavaScript/TypeScript",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
+    "clean": "npm run clean --workspaces",
+    "publish:all": "cd packages/core && npm publish --access public && cd ../oauth2 && npm publish --access public && cd ../api && npm publish --access public && cd ../..",
+    "dev": "npm run dev --workspaces"
+  },
+  "keywords": [
+    "vybit",
+    "sdk",
+    "oauth2",
+    "api",
+    "notifications"
+  ],
+  "author": "Vybit Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.com/vybit/vybit-sdk.git"
+  },
+  "homepage": "https://gitlab.com/vybit/vybit-sdk",
+  "bugs": {
+    "url": "https://gitlab.com/vybit/vybit-sdk/-/issues"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "jest": "^29.0.0",
+    "@types/jest": "^29.0.0",
+    "ts-jest": "^29.0.0",
+    "jest-fetch-mock": "^3.0.3",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "prettier": "^3.0.0"
+  }
+}

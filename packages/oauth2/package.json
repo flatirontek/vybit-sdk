@@ -1,0 +1,51 @@
+{
+  "name": "@vybit/oauth2-sdk",
+  "version": "1.0.0",
+  "description": "OAuth 2.0 SDK for Vybit authentication and authorization",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "dev": "tsc --watch",
+    "test": "jest --config ../../jest.config.js --rootDir ../.."
+  },
+  "keywords": [
+    "vybit",
+    "oauth2",
+    "authentication",
+    "sdk"
+  ],
+  "author": "Vybit Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.com/vybit/vybit-sdk.git",
+    "directory": "packages/oauth2"
+  },
+  "homepage": "https://gitlab.com/vybit/vybit-sdk#readme",
+  "bugs": {
+    "url": "https://gitlab.com/vybit/vybit-sdk/-/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "@vybit/core": "^1.0.0"
+  },
+  "peerDependencies": {
+    "node-fetch": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "node-fetch": {
+      "optional": true
+    }
+  }
+}
