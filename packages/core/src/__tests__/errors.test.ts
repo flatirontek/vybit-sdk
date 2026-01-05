@@ -47,8 +47,8 @@ describe('Error Classes', () => {
 
     it('should include details when provided', () => {
       const details = { reason: 'invalid_token' };
-      const error = new VybitAuthError('Token invalid', details);
-      
+      const error = new VybitAuthError('Token invalid', undefined, details);
+
       expect(error.details).toEqual(details);
     });
   });
