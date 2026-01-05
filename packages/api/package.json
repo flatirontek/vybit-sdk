@@ -5,8 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "clean": "rm -rf dist",
+    "build": "tsc -b",
+    "clean": "rm -rf dist *.tsbuildinfo",
     "dev": "tsc --watch",
     "test": "jest --config ../../jest.config.js --rootDir ../..",
     "lint": "echo 'Run lint from root: npm run lint'"

@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces",
+    "build": "npm run build -w @vybit/core && npm run build -w @vybit/oauth2-sdk && npm run build -w @vybit/api-sdk",
     "test": "npm run test --workspaces",
     "lint": "eslint packages/*/src --ext .ts",
     "clean": "npm run clean --workspaces",

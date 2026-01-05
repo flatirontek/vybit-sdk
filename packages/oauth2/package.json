@@ -1,12 +1,12 @@
 {
   "name": "@vybit/oauth2-sdk",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "OAuth 2.0 SDK for Vybit authentication and authorization",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "clean": "rm -rf dist",
+    "build": "tsc -b",
+    "clean": "rm -rf dist *.tsbuildinfo",
     "dev": "tsc --watch",
     "test": "jest --config ../../jest.config.js --rootDir ../..",
     "lint": "echo 'Run lint from root: npm run lint'"
