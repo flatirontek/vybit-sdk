@@ -2,7 +2,14 @@ openapi: 3.0.3
 info:
   title: Vybit OAuth2 API
   version: 1.0.0
+  x-logo:
+    url: 'https://vybit.net/images/vybit_logo100px.png'
+    altText: 'Vybit Logo'
   description: |
+    <div style="text-align: center; margin: 20px 0;">
+      <img src="https://vybit.net/images/vybit_logo100px.png" alt="Vybit Logo" style="max-width: 120px;" />
+    </div>
+
     OAuth2 authentication and API endpoints for the Vybit notification platform.
     
     This API provides secure authentication for third-party applications to access

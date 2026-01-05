@@ -2,7 +2,14 @@ openapi: 3.0.3
 info:
   title: Vybit Developer API
   version: 1.0.0
+  x-logo:
+    url: 'https://vybit.net/images/vybit_logo100px.png'
+    altText: 'Vybit Logo'
   description: |
+    <div style="text-align: center; margin: 20px 0;">
+      <img src="https://vybit.net/images/vybit_logo100px.png" alt="Vybit Logo" style="max-width: 120px;" />
+    </div>
+
     REST API for third-party applications to integrate with the Vybit push notification platform.
 
     The Developer API provides programmatic access to manage vybits, subscriptions, sounds,

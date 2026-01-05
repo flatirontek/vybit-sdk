@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vybit OAuth2 API Reference</title>
+    <meta name="description" content="Interactive API reference for the Vybit OAuth2 API. Learn how to authenticate users and access their Vybit accounts from your applications.">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="https://vybit.net/favicon.ico">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <script
+        id="api-reference"
+        data-configuration='{
+            "theme": "default",
+            "layout": "modern",
+            "defaultHttpClient": {
+                "targetKey": "javascript",
+                "clientKey": "fetch"
+            },
+            "hideModels": false,
+            "hideDarkModeToggle": false,
+            "searchHotKey": "k",
+            "authentication": {
+                "preferredSecurityScheme": "ApiKeyAuth",
+                "apiKey": {
+                    "token": ""
+                }
+            },
+            "showSidebar": true,
+            "hideDownloadButton": false
+        }'
+    ></script>
+
+    <script>
+        // Dynamically set OpenAPI spec URL based on environment
+        // Dev/Local: Use local file from vybit-sdk repo
+        // Production: Use GitLab raw file URL
+        (function() {
+            const hostname = window.location.hostname;
+            const isDev = hostname.includes('localhost') || hostname.includes('dev.developer.vybit.net');
+
+            const specUrl = isDev
+                ? './oauth2.yaml'  // Local file served by Node
+                : 'https://gitlab.com/flatirontek/vybit-sdk/-/raw/main/docs/openapi/oauth2.yaml';
+
+            document.getElementById('api-reference').setAttribute('data-url', specUrl);
+        })();
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+</body>
+</html>

@@ -20,9 +20,8 @@
 <body>
     <script
         id="api-reference"
-        data-url="./developer-api.yaml"
         data-configuration='{
-            "theme": "purple",
+            "theme": "default",
             "layout": "modern",
             "defaultHttpClient": {
                 "targetKey": "javascript",
@@ -41,6 +40,22 @@
             "hideDownloadButton": false
         }'
     ></script>
+
+    <script>
+        // Dynamically set OpenAPI spec URL based on environment
+        // Dev/Local: Use local file from vybit-sdk repo
+        // Production: Use GitLab raw file URL
+        (function() {
+            const hostname = window.location.hostname;
+            const isDev = hostname.includes('localhost') || hostname.includes('dev.developer.vybit.net');
+
+            const specUrl = isDev
+                ? './developer-api.yaml'  // Local file served by Node
+                : 'https://gitlab.com/flatirontek/vybit-sdk/-/raw/main/docs/openapi/developer-api.yaml';
+
+            document.getElementById('api-reference').setAttribute('data-url', specUrl);
+        })();
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
 </body>
