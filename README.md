@@ -9,17 +9,19 @@ Official TypeScript/JavaScript SDKs for integrating with the Vybit notification 
 
 - **[@vybit/core](./packages/core)** - Core utilities and types shared across all SDKs
 - **[@vybit/oauth2-sdk](./packages/oauth2)** - OAuth 2.0 authentication and authorization
-- **[@vybit/api-sdk](./packages/api)** - *Placeholder package - full implementation coming in future release*
+- **[@vybit/api-sdk](./packages/api)** - Developer API SDK for programmatic access
 
 ## Installation
 
-Install the OAuth2 SDK (currently available):
+Install the package you need:
 
 ```bash
+# For OAuth 2.0 user authentication (user-facing apps)
 npm install @vybit/oauth2-sdk
-```
 
-> **Note**: `@vybit/api-sdk` is currently a placeholder package. Full API implementation will be available in a future release.
+# For Developer API access (backend/automation)
+npm install @vybit/api-sdk
+```
 
 ## Quick Start
 
@@ -57,13 +59,33 @@ const result = await client.sendVybitNotification('trigger-key', {
 // Vybit accounts with their own OAuth credentials
 ```
 
-### API Client
+### Developer API
 
-> **Coming Soon**: The API SDK is currently a placeholder. Full implementation will be available in a future release once the main Vybit application API is finalized.
+For backend integrations and automation, use the Developer API SDK:
 
 ```typescript
-// This will be available in a future release:
-// import { VybitAPIClient } from '@vybit/api-sdk';
+import { VybitAPIClient } from '@vybit/api-sdk';
+
+const client = new VybitAPIClient({
+  apiKey: 'your-api-key-from-developer-portal'
+});
+
+// Create a vybit
+const vybit = await client.createVybit({
+  name: 'Server Alert',
+  soundKey: 'sound123abc',
+  triggerType: 'webhook'
+});
+
+// List vybits with search and pagination
+const vybits = await client.listVybits({
+  search: 'alert',
+  limit: 10
+});
+
+// Get usage metrics
+const meter = await client.getMeter();
+console.log(`Usage: ${meter.count_daily} / ${meter.cap_daily}`);
 ```
 
 ## Environment Management
@@ -94,6 +116,15 @@ The OpenAPI spec provides:
 - Postman/Insomnia collection import
 - Interactive testing interface
 
+## Examples
+
+Check the `examples/` directory for usage examples:
+- **oauth2-simple.js** - Basic OAuth 2.0 flow
+- **oauth2-complete-flow.js** - Complete OAuth implementation
+- **oauth2-express-server.js** - Full Express.js integration
+- **developer-api-notifications.js** - Developer API with new trigger/send methods
+- **simple-notifications.js** - Sending notifications with different options
+
 ## Development
 
 ```bash
@@ -103,7 +134,10 @@ npm install
 # Build all packages
 npm run build
 
-# Run tests
+# Run integration tests
+node tests/test-api-complete-coverage.js
+
+# Run unit tests
 npm run test
 
 # Lint code

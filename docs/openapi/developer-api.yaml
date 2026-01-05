@@ -1,0 +1,2309 @@
+openapi: 3.0.3
+info:
+  title: Vybit Developer API
+  version: 1.0.0
+  description: |
+    REST API for third-party applications to integrate with the Vybit push notification platform.
+
+    The Developer API provides programmatic access to manage vybits, subscriptions, sounds,
+    and notification logs. Build custom integrations, automation workflows, and notification
+    management tools using simple REST endpoints.
+
+    ## Authentication
+
+    All API requests (except `/sound/{key}/play`) require authentication using an API key:
+
+    1. Create a [Vybit developer account](https://developer.vybit.net)
+    2. Generate an API key from your developer dashboard
+    3. Include the key in every request using the `X-API-Key` header
+
+    ## Rate Limiting
+
+    All authenticated endpoints are rate limited to ensure fair usage:
+    - **10 requests per second** (per API key)
+    - **300 requests per minute** (per API key)
+    - **5,000 requests per hour** (per API key)
+
+    Rate limit status is included in response headers:
+    ```
+    X-RateLimit-Limit-Second: 10
+    X-RateLimit-Remaining-Second: 7
+    X-RateLimit-Limit-Minute: 300
+    X-RateLimit-Remaining-Minute: 285
+    ```
+
+    When rate limits are exceeded, the API returns `429 Too Many Requests`.
+
+    ## Pagination
+
+    Collection endpoints support pagination using query parameters:
+    - `offset` - Number of records to skip (default: 0)
+    - `limit` - Maximum records to return (default: 30, max: 100)
+
+    ## Search
+
+    Collection endpoints support text search using the `search` query parameter.
+    Search behavior varies by endpoint - see individual endpoint documentation.
+
+    ## Environment Management
+
+    The Developer API always connects to production Vybit endpoints at `api.vybit.net`.
+
+    To manage different environments (development, staging, production), create separate
+    Vybit accounts for each environment, each with their own:
+    - API keys from the developer portal
+    - Vybit configurations and triggers
+
+    This approach provides better isolation and security compared to using different API endpoints.
+
+  contact:
+    name: Vybit Developer Support
+    url: https://gitlab.com/flatirontek/vybit-sdk
+    email: developer@vybit.net
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://vybit.net/terms
+
+servers:
+  - url: https://api.vybit.net/v1
+    description: Production API service
+
+paths:
+  /status:
+    get:
+      summary: API Health Check
+      description: |
+        Check the API service status and availability.
+
+        Returns the current operational status of the API. Use this endpoint
+        for health checks and monitoring.
+
+      operationId: getStatus
+      tags:
+        - Status & Utility
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: API is operational
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+              example:
+                status: "up"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /profile:
+    get:
+      summary: Get User Profile
+      description: |
+        Retrieve the authenticated user's profile information.
+
+        Returns read-only profile data including account name, email,
+        unique key, and subscription tier.
+
+      operationId: getProfile
+      tags:
+        - Profile
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: User profile data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+              example:
+                key: "abc123def456"
+                name: "John Doe"
+                email: "john@example.com"
+                tier_id: 1
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /meter:
+    get:
+      summary: Get Usage Metrics
+      description: |
+        Retrieve current usage statistics and tier limits for the authenticated user.
+
+        Returns notification counts (daily, monthly, total) and tier-specific
+        capacity limits for vybits and notifications.
+
+        Tier Map:
+        - 1 - Free
+        - 2 - Bronze
+        - 3 - Silver
+        - 4 - Gold
+
+
+      operationId: getMeter
+      tags:
+        - Status & Utility
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Usage metrics and limits
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Meter'
+              example:
+                tier_id: 1
+                cap_vybits: 50
+                cap_daily: 500
+                cap_monthly: 7500
+                number_vybits: 12
+                count_daily: 127
+                count_monthly: 3421
+                monthly_reset_dts: "2025-12-01T00:00:00Z"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /vybits:
+    get:
+      summary: List Vybits
+      description: |
+        Retrieve a paginated list of vybits owned by the authenticated user.
+
+        Returns all vybits created by the user, with support for pagination
+        and text search across name and description fields.
+
+      operationId: listVybits
+      tags:
+        - Vybits
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SearchParam'
+      responses:
+        '200':
+          description: List of vybits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Vybit'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /vybit/{key}:
+    get:
+      summary: Get Vybit
+      description: |
+        Retrieve details for a specific vybit owned by the authenticated user.
+
+      operationId: getVybit
+      tags:
+        - Vybits
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The unique key of the vybit
+          schema:
+            type: string
+            example: "abc123def456"
+      responses:
+        '200':
+          description: Vybit details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vybit'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Vybit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    patch:
+      summary: Update Vybit (Partial)
+      description: |
+        Perform a partial update of a vybit, modifying only specified fields.
+
+        Only include the fields you want to update. All other fields remain unchanged.
+
+      operationId: updateVybitPartial
+      tags:
+        - Vybits
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The unique key of the vybit (use path param, not 'vybKey')
+          schema:
+            type: string
+            example: "abc123def456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 255
+                  example: "Updated Alert Name"
+                description:
+                  type: string
+                  example: "Updated description"
+                soundKey:
+                  type: string
+                  example: "newsound123"
+                triggerType:
+                  type: string
+                  enum: ["webhook", "schedule", "geofence", "integration"]
+                  example: "schedule"
+                triggerSettings:
+                  type: object
+                  nullable: true
+                  example: {"cron": "0 9 * * *"}
+                access:
+                  type: string
+                  enum: ["public", "private", "unlisted"]
+                  example: "public"
+                status:
+                  type: string
+                  enum: ["on", "off"]
+                  description: Vybit status (on = active, off = disabled)
+                  example: "on"
+                message:
+                  type: string
+                  nullable: true
+                  maxLength: 500
+                  example: "New message"
+                imageUrl:
+                  type: string
+                  format: uri
+                  nullable: true
+                  example: "https://example.com/newimage.jpg"
+                linkUrl:
+                  type: string
+                  format: uri
+                  nullable: true
+                  example: "https://example.com/newlink"
+                geofence:
+                  type: object
+                  nullable: true
+                sendPermissions:
+                  type: string
+                  enum: ["owner_subs", "subs_owner", "subs_group"]
+                  example: "subs_owner"
+      responses:
+        '200':
+          description: Vybit updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vybit'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Vybit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete Vybit
+      description: |
+        Permanently delete a vybit owned by the authenticated user.
+
+        This action cannot be undone. All associated data including
+        subscriptions and QR codes will be removed. Existing logs are not deleted.
+
+      operationId: deleteVybit
+      tags:
+        - Vybits
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The unique key of the vybit (use path param, not 'vybKey')
+          schema:
+            type: string
+            example: "abc123def456"
+      responses:
+        '200':
+          description: Vybit deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: "Vybit deleted"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Vybit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /vybit/{key}/trigger:
+    post:
+      summary: Trigger Vybit Notification
+      description: |
+        Manually trigger a vybit notification as the owner.
+
+        This endpoint allows vybit owners to manually send notifications to all
+        subscribers. The request payload can override the vybit's default message,
+        image, and link settings.
+
+        **Usage limits:** This endpoint is subject to your account's usage tier limits.
+
+      operationId: triggerVybit
+      tags:
+        - Vybits
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The unique key of the vybit to trigger
+          schema:
+            type: string
+            example: "abc123def456"
+      requestBody:
+        description: Optional payload to override notification content
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  description: Custom notification message
+                  example: "System maintenance complete"
+                imageUrl:
+                  type: string
+                  format: uri
+                  description: Custom image URL
+                  example: "https://example.com/image.jpg"
+                linkUrl:
+                  type: string
+                  format: uri
+                  description: Custom link URL
+                  example: "https://example.com/status"
+      responses:
+        '200':
+          description: Notification sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: integer
+                    example: 1
+                  plk:
+                    type: string
+                    description: Primary log key for the triggered notification
+                    example: "log123abc456"
+        '201':
+          description: Vybit is off - notification not sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: integer
+                    example: 0
+                  warn:
+                    type: string
+                    example: "Vybit is off and will not be triggered"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Account suspended or usage limits exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Vybit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /vybit:
+    post:
+      summary: Create Vybit
+      description: |
+        Create a new vybit notification.
+
+        Creates a vybit with the specified configuration. The API automatically
+        generates unique keys (key, triggerKey, subscriptionKey) and sets up
+        the notification infrastructure.
+
+      operationId: createVybit
+      tags:
+        - Vybits
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: Vybit display name
+                  maxLength: 64
+                  example: "Server Alert"
+                description:
+                  type: string
+                  description: Detailed vybit description
+                  maxLength: 512
+                  default: ""
+                  example: "Notification for critical server errors"
+                soundKey:
+                  type: string
+                  description: Key of the sound to play (must be an available sound from /sounds endpoint)
+                  example: "sound123abc"
+                status:
+                  type: string
+                  enum: ["on", "off"]
+                  description: Vybit status (on = active, off = disabled)
+                  default: "on"
+                  example: "on"
+                triggerType:
+                  type: string
+                  enum: ["webhook", "schedule", "geofence", "integration"]
+                  description: How this vybit is triggered
+                  default: "webhook"
+                  example: "webhook"
+                triggerSettings:
+                  type: object
+                  description: |
+                    Configuration for scheduled triggers.
+                    Required when triggerType is "schedule", null otherwise.
+                  nullable: true
+                  properties:
+                    crons:
+                      type: array
+                      items:
+                        type: object
+                        required:
+                          - cron
+                          - timeZone
+                        properties:
+                          cron:
+                            type: string
+                            description: Cron expression (minute hour day month dayOfWeek)
+                            example: "0 9 * * *"
+                          timeZone:
+                            type: string
+                            description: IANA timezone identifier
+                            example: "America/Denver"
+                  example:
+                    crons:
+                      - cron: "0 9 * * *"
+                        timeZone: "America/Denver"
+                access:
+                  type: string
+                  enum: ["public", "private", "unlisted"]
+                  description: Vybit visibility and access control
+                  default: "private"
+                  example: "private"
+                message:
+                  type: string
+                  description: Default message displayed with notifications
+                  nullable: true
+                  maxLength: 500
+                  example: "Alert triggered!"
+                imageUrl:
+                  type: string
+                  format: uri
+                  description: Default image URL for notifications
+                  nullable: true
+                  example: "https://example.com/image.jpg"
+                linkUrl:
+                  type: string
+                  format: uri
+                  description: Default URL to open when notification is tapped
+                  nullable: true
+                  example: "https://example.com"
+                geofence:
+                  type: object
+                  description: |
+                    Geofence configuration. Required when triggerType is "geofence", null otherwise.
+                  nullable: true
+                  required:
+                    - lat
+                    - lon
+                    - radius
+                    - radiusUnits
+                    - type
+                  properties:
+                    lat:
+                      type: number
+                      format: double
+                      description: Latitude of geofence center in decimal format
+                      example: 40.0458744
+                    lon:
+                      type: number
+                      format: double
+                      description: Longitude of geofence center in decimal format
+                      example: -105.2654336
+                    radius:
+                      type: number
+                      description: Geofence radius value
+                      example: 100
+                    radiusUnits:
+                      type: string
+                      enum: ["meters", "kilometers", "miles"]
+                      description: Units for the radius measurement
+                      example: "meters"
+                    type:
+                      type: string
+                      enum: ["enter", "exit"]
+                      description: Trigger on entry or exit from geofence
+                      example: "enter"
+                    timeThrottle:
+                      type: string
+                      description: Minimum seconds between triggers (default "0" = no throttle)
+                      default: "0"
+                      example: "0"
+                    subscribable:
+                      type: string
+                      enum: ["yes", "no"]
+                      description: Whether others can subscribe to this geofenced vybit
+                      default: "yes"
+                      example: "yes"
+                  example:
+                    lat: 40.0458744
+                    lon: -105.2654336
+                    radius: 100
+                    radiusUnits: "meters"
+                    type: "enter"
+                    timeThrottle: "0"
+                    subscribable: "yes"
+                sendPermissions:
+                  type: string
+                  enum: ["owner_subs", "subs_owner", "subs_group"]
+                  description: |
+                    Who can trigger and receive notifications:
+                    - owner_subs: owner triggers → subscribers receive (one-way)
+                    - subs_owner: owner ↔ subscribers (two-way between owner and each subscriber)
+                    - subs_group: subscribers trigger → all subscribers receive (group broadcast)
+                  default: "owner_subs"
+                  example: "owner_subs"
+      responses:
+        '200':
+          description: Vybit created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vybit'
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /subscriptions/public:
+    get:
+      summary: List Public Vybits
+      description: |
+        Retrieve a list of public vybits available for subscription.
+
+        Returns vybits with `access: "public"` that can be subscribed to
+        by any user. Use this endpoint to discover vybits created by other users.
+
+      operationId: listPublicVybits
+      tags:
+        - Subscriptions
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SearchParam'
+      responses:
+        '200':
+          description: List of public vybits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Vybit'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /subscription/{key}:
+    get:
+      summary: Get Public Vybit by Subscription Key
+      description: |
+        Retrieve details for a public vybit using its subscription key.
+
+        Use this endpoint to get vybit information before subscribing.
+        The subscription key is typically shared via QR codes or direct links.
+
+      operationId: getPublicVybit
+      tags:
+        - Subscriptions
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The subscription key of the vybit
+          schema:
+            type: string
+            example: "sub123abc456"
+      responses:
+        '200':
+          description: Public vybit details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vybit'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Vybit not found or not public
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      summary: Subscribe to Vybit
+      description: |
+        Subscribe to a vybit using its subscription key.
+
+        Creates a new subscription for the authenticated user. The subscription key
+        can be obtained from QR codes, direct links, or the `/subscriptions/public` endpoint.
+
+      operationId: createSubscription
+      tags:
+        - Subscriptions
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The subscription key of the vybit to subscribe to
+          schema:
+            type: string
+            example: "sub123abc456"
+      responses:
+        '200':
+          description: Successfully subscribed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: "subscribed"
+                  followingKey:
+                    type: string
+                    description: Key of the created subscription following record
+                    example: "follow123abc"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Vybit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Cannot subscribe to owned vybits or other errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /subscriptions/following:
+    get:
+      summary: List Vybit Subscriptions
+      description: |
+        Retrieve a paginated list of vybits the authenticated user is subscribed to.
+
+        Returns all active subscriptions with support for
+        pagination and text search across vybit name and description.
+
+      operationId: listSubscriptions
+      tags:
+        - Subscriptions
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SearchParam'
+      responses:
+        '200':
+          description: List of vybit subscriptions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Subscription'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /subscription/following/{key}:
+    get:
+      summary: Get Subscription Following
+      description: |
+        Retrieve details for a specific subscription you're following.
+
+      operationId: getSubscription
+      tags:
+        - Subscriptions
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The unique followingKey of the subscription
+          schema:
+            type: string
+            example: "follow123abc"
+      responses:
+        '200':
+          description: Subscription following details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Subscription not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    patch:
+      summary: Update Subscription Following
+      description: |
+        Update settings for a subscription you're following.
+
+        Allowed fields depend on the vybit's `sendPermissions` setting:
+        - `owner_subs`: Only `status` can be updated
+        - `subs_owner` or `subs_group`: `status`, `message`, `imageUrl`, `linkUrl` can be updated
+
+      operationId: updateSubscription
+      tags:
+        - Subscriptions
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The unique followingKey of the subscription
+          schema:
+            type: string
+            example: "follow123abc"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [on, off]
+                  description: Enable or disable notifications for this subscription
+                  example: "on"
+                accessStatus:
+                  type: string
+                  enum: [granted, declined]
+                  description: Accept or decline a subscription invitation (only applicable when current status is 'invited')
+                  example: "granted"
+                message:
+                  type: string
+                  description: Custom notification message (only if subscribers can send notifications)
+                  example: "Custom notification text"
+                imageUrl:
+                  type: string
+                  format: uri
+                  description: Custom image URL for notifications (only if subscribers can send notifications)
+                  example: "https://example.com/image.jpg"
+                linkUrl:
+                  type: string
+                  format: uri
+                  description: Custom link URL for notifications (only if subscribers can send notifications)
+                  example: "https://example.com"
+      responses:
+        '200':
+          description: Subscription updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+        '400':
+          description: Bad request - invalid accessStatus value or current status is not 'invited'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden - attempting to update restricted fields based on vybit's sendPermissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Subscription not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Unsubscribe from Vybit
+      description: |
+        Remove a subscription (unfollow a vybit).
+
+        This action cannot be undone. To re-subscribe, use POST `/subscription/{key}`
+        with the vybit's subscription key.
+
+      operationId: deleteSubscription
+      tags:
+        - Subscriptions
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The unique followingKey of the subscription
+          schema:
+            type: string
+            example: "follow123abc"
+      responses:
+        '200':
+          description: Unsubscribed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "subscription deleted"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Subscription not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /subscription/following/{key}/send-to-owner:
+    post:
+      summary: Send Notification to Owner
+      description: |
+        Send a notification from a subscriber to the vybit owner.
+
+        This endpoint is only available for subscriptions where the vybit's
+        `sendPermissions` is set to `subs_owner` (subscribers can send to owner).
+
+        The subscriber can customize the notification message, image, and link
+        that will be sent to the vybit owner.
+
+        **Requirements:**
+        - Subscription must have status='on'
+        - Subscription accessStatus must be 'granted' or 'public'
+        - Vybit sendPermissions must be 'subs_owner'
+        - Subject to account usage tier limits
+
+      operationId: sendToOwner
+      tags:
+        - Subscriptions
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The unique followingKey of the subscription
+          schema:
+            type: string
+            example: "follow123abc"
+      requestBody:
+        description: Notification content to send to the owner
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  description: Notification message
+                  example: "Server is back online"
+                imageUrl:
+                  type: string
+                  format: uri
+                  description: Custom image URL
+                  example: "https://example.com/status-ok.jpg"
+                linkUrl:
+                  type: string
+                  format: uri
+                  description: Custom link URL
+                  example: "https://example.com/dashboard"
+      responses:
+        '200':
+          description: Notification sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: integer
+                    example: 1
+                  plk:
+                    type: string
+                    description: Primary log key for the triggered notification
+                    example: "log123abc456"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden - subscription not active or vybit doesn't allow subscriber sends
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Subscription not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /subscription/following/{key}/send-to-group:
+    post:
+      summary: Send Notification to Group
+      description: |
+        Send a notification from a subscriber to all subscribers in the group.
+
+        This endpoint is only available for subscriptions where the vybit's
+        `sendPermissions` is set to `subs_group` (subscribers can send to all subscribers).
+
+        The subscriber can customize the notification message, image, and link
+        that will be sent to all subscribers of this vybit.
+
+        **Requirements:**
+        - Subscription must have status='on'
+        - Subscription accessStatus must be 'granted' or 'public'
+        - Vybit sendPermissions must be 'subs_group'
+        - Subject to account usage tier limits
+
+      operationId: sendToGroup
+      tags:
+        - Subscriptions
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The unique followingKey of the subscription
+          schema:
+            type: string
+            example: "follow123abc"
+      requestBody:
+        description: Notification content to send to the group
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  description: Notification message
+                  example: "Emergency alert: Check the group chat"
+                imageUrl:
+                  type: string
+                  format: uri
+                  description: Custom image URL
+                  example: "https://example.com/alert.jpg"
+                linkUrl:
+                  type: string
+                  format: uri
+                  description: Custom link URL
+                  example: "https://example.com/chat"
+      responses:
+        '200':
+          description: Notification sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: integer
+                    example: 1
+                  plk:
+                    type: string
+                    description: Primary log key for the triggered notification
+                    example: "log123abc456"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden - subscription not active or vybit doesn't allow subscriber group sends
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Subscription not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sounds:
+    get:
+      summary: Search Sounds
+      description: |
+        Search for available sounds in the Vybit platform.
+
+        Returns a list of sounds that can be used when creating or updating vybits.
+        Each sound includes a `vybitKey` attribute indicating if the sound is
+        currently in use (null = unused, string = vybit key using it). Note that each sound
+        can only be used by one vybit at a time.
+
+      operationId: searchSounds
+      tags:
+        - Sounds
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: search
+          in: query
+          required: false
+          description: Search query for sound name/description (if omitted, returns user's sounds)
+          schema:
+            type: string
+            example: "notification"
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: List of available sounds
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sound'
+              example:
+                - key: "sound123abc"
+                  name: "Notification Bell"
+                  description: "Clean notification sound"
+                  type: "mp3"
+                  status: "public"
+                  url: "https://api.vybit.net/v1/sound/sound123abc/play"
+                  vybitKey: "vybit456def"
+                  meta: null
+                - key: "sound789xyz"
+                  name: "Alert Chime"
+                  description: "Gentle alert sound"
+                  type: "mp3"
+                  status: "public"
+                  url: "https://api.vybit.net/v1/sound/sound789xyz/play"
+                  vybitKey: null
+                  meta: null
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /sound/{key}:
+    get:
+      summary: Get Sound Details
+      description: |
+        Retrieve details for a specific sound by its unique key.
+
+      operationId: getSound
+      tags:
+        - Sounds
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The unique sound key
+          schema:
+            type: string
+            example: "sound123abc"
+      responses:
+        '200':
+          description: Sound details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sound'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Sound not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sound/{key}/play:
+    get:
+      summary: Play/Download Sound
+      description: |
+        Stream or download a sound file.
+
+        **Note**: This endpoint does NOT require authentication to allow
+        embedding in audio players and direct playback.
+
+      operationId: playSound
+      tags:
+        - Sounds
+      security: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The unique sound key
+          schema:
+            type: string
+            example: "sound123abc"
+      responses:
+        '200':
+          description: Audio file stream
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+            audio/mp4:
+              schema:
+                type: string
+                format: binary
+        '302':
+          description: Redirect to audio file location
+          headers:
+            Location:
+              description: Audio file URL
+              schema:
+                type: string
+        '404':
+          description: Sound not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /logs:
+    get:
+      summary: List All Logs
+      description: |
+        Retrieve a paginated list of all notification logs for the authenticated user.
+
+        Returns logs for both owned vybits and subscribed vybits, with support
+        for pagination and text search across vybit name and diagnostic fields.
+
+      operationId: listLogs
+      tags:
+        - Logs
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SearchParam'
+      responses:
+        '200':
+          description: List of notification logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Log'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /log/{logKey}:
+    get:
+      summary: Get Log Entry
+      description: |
+        Retrieve details for a specific notification log entry.
+
+      operationId: getLog
+      tags:
+        - Logs
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: logKey
+          in: path
+          required: true
+          description: The unique key of the log entry
+          schema:
+            type: string
+            example: "log123abc456"
+      responses:
+        '200':
+          description: Log entry details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Log'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Log entry not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /logs/vybit/{vybKey}:
+    get:
+      summary: List Logs for Owned Vybit
+      description: |
+        Retrieve logs for a specific vybit owned by the authenticated user.
+
+        Returns all notification logs triggered for the specified vybit,
+        with support for pagination and text search.
+
+      operationId: listVybitLogs
+      tags:
+        - Logs
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: vybKey
+          in: path
+          required: true
+          description: The unique key of the vybit
+          schema:
+            type: string
+            example: "vybit123abc"
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: search
+          in: query
+          required: false
+          description: Search logs by vybit name or diagnostic fields
+          schema:
+            type: string
+            example: "error"
+      responses:
+        '200':
+          description: List of logs for the vybit
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Log'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Vybit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /logs/subscription/following/{followingKey}:
+    get:
+      summary: List Logs for Subscription Following
+      description: |
+        Retrieve logs for a vybit subscription you're following.
+
+        Returns all notification logs for the specified subscription,
+        with support for pagination and text search.
+
+      operationId: listSubscriptionLogs
+      tags:
+        - Logs
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: followingKey
+          in: path
+          required: true
+          description: The unique followingKey of the subscription
+          schema:
+            type: string
+            example: "follow123abc"
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: search
+          in: query
+          required: false
+          description: Search logs by vybit name or diagnostic fields
+          schema:
+            type: string
+            example: "triggered"
+      responses:
+        '200':
+          description: List of logs for the vybit subscription
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Log'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Subscription not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /peeps:
+    get:
+      summary: List All Peeps
+      description: |
+        Retrieve all peeps (subscribers) across all vybits owned by the authenticated user.
+
+        Returns all users following your vybits, including those who subscribed via
+        public discovery, unlisted links, or private invitations. Supports pagination and search.
+
+      operationId: listAllPeeps
+      tags:
+        - Peeps
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SearchParam'
+      responses:
+        '200':
+          description: List of peeps across all owned vybits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Peep'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /peeps/{vybitKey}:
+    get:
+      summary: List Peeps for Vybit
+      description: |
+        Retrieve all peeps (subscribers) for a specific vybit you own.
+
+        Returns all users following this vybit, including those who subscribed via
+        public discovery, unlisted links, or private invitations.
+
+      operationId: listVybitPeeps
+      tags:
+        - Peeps
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: vybitKey
+          in: path
+          required: true
+          description: The unique key of the vybit
+          schema:
+            type: string
+            example: "vybit123abc"
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SearchParam'
+      responses:
+        '200':
+          description: List of peeps for the vybit
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Peep'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Vybit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /peep/{key}:
+    post:
+      summary: Invite User to Vybit
+      description: |
+        Invite a user by email to follow one of your vybits.
+
+        If the invitee has a Vybit account, they receive a vybit notification inviting them to subscribe.
+        If not, they receive an email invitation to subscribe.
+
+        **Note**: For this method, the `key` parameter is the vybit key.
+
+      operationId: createPeep
+      tags:
+        - Peeps
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The unique key of the vybit (for POST) or peep (for GET/DELETE)
+          schema:
+            type: string
+            example: "vybit123abc"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: Email address of the user to invite
+                  example: "friend@example.com"
+      responses:
+        '200':
+          description: Peep invitation created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: "invitation"
+                  logKey:
+                    type: string
+                    description: Key of the log entry created for this invitation
+                    example: "log123abc"
+                  key:
+                    type: string
+                    description: Key of the created peep
+                    example: "peep123abc"
+        '404':
+          description: Vybit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Invitation already sent to this email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: integer
+                    example: 0
+                  message:
+                    type: string
+                    example: "Invitation already sent to this email"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    get:
+      summary: Get Peep
+      description: |
+        Retrieve details for a specific peep (subscriber) on one of your vybits.
+
+        **Note**: For this method, the `key` parameter is the peep key.
+
+      operationId: getPeep
+      tags:
+        - Peeps
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The unique key of the vybit (for POST) or peep (for GET/DELETE)
+          schema:
+            type: string
+            example: "peep123abc"
+      responses:
+        '200':
+          description: Peep details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Peep'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Peep not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Remove Peep
+      description: |
+        Remove a peep (subscriber) from one of your vybits.
+
+        This removes the subscription relationship, preventing the user from receiving
+        notifications from this vybit.
+
+        **Note**: For this method, the `key` parameter is the peep key.
+
+      operationId: deletePeep
+      tags:
+        - Peeps
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The unique key of the vybit (for POST) or peep (for GET/DELETE)
+          schema:
+            type: string
+            example: "peep123abc"
+      responses:
+        '200':
+          description: Peep removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "peep removed"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Peep not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        Developer API key obtained from Vybit developer portal.
+
+        Create an API key at [developer.vybit.net](https://developer.vybit.net) and include
+        it in every request using the `X-API-Key` header.
+
+  parameters:
+    OffsetParam:
+      name: offset
+      in: query
+      required: false
+      description: Number of records to skip (for pagination)
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+        example: 0
+
+    LimitParam:
+      name: limit
+      in: query
+      required: false
+      description: Maximum number of records to return (for pagination)
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 30
+        example: 30
+
+    SearchParam:
+      name: search
+      in: query
+      required: false
+      description: Text search query (searches name, description, and other relevant fields)
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 255
+        example: "notification"
+
+  responses:
+    UnauthorizedError:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            missing_key:
+              summary: Missing API key
+              value:
+                error: "unauthorized"
+                message: "Missing X-API-Key header"
+            invalid_key:
+              summary: Invalid API key
+              value:
+                error: "unauthorized"
+                message: "Invalid API key"
+
+    RateLimitError:
+      description: Rate limit exceeded
+      headers:
+        X-RateLimit-Limit-Second:
+          description: Requests allowed per second
+          schema:
+            type: integer
+            example: 10
+        X-RateLimit-Remaining-Second:
+          description: Requests remaining this second
+          schema:
+            type: integer
+            example: 0
+        X-RateLimit-Limit-Minute:
+          description: Requests allowed per minute
+          schema:
+            type: integer
+            example: 300
+        X-RateLimit-Remaining-Minute:
+          description: Requests remaining this minute
+          schema:
+            type: integer
+            example: 0
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "rate_limit_exceeded"
+            message: "Too many requests"
+
+  schemas:
+    StatusResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: ["up", "down"]
+          description: API operational status
+          example: "up"
+
+    Profile:
+      type: object
+      required:
+        - key
+        - name
+        - email
+        - tier_id
+      properties:
+        key:
+          type: string
+          description: Unique user identifier
+          example: "person123abc456"
+        name:
+          type: string
+          description: User's display name
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "john@example.com"
+        tier_id:
+          type: integer
+          description: Subscription tier ID (0=Free, 1=Bronze, 2=Silver, 3=Gold)
+          example: 1
+
+    Meter:
+      type: object
+      required:
+        - tier_id
+        - cap_vybits
+        - cap_daily
+        - cap_monthly
+        - number_vybits
+        - count_daily
+        - count_monthly
+        - monthly_reset_dts
+      properties:
+        tier_id:
+          type: integer
+          description: Current subscription tier ID (0=Free, 1=Bronze, 2=Silver, 3=Gold)
+          example: 1
+        cap_vybits:
+          type: integer
+          description: Maximum vybits allowed for this tier
+          example: 50
+        cap_daily:
+          type: integer
+          description: Maximum daily notifications for this tier
+          example: 500
+        cap_monthly:
+          type: integer
+          description: Maximum monthly notifications for this tier
+          example: 7500
+        number_vybits:
+          type: integer
+          description: Current number of vybits created
+          example: 12
+        count_daily:
+          type: integer
+          description: Notifications triggered today
+          example: 127
+        count_monthly:
+          type: integer
+          description: Notifications triggered this month
+          example: 3421
+        monthly_reset_dts:
+          type: string
+          format: date-time
+          description: When the monthly count will reset
+          example: "2025-12-01T00:00:00Z"
+
+    Vybit:
+      type: object
+      required:
+        - key
+        - name
+        - soundKey
+        - triggerType
+      properties:
+        key:
+          type: string
+          description: Unique vybit identifier
+          example: "vybit123abc456"
+        name:
+          type: string
+          description: Vybit display name
+          maxLength: 255
+          example: "Server Alert"
+        description:
+          type: string
+          description: Detailed vybit description
+          example: "Notification for critical server errors"
+        soundKey:
+          type: string
+          description: Key of the sound to play
+          example: "sound123abc"
+        status:
+          type: string
+          enum: ["on", "off"]
+          description: Vybit status (on = active, off = disabled)
+          example: "on"
+        triggerKey:
+          type: string
+          description: Unique key for triggering this vybit via webhook
+          example: "trigger123abc456"
+        subscriptionKey:
+          type: string
+          description: Unique key for subscribing to this vybit
+          example: "sub123abc456"
+        triggerType:
+          type: string
+          enum: ["webhook", "schedule", "geofence", "integration"]
+          description: How this vybit is triggered
+          example: "webhook"
+        triggerSettings:
+          type: object
+          description: |
+            Configuration specific to the trigger type.
+
+            **For schedule triggers**: Contains cron expressions and timezone.
+            **For other triggers**: null or trigger-specific configuration.
+          nullable: true
+          properties:
+            crons:
+              type: array
+              description: Array of cron schedule definitions (for triggerType="schedule")
+              items:
+                type: object
+                properties:
+                  cron:
+                    type: string
+                    description: |
+                      Cron expression defining when to trigger.
+                      Format: minute hour day month dayOfWeek
+                      Example: "0 9 * * *" = every day at 9:00 AM
+                    example: "0,5,10,15,20,25,30,35,40,45,50,55 * * * 0"
+                  timeZone:
+                    type: string
+                    description: IANA timezone for the cron schedule
+                    example: "America/Denver"
+          example:
+            crons:
+              - cron: "0 9 * * *"
+                timeZone: "America/Denver"
+        access:
+          type: string
+          enum: ["public", "private", "unlisted"]
+          description: Vybit visibility and access control
+          example: "private"
+        message:
+          type: string
+          description: Default message displayed with notifications
+          nullable: true
+          maxLength: 500
+          example: "Server is down!"
+        imageUrl:
+          type: string
+          format: uri
+          description: Default image URL for notifications
+          nullable: true
+          example: "https://example.com/alert.jpg"
+        linkUrl:
+          type: string
+          format: uri
+          description: Default URL to open when notification is tapped
+          nullable: true
+          example: "https://status.example.com"
+        geofence:
+          type: object
+          description: |
+            Geofence configuration (required when triggerType is "geofence").
+
+            Defines a geographic boundary that triggers the vybit when entered or exited.
+          nullable: true
+          properties:
+            id:
+              type: string
+              description: Unique identifier for the geofence
+              example: "6nq1h6h4lj8elimg"
+            lat:
+              type: number
+              format: double
+              description: Latitude of geofence center
+              example: 40.0458744
+            lon:
+              type: number
+              format: double
+              description: Longitude of geofence center
+              example: -105.2654336
+            radius:
+              type: number
+              description: Geofence radius value
+              example: 100
+            radiusUnits:
+              type: string
+              enum: ["meters", "kilometers", "miles"]
+              description: Units for the radius measurement
+              example: "meters"
+            displayRadius:
+              type: string
+              description: Formatted radius for display
+              example: "100"
+            type:
+              type: string
+              enum: ["enter", "exit"]
+              description: Trigger on entry or exit from geofence
+              example: "enter"
+            timeThrottle:
+              type: string
+              description: Minimum seconds between triggers (0 = no throttle)
+              example: "0"
+            subscribable:
+              type: string
+              enum: ["yes", "no"]
+              description: Whether others can subscribe to this geofenced vybit
+              example: "yes"
+          example:
+            id: "6nq1h6h4lj8elimg"
+            lat: 40.0458744
+            lon: -105.2654336
+            radius: 100
+            radiusUnits: "meters"
+            displayRadius: "100"
+            type: "enter"
+            timeThrottle: "0"
+            subscribable: "yes"
+        numberFollowers:
+          type: integer
+          description: Count of users subscribed to this vybit
+          example: 15
+        sendPermissions:
+          type: string
+          enum: ["owner_subs", "subs_owner", "subs_group"]
+          description: Who can trigger this vybit (owner+subscribers, subscribers+owner, subscribers only)
+          example: "owner_subs"
+        following:
+          type: boolean
+          description: |
+            Whether the authenticated user is currently following this vybit.
+            Only present in /subscriptions endpoints (not in owned vybit responses).
+            - true: User is actively subscribed and receiving notifications
+            - false: User is not following
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          description: When the vybit was created
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the vybit was last updated
+          example: "2024-01-20T14:45:00Z"
+
+    Log:
+      type: object
+      required:
+        - key
+        - vybKey
+        - personKey
+      properties:
+        key:
+          type: string
+          description: Unique log entry identifier
+          example: "log123abc456"
+        vybKey:
+          type: string
+          description: Key of the vybit that was triggered
+          example: "vybit123abc"
+        personKey:
+          type: string
+          description: Key of the user who received the notification
+          example: "person123abc"
+        dtStart:
+          type: string
+          description: When notification processing started (ISO 8601)
+          example: "2024-01-20T15:30:00Z"
+        dtEnd:
+          type: string
+          description: When notification processing completed (ISO 8601)
+          nullable: true
+          example: "2024-01-20T15:30:02Z"
+        input:
+          type: object
+          nullable: true
+          description: Input data that triggered the notification (e.g., webhook payload)
+          example: {"message": "Server error detected", "severity": "critical"}
+        output:
+          type: object
+          nullable: true
+          description: Output data from notification processing
+          example: {"sent": true, "devices": 2}
+        diagnostics:
+          type: object
+          nullable: true
+          description: Diagnostic information about the notification delivery
+          example: {"vybName": "Server Alert", "soundPlayed": true, "deliveryStatus": "success"}
+        parentLogKey:
+          type: string
+          nullable: true
+          description: Key of parent log entry (for grouped notifications)
+          example: null
+        playedSound:
+          type: string
+          nullable: true
+          description: Whether the sound was played
+          example: "yes"
+
+    Sound:
+      type: object
+      required:
+        - key
+        - name
+        - type
+        - status
+        - url
+      properties:
+        key:
+          type: string
+          description: Unique sound identifier
+          example: "sound123abc456"
+        name:
+          type: string
+          description: Sound name
+          example: "Notification Bell"
+        description:
+          type: string
+          description: Sound description
+          example: "Clean notification sound"
+        type:
+          type: string
+          description: Audio file type
+          example: "mp3"
+        status:
+          type: string
+          description: Sound status
+          example: "public"
+        url:
+          type: string
+          format: uri
+          description: URL to play/download the sound
+          example: "https://api.vybit.net/v1/sound/sound123abc/play"
+        vybitKey:
+          type: string
+          nullable: true
+          description: Key of first vybit using this sound (null if unused)
+          example: "vybit456def"
+        meta:
+          type: object
+          nullable: true
+          description: Additional metadata about the sound (license, attribution, etc.)
+          example: null
+
+    Peep:
+      type: object
+      required:
+        - key
+        - vybKey
+      properties:
+        key:
+          type: string
+          description: Unique peep identifier
+          example: "peep123abc456"
+        vybKey:
+          type: string
+          description: Key of the vybit this person is subscribed to
+          example: "vybit123abc"
+        name:
+          type: string
+          description: Name of the subscriber
+          example: "John Doe"
+        accessStatus:
+          type: string
+          enum: ["denied", "public", "invited", "granted"]
+          description: |
+            Access status for this subscription:
+            - "denied": access denied
+            - "public": public subscription
+            - "invited": invitation sent but not accepted
+            - "granted": invitation accepted
+          example: "public"
+        createdAt:
+          type: string
+          format: date-time
+          description: When the subscription was created
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the subscription was last updated
+          example: "2024-01-20T14:45:00Z"
+
+    Subscription:
+      type: object
+      required:
+        - followingKey
+        - vybName
+      properties:
+        followingKey:
+          type: string
+          description: Unique subscription following identifier
+          example: "follow123abc456"
+        vybName:
+          type: string
+          description: Name of the vybit being followed
+          example: "Server Alert"
+        description:
+          type: string
+          description: Description of the vybit
+          example: "Critical server notifications"
+        soundKey:
+          type: string
+          description: Sound key for this vybit
+          example: "sound123abc"
+        soundType:
+          type: string
+          description: Type of sound file
+          example: "mp3"
+        ownerName:
+          type: string
+          description: Name of the vybit owner
+          example: "Jane Smith"
+        status:
+          type: string
+          enum: ["on", "off"]
+          description: Subscription status (on = active, off = disabled)
+          example: "on"
+        accessStatus:
+          type: string
+          enum: ["denied", "public", "invited", "granted"]
+          description: |
+            Access status for this subscription:
+            - "denied": access denied
+            - "public": publicly accessible subscription
+            - "invited": invitation sent but not accepted
+            - "granted": invitation accepted
+          example: "public"
+        subscriptionKey:
+          type: string
+          description: Subscription key used to create this follow
+          example: "sub123abc"
+        access:
+          type: string
+          enum: ["public", "private", "unlisted"]
+          description: Access level of the vybit
+          example: "public"
+        message:
+          type: string
+          nullable: true
+          description: Default message for this vybit
+          example: "Alert!"
+        imageUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: Default image URL
+          example: "https://example.com/image.jpg"
+        linkUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: Default link URL
+          example: "https://example.com"
+        sendPermissions:
+          type: string
+          enum: ["owner_subs", "subs_owner", "subs_group"]
+          description: Send permissions for this vybit
+          example: "owner_subs"
+        createdAt:
+          type: string
+          format: date-time
+          description: When the subscription was created
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the subscription was last updated
+          example: "2024-01-20T14:45:00Z"
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error code or type
+          example: "not_found"
+        message:
+          type: string
+          description: Human-readable error description
+          example: "Resource not found"
+        result:
+          type: integer
+          description: Result code (0 = error)
+          example: 0
+
+tags:
+  - name: Status & Utility
+    description: |
+      API health checks and usage monitoring endpoints.
+      Use these to verify API availability and track usage metrics.
+
+  - name: Profile
+    description: |
+      User profile information endpoints.
+      Retrieve account details for the authenticated user.
+
+  - name: Vybits
+    description: |
+      Manage vybits (custom notifications) owned by the authenticated user.
+      Create, read, update, and delete vybits with various trigger types.
+
+  - name: Logs
+    description: |
+      View notification logs and history.
+      Track notification deliveries for owned and subscribed vybits.
+
+  - name: Sounds
+    description: |
+      Search and manage sounds available on the Vybit platform.
+      Use sounds when creating or updating vybits.
+
+  - name: Peeps
+    description: |
+      Manage peeps (subscribers) for your vybits.
+      Peeps are all users who follow your vybits, whether they subscribed via
+      public discovery, unlisted subscription links, or private invitations.
+      Use these endpoints to view, invite, and manage subscribers.
+
+  - name: Subscriptions
+    description: |
+      Discover public vybits and manage your subscriptions.
+      Browse vybits created by other users, subscribe to them, and customize
+      your subscription settings.
+
+  - name: Models
+    description: |
+      Data models and schemas used throughout the API.
+      Reference these schemas to understand the structure of request and response objects.
+
+externalDocs:
+  description: Vybit SDK Documentation and Code Examples
+  url: https://gitlab.com/flatirontek/vybit-sdk

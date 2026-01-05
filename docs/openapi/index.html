@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vybit OAuth2 API Documentation</title>
+    <title>Vybit API Documentation</title>
     <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui.css" />
     <style>
         html {
@@ -33,7 +33,17 @@
     <script>
         window.onload = function() {
             const ui = SwaggerUIBundle({
-                url: './oauth2.yaml',
+                urls: [
+                    {
+                        url: './developer-api.yaml',
+                        name: 'Developer API v1'
+                    },
+                    {
+                        url: './oauth2.yaml',
+                        name: 'OAuth2 API'
+                    }
+                ],
+                "urls.primaryName": "Developer API v1",
                 dom_id: '#swagger-ui',
                 deepLinking: true,
                 presets: [

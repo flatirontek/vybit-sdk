@@ -1,7 +1,7 @@
 {
   "name": "@vybit/api-sdk",
-  "version": "1.0.1",
-  "description": "[PLACEHOLDER] API SDK for Vybit - Full implementation coming in future release",
+  "version": "1.1.0",
+  "description": "Developer API SDK for Vybit notification platform",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -15,7 +15,9 @@
     "vybit",
     "api",
     "rest",
-    "sdk"
+    "sdk",
+    "notifications",
+    "developer-api"
   ],
   "author": "Vybit Team",
   "license": "MIT",
@@ -39,6 +41,14 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "@vybit/core": "^1.0.1"
+    "@vybit/core": "^1.1.0"
+  },
+  "peerDependencies": {
+    "node-fetch": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "node-fetch": {
+      "optional": true
+    }
   }
 }

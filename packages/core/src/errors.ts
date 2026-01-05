@@ -11,9 +11,12 @@ export class VybitSDKError extends Error {
 }
 
 export class VybitAuthError extends VybitSDKError {
-  constructor(message: string, details?: any) {
+  public readonly statusCode?: number;
+
+  constructor(message: string, statusCode?: number, details?: any) {
     super(message, 'AUTH_ERROR', details);
     this.name = 'VybitAuthError';
+    this.statusCode = statusCode;
   }
 }
 

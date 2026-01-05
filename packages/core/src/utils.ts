@@ -49,3 +49,11 @@ export function getDefaultBaseUrl(): string {
 export function getAuthDomain(): string {
   return 'https://app.vybit.net';
 }
+
+/**
+ * Gets the Developer API base URL
+ * @returns The production Developer API base URL
+ */
+export function getApiBaseUrl(): string {
+  return 'https://api.vybit.net/v1';
+}

@@ -16,6 +16,7 @@ dist/
 # IDE
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 
@@ -30,3 +31,7 @@ coverage/
 # Logs
 logs/
 *.log
+
+# Temporary test files
+TEST_RESULTS.md
+test-*.js
