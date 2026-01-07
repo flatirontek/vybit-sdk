@@ -679,7 +679,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Vybit'
+                  $ref: '#/components/schemas/PublicVybit'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
@@ -711,7 +711,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Vybit'
+                $ref: '#/components/schemas/PublicVybit'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '404':
@@ -2024,12 +2024,74 @@ components:
           description: When the vybit was last updated
           example: "2024-01-20T14:45:00Z"
 
+    PublicVybit:
+      type: object
+      required:
+        - key
+        - name
+        - soundKey
+        - ownerName
+        - following
+      properties:
+        key:
+          type: string
+          description: Unique subscription key for this public vybit
+          example: "sub123abc456"
+        name:
+          type: string
+          description: Vybit display name
+          maxLength: 255
+          example: "Server Alert"
+        description:
+          type: string
+          description: Detailed vybit description
+          example: "Notification for critical server errors"
+        soundKey:
+          type: string
+          description: Key of the sound to play
+          example: "sound123abc"
+        soundType:
+          type: string
+          description: Type of sound file
+          example: "mp3"
+        imageUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: Default image URL for notifications
+          example: "https://example.com/alert.jpg"
+        linkUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: Default URL to open when notification is tapped
+          example: "https://status.example.com"
+        ownerName:
+          type: string
+          description: Name of the vybit owner
+          example: "Jane Smith"
+        following:
+          type: boolean
+          description: Whether the authenticated user is currently following this vybit
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          description: When the vybit was created
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: When the vybit was last updated
+          example: "2024-01-20T14:45:00Z"
+
     Log:
       type: object
       required:
         - key
-        - vybKey
-        - personKey
+        - vybName
+        - ownerName
+        - senderName
       properties:
         key:
           type: string
@@ -2037,46 +2099,62 @@ components:
           example: "log123abc456"
         vybKey:
           type: string
-          description: Key of the vybit that was triggered
+          nullable: true
+          description: Key of the vybit that was triggered (null if user doesn't own the vybit)
           example: "vybit123abc"
-        personKey:
+        vybName:
           type: string
-          description: Key of the user who received the notification
-          example: "person123abc"
-        dtStart:
+          description: Name of the vybit
+          example: "Server Alert"
+        createdAt:
           type: string
-          description: When notification processing started (ISO 8601)
+          format: date-time
+          description: When the log entry was created (ISO 8601)
           example: "2024-01-20T15:30:00Z"
-        dtEnd:
+        vybDescription:
           type: string
-          description: When notification processing completed (ISO 8601)
-          nullable: true
-          example: "2024-01-20T15:30:02Z"
-        input:
-          type: object
-          nullable: true
-          description: Input data that triggered the notification (e.g., webhook payload)
-          example: {"message": "Server error detected", "severity": "critical"}
-        output:
-          type: object
-          nullable: true
-          description: Output data from notification processing
-          example: {"sent": true, "devices": 2}
-        diagnostics:
-          type: object
-          nullable: true
-          description: Diagnostic information about the notification delivery
-          example: {"vybName": "Server Alert", "soundPlayed": true, "deliveryStatus": "success"}
-        parentLogKey:
+          description: Description of the vybit
+          example: "Alerts when server CPU exceeds 80%"
+        soundKey:
           type: string
           nullable: true
-          description: Key of parent log entry (for grouped notifications)
-          example: null
-        playedSound:
+          description: Key of the sound that was played
+          example: "sound123abc"
+        vybfollowKey:
           type: string
           nullable: true
-          description: Whether the sound was played
-          example: "yes"
+          description: Key of the subscription/follow (null if owner-triggered)
+          example: "follow123abc"
+        ownerName:
+          type: string
+          description: Name of the user who owns/received the notification
+          example: "John Doe"
+        senderName:
+          type: string
+          description: Name of the user who sent/triggered the notification
+          example: "Jane Smith"
+        notification:
+          type: string
+          nullable: true
+          description: The notification message that was displayed
+          example: "Server CPU usage critical: 95%"
+        log:
+          type: string
+          nullable: true
+          description: Custom log message
+          example: "Triggered by monitoring script"
+        imageUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: Custom image URL included in the notification
+          example: "https://example.com/alert.png"
+        linkUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: Custom link URL included in the notification
+          example: "https://dashboard.example.com/server-status"
 
     Sound:
       type: object

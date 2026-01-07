@@ -18,6 +18,7 @@ import {
   VybitTriggerResponse,
   VybitFollow,
   VybitFollowUpdateParams,
+  PublicVybit,
   SubscriberSendParams,
   SubscriberSendResponse,
   Sound,
@@ -34,9 +35,13 @@ import {
  *
  * @example
  * ```typescript
+ * // With explicit API key
  * const client = new VybitAPIClient({
  *   apiKey: 'your-api-key-from-developer-portal'
  * });
+ *
+ * // Using VYBIT_API_KEY environment variable
+ * const client = new VybitAPIClient();
  *
  * // Get API status
  * const status = await client.getStatus();
@@ -53,24 +58,26 @@ import {
  * ```
  */
 export class VybitAPIClient {
-  private config: VybitAPIConfig;
+  private apiKey: string;
   private baseUrl: string;
 
   /**
    * Creates a new Vybit Developer API client
-   * @param config - API configuration including API key
-   * @throws {VybitValidationError} When configuration is invalid
+   * @param config - API configuration. If apiKey is not provided, falls back to VYBIT_API_KEY environment variable
+   * @throws {VybitValidationError} When API key is not provided and VYBIT_API_KEY environment variable is not set
    */
-  constructor(config: VybitAPIConfig) {
-    this.validateConfig(config);
-    this.config = config;
-    this.baseUrl = config.baseUrl || getApiBaseUrl();
-  }
+  constructor(config: VybitAPIConfig = {}) {
+    // Explicit apiKey takes precedence, then fall back to env var
+    const apiKey = config.apiKey || process.env.VYBIT_API_KEY;
 
-  private validateConfig(config: VybitAPIConfig): void {
-    if (!config.apiKey) {
-      throw new VybitValidationError('API key is required');
+    if (!apiKey) {
+      throw new VybitValidationError(
+        'API key is required. Provide it in the config or set VYBIT_API_KEY environment variable'
+      );
     }
+
+    this.apiKey = apiKey;
+    this.baseUrl = config.baseUrl || getApiBaseUrl();
   }
 
   private async request<T = any>(
@@ -79,7 +86,7 @@ export class VybitAPIClient {
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const headers: Record<string, string> = {
-      'X-API-Key': this.config.apiKey,
+      'X-API-Key': this.apiKey,
       ...( options.headers as Record<string, string>),
     };
 
@@ -101,8 +108,17 @@ export class VybitAPIClient {
           throw new VybitAPIError('Rate limit exceeded', response.status);
         }
         const errorData = await response.json().catch(() => ({}));
+
+        // Handle vybit limit error specifically
+        if (response.status === 403 && errorData.error === 'vybit_limit_reached') {
+          throw new VybitAPIError(
+            'Vybit limit reached for your tier. Delete existing vybits or upgrade your account.',
+            response.status
+          );
+        }
+
         throw new VybitAPIError(
-          errorData.message || `API request failed: ${response.statusText}`,
+          errorData.message || errorData.error || `API request failed: ${response.statusText}`,
           response.status
         );
       }
@@ -255,9 +271,9 @@ export class VybitAPIClient {
    * @param params - Pagination and search parameters
    * @returns Array of public vybits
    */
-  async listPublicVybits(params?: SearchParams): Promise<Vybit[]> {
+  async listPublicVybits(params?: SearchParams): Promise<PublicVybit[]> {
     const query = this.buildQueryParams(params);
-    return this.request<Vybit[]>(`/subscriptions/public${query}`);
+    return this.request<PublicVybit[]>(`/subscriptions/public${query}`);
   }
 
   /**
@@ -265,8 +281,8 @@ export class VybitAPIClient {
    * @param key - Subscription key
    * @returns Public vybit details
    */
-  async getPublicVybit(key: string): Promise<Vybit> {
-    return this.request<Vybit>(`/subscription/${key}`);
+  async getPublicVybit(key: string): Promise<PublicVybit> {
+    return this.request<PublicVybit>(`/subscription/${key}`);
   }
 
   // ==================== Vybit Subscriptions (Follows) ====================

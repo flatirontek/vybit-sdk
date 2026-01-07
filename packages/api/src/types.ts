@@ -2,8 +2,8 @@
  * Configuration for Vybit Developer API client
  */
 export interface VybitAPIConfig {
-  /** Developer API key from Vybit developer portal */
-  apiKey: string;
+  /** Developer API key from Vybit developer portal. If not provided, falls back to VYBIT_API_KEY environment variable */
+  apiKey?: string;
   /** Base URL for API calls (defaults to production) */
   baseUrl?: string;
 }
@@ -60,12 +60,14 @@ export interface Meter {
   cap_daily: number;
   /** Maximum monthly notifications */
   cap_monthly: number;
+  /** Current number of vybits created */
+  number_vybits: number;
   /** Notifications triggered today */
   count_daily: number;
   /** Notifications triggered this month */
   count_monthly: number;
-  /** Total notifications all-time */
-  count_total: number;
+  /** When the monthly count will reset */
+  monthly_reset_dts: string;
 }
 
 /**
@@ -81,7 +83,7 @@ export interface Vybit {
   /** Key of the sound to play */
   soundKey: string;
   /** Vybit status */
-  status?: 'active' | 'inactive' | 'deleted';
+  status?: 'on' | 'off';
   /** Vybit type (legacy field) */
   type?: string;
   /** Unique key for triggering this vybit via webhook */
@@ -122,13 +124,15 @@ export interface VybitCreateParams {
   name: string;
   /** Detailed vybit description */
   description?: string;
-  /** Key of the sound to play */
-  soundKey: string;
-  /** How this vybit is triggered */
-  triggerType: 'webhook' | 'schedule' | 'geofence' | 'integration';
+  /** Key of the sound to play (defaults to a system sound if not provided) */
+  soundKey?: string;
+  /** Vybit status (on = active, off = disabled, defaults to "on") */
+  status?: 'on' | 'off';
+  /** How this vybit is triggered (defaults to "webhook") */
+  triggerType?: 'webhook' | 'schedule' | 'geofence' | 'integration';
   /** Configuration specific to the trigger type */
   triggerSettings?: any;
-  /** Vybit visibility and access control */
+  /** Vybit visibility and access control (defaults to "private") */
   access?: 'public' | 'private' | 'unlisted';
   /** Default message displayed with notifications */
   message?: string;
@@ -138,7 +142,7 @@ export interface VybitCreateParams {
   linkUrl?: string;
   /** Geofence configuration (for geofence trigger type) */
   geofence?: any;
-  /** Who can trigger this vybit */
+  /** Who can trigger this vybit (defaults to "owner_subs") */
   sendPermissions?: 'owner_subs' | 'subs_owner' | 'subs_group';
 }
 
@@ -152,6 +156,8 @@ export interface VybitUpdateParams {
   description?: string;
   /** Key of the sound to play */
   soundKey?: string;
+  /** Vybit status (on = active, off = disabled) */
+  status?: 'on' | 'off';
   /** How this vybit is triggered */
   triggerType?: 'webhook' | 'schedule' | 'geofence' | 'integration';
   /** Configuration specific to the trigger type */
@@ -175,11 +181,7 @@ export interface VybitUpdateParams {
  */
 export interface VybitFollow {
   /** Unique vybit follow identifier */
-  key: string;
-  /** Key of the subscribed user */
-  personKey?: string;
-  /** Key of the vybit being followed */
-  vybKey: string;
+  followingKey: string;
   /** Name of the vybit being followed */
   vybName: string;
   /** Description of the vybit */
@@ -198,8 +200,6 @@ export interface VybitFollow {
   subscriptionKey?: string;
   /** Access level of the vybit */
   access?: 'public' | 'private' | 'unlisted';
-  /** Trigger type of the vybit */
-  triggerType?: 'webhook' | 'schedule' | 'geofence' | 'integration';
   /** Default message for this vybit */
   message?: string;
   /** Default image URL */
@@ -239,6 +239,34 @@ export interface VybitFollowUpdateParams {
 }
 
 /**
+ * Public vybit information for discovery
+ */
+export interface PublicVybit {
+  /** Unique subscription key for this public vybit */
+  key: string;
+  /** Vybit display name */
+  name: string;
+  /** Detailed vybit description */
+  description?: string;
+  /** Key of the sound to play */
+  soundKey: string;
+  /** Type of sound file */
+  soundType?: string;
+  /** Default image URL for notifications */
+  imageUrl?: string | null;
+  /** Default URL to open when notification is tapped */
+  linkUrl?: string | null;
+  /** Name of the vybit owner */
+  ownerName: string;
+  /** Whether the authenticated user is currently following this vybit */
+  following: boolean;
+  /** When the vybit was created */
+  createdAt?: string;
+  /** When the vybit was last updated */
+  updatedAt?: string;
+}
+
+/**
  * Sound information
  */
 export interface Sound {
@@ -252,12 +280,16 @@ export interface Sound {
   type: string;
   /** Sound status */
   status: string;
-  /** URL to play/download the sound */
+  /** URL to play/download the sound via Vybit proxy */
   url: string;
   /** Key of first vybit using this sound (null if unused) */
   vybitKey?: string | null;
   /** Additional metadata about the sound */
   meta?: any;
+  /** When the sound was created */
+  createdAt?: string;
+  /** When the sound was last updated */
+  updatedAt?: string;
 }
 
 /**
@@ -268,22 +300,28 @@ export interface Log {
   key: string;
   /** Key of the vybit that was triggered */
   vybKey: string;
-  /** Key of the user who received the notification */
-  personKey: string;
-  /** When notification processing started */
-  dtStart?: string;
-  /** When notification processing completed */
-  dtEnd?: string;
-  /** Input data that triggered the notification */
-  input?: any;
-  /** Output data from notification processing */
-  output?: any;
-  /** Diagnostic information about the notification delivery */
-  diagnostics?: any;
-  /** Key of parent log entry (for grouped notifications) */
-  parentLogKey?: string;
-  /** Whether the sound was played */
-  playedSound?: string;
+  /** Name of the vybit */
+  vybName: string;
+  /** Description of the vybit */
+  vybDescription?: string;
+  /** Name of the user who owns/received the notification */
+  ownerName: string;
+  /** Name of the user who sent/triggered the notification */
+  senderName: string;
+  /** Notification message */
+  notification?: string;
+  /** Custom image URL */
+  imageUrl?: string | null;
+  /** Custom link URL */
+  linkUrl?: string | null;
+  /** Sound key used */
+  soundKey?: string | null;
+  /** Vybit follow key (null if owner-triggered) */
+  vybfollowKey?: string | null;
+  /** Custom log message */
+  log?: string | null;
+  /** When the log entry was created */
+  createdAt?: string;
 }
 
 /**

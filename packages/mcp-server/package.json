@@ -1,0 +1,55 @@
+{
+  "name": "@vybit/mcp-server",
+  "version": "1.1.0",
+  "description": "Model Context Protocol (MCP) server for Vybit Developer API",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "vybit-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "dev": "tsc --watch",
+    "test": "jest --config ../../jest.config.js --rootDir ../..",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "vybit",
+    "mcp",
+    "model-context-protocol",
+    "developer-api",
+    "ai",
+    "claude",
+    "notifications"
+  ],
+  "author": "Vybit Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.com/flatirontek/vybit-sdk.git",
+    "directory": "packages/mcp-server"
+  },
+  "homepage": "https://gitlab.com/flatirontek/vybit-sdk#readme",
+  "bugs": {
+    "url": "https://gitlab.com/flatirontek/vybit-sdk/-/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "@vybit/api-sdk": "^1.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
+}

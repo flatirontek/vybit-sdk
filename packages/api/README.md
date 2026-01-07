@@ -53,13 +53,13 @@ console.log('Account:', profile.name, profile.email);
 const vybits = await client.listVybits({ limit: 10 });
 console.log(`You have ${vybits.length} vybits`);
 
-// Create a new vybit
+// Create a new vybit (only name is required)
 const vybit = await client.createVybit({
   name: 'Server Alert',
   description: 'Notifications for server errors',
-  soundKey: 'sound123abc',
-  triggerType: 'webhook',
-  access: 'private'
+  soundKey: 'sound123abc',  // Optional - defaults to system sound
+  triggerType: 'webhook',     // Optional - defaults to 'webhook'
+  access: 'private'           // Optional - defaults to 'private'
 });
 console.log('Created vybit:', vybit.key);
 
@@ -88,7 +88,7 @@ const vybit = await client.getVybit('vybit123abc');
 // Update vybit
 await client.updateVybit('vybit123abc', {
   name: 'Updated Alert Name',
-  mute: 'off'
+  status: 'on'
 });
 
 // Delete vybit
@@ -109,11 +109,11 @@ const follow = await client.createVybitFollow({
 // List your subscriptions
 const follows = await client.listVybitFollows();
 
-// Mute a subscription
-await client.updateVybitFollow(follow.key, { mute: 'on' });
+// Disable a subscription
+await client.updateVybitFollow(follow.followingKey, { status: 'off' });
 
 // Unsubscribe
-await client.deleteVybitFollow(follow.key);
+await client.deleteVybitFollow(follow.followingKey);
 ```
 
 ### Sound Search
@@ -197,9 +197,7 @@ import { VybitAPIError, VybitAuthError, VybitValidationError } from '@vybit/core
 
 try {
   const vybit = await client.createVybit({
-    name: 'Test Vybit',
-    soundKey: 'sound123',
-    triggerType: 'webhook'
+    name: 'Test Vybit'  // Only name is required
   });
 } catch (error) {
   if (error instanceof VybitAuthError) {
@@ -250,10 +248,7 @@ import {
 
 // Full type safety for all API operations
 const params: VybitCreateParams = {
-  name: 'My Vybit',
-  soundKey: 'sound123',
-  triggerType: 'webhook',
-  access: 'private'
+  name: 'My Vybit'  // Only name is required, all other fields are optional
 };
 
 const vybit: Vybit = await client.createVybit(params);

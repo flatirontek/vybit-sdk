@@ -83,7 +83,9 @@ async function main() {
       const targetVybit = publicVybits[0];
       console.log(`9. Subscribing to "${targetVybit.name}"...`);
 
-      const subscription = await client.createVybitFollow(targetVybit.key);
+      const subscription = await client.createVybitFollow({
+        subscriptionKey: targetVybit.key
+      });
       const followKey = subscription.followingKey || subscription.key;
       console.log(`   ✅ Subscribed! Following key: ${followKey}\n`);
 
@@ -132,7 +134,7 @@ async function main() {
     const logs = await client.listVybitLogs(vybit.key, { limit: 5 });
     console.log(`   📜 Found ${logs.length} log entries for this vybit`);
     if (logs.length > 0) {
-      console.log(`   Latest: ${logs[0].key} at ${logs[0].dtStart}\n`);
+      console.log(`   Latest: ${logs[0].key} at ${logs[0].createdAt}\n`);
     }
 
     // ========== Example 13: Manage Peeps (Subscribers) ==========

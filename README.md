@@ -2,20 +2,22 @@
 
 Official TypeScript/JavaScript SDKs for integrating with the Vybit notification platform.
 
-[![npm version](https://badge.fury.io/js/%40vybit%2Foauth2-sdk.svg)](https://www.npmjs.com/package/@vybit/oauth2-sdk)
 [![npm version](https://badge.fury.io/js/%40vybit%2Fapi-sdk.svg)](https://www.npmjs.com/package/@vybit/api-sdk)
+[![npm version](https://badge.fury.io/js/%40vybit%2Foauth2-sdk.svg)](https://www.npmjs.com/package/@vybit/oauth2-sdk)
+[![npm version](https://badge.fury.io/js/%40vybit%2Fmcp-server.svg)](https://www.npmjs.com/package/@vybit/mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Overview
 
-Vybit provides two distinct SDKs for different integration scenarios:
+Vybit provides multiple integration options for different use cases:
 
-| SDK | Use Case | Authentication | Best For |
-|-----|----------|----------------|----------|
+| Package | Use Case | Authentication | Best For |
+|---------|----------|----------------|----------|
 | **[@vybit/api-sdk](./packages/api)** | Backend/automation | API Key | Server-to-server integrations, automation, monitoring systems |
 | **[@vybit/oauth2-sdk](./packages/oauth2)** | User-facing applications | OAuth 2.0 (user authorization) | Web apps, mobile apps where users connect their Vybit accounts |
+| **[@vybit/mcp-server](./packages/mcp-server)** | AI assistants | API Key | Claude Desktop, Claude Code, and other MCP-compatible AI tools |
 
-Both SDKs share common utilities from **[@vybit/core](./packages/core)**.
+All packages share common utilities from **[@vybit/core](./packages/core)**.
 
 ---
 
@@ -51,11 +53,9 @@ const client = new VybitAPIClient({
 #### Create and Manage Vybits
 
 ```typescript
-// Create a vybit
+// Create a vybit (only name is required)
 const vybit = await client.createVybit({
-  name: 'Server Alert',
-  soundKey: 'sound123abc',
-  triggerType: 'webhook'
+  name: 'Server Alert'
 });
 
 // List vybits with search and pagination
@@ -71,7 +71,7 @@ const details = await client.getVybit('vybit-id');
 // Update a vybit
 await client.updateVybit('vybit-id', {
   name: 'Updated Server Alert',
-  enabled: true
+  status: 'on'
 });
 
 // Delete a vybit
@@ -106,6 +106,30 @@ const sounds = await client.listSounds({
 const sound = await client.getSound('sound-key');
 ```
 
+#### Discover and Subscribe to Public Vybits
+
+```typescript
+// Browse public vybits (returns PublicVybit[])
+const publicVybits = await client.listPublicVybits({
+  search: 'weather',
+  limit: 10
+});
+
+// Get details about a public vybit before subscribing
+const vybitDetails = await client.getPublicVybit('subscription-key-abc123');
+
+// Subscribe to a public vybit using its subscription key
+const follow = await client.createVybitFollow({
+  subscriptionKey: vybitDetails.key
+});
+
+// List your subscriptions
+const subscriptions = await client.listVybitFollows();
+
+// Unsubscribe from a vybit
+await client.deleteVybitFollow(follow.followingKey);
+```
+
 #### Monitor Usage
 
 ```typescript
@@ -113,7 +137,7 @@ const sound = await client.getSound('sound-key');
 const meter = await client.getMeter();
 console.log(`Daily: ${meter.count_daily} / ${meter.cap_daily}`);
 console.log(`Monthly: ${meter.count_monthly} / ${meter.cap_monthly}`);
-console.log(`Tier: ${meter.tier_name}`);
+console.log(`Tier: ${meter.tier_id}`);
 ```
 
 ### API Reference
@@ -209,6 +233,111 @@ client.setAccessToken('existing-token');
 
 - **📖 Interactive Documentation**: [developer.vybit.net/oauth-reference](https://developer.vybit.net/oauth-reference)
 - **📋 OpenAPI Spec**: [docs/openapi/oauth2.yaml](./docs/openapi/oauth2.yaml)
+
+---
+
+## MCP Server
+
+**For AI assistants like Claude to interact with your Vybit notifications**
+
+The [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server enables AI assistants to manage your Vybit notifications through natural conversation. It provides **full parity** with the Developer API, giving AI assistants access to all Vybit features.
+
+### Installation
+
+```bash
+npm install -g @vybit/mcp-server
+```
+
+### Configuration
+
+Add to your MCP client configuration:
+
+**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "vybit": {
+      "command": "npx",
+      "args": ["-y", "@vybit/mcp-server"],
+      "env": {
+        "VYBIT_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+**Claude Code** (`.claude/mcp.json` in your project):
+```json
+{
+  "mcpServers": {
+    "vybit": {
+      "command": "npx",
+      "args": ["-y", "@vybit/mcp-server"],
+      "env": {
+        "VYBIT_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+### What You Can Do
+
+Once configured, you can ask your AI assistant to:
+
+- **Manage Vybits**: Create, update, delete, and list your notification vybits
+- **Send Notifications**: Trigger notifications with custom messages and content
+- **Discover Public Vybits**: Browse and search public vybits created by others
+- **Manage Subscriptions**: Subscribe to public vybits and manage your subscriptions
+- **Browse Sounds**: Search available notification sounds
+- **View Logs**: See notification history for your vybits and subscriptions
+- **Manage Access**: Invite people to private vybits and control permissions
+- **Monitor Usage**: Check your API usage and quota limits
+
+### Example Conversations
+
+```
+You: Create a vybit called "Server Alert" for webhooks with an alarm sound
+Claude: [Creates the vybit and shows details including trigger URL]
+
+You: Trigger my Server Alert vybit with message "CPU at 95%"
+Claude: [Sends the notification]
+
+You: What public vybits are available about weather?
+Claude: [Shows matching public vybits]
+
+You: Subscribe me to the "Daily Weather" vybit
+Claude: [Subscribes and confirms]
+
+You: Show me recent notifications for my Server Alert
+Claude: [Lists notification logs]
+```
+
+### Features
+
+The MCP server provides **26 tools** across all Vybit API features:
+- Vybit management (6 tools)
+- Public vybit discovery (2 tools)
+- Subscription management (6 tools)
+- Sound browsing (2 tools)
+- Notification logs (4 tools)
+- Access control / peeps (5 tools)
+- Usage monitoring (1 tool)
+
+### Compatibility
+
+Works with any MCP-compatible client:
+- ✅ Claude Desktop
+- ✅ Claude Code
+- ✅ Cline (VS Code extension)
+- ✅ Zed Editor
+- ✅ Continue.dev
+- ✅ Any other MCP-compatible AI tool
+
+### Documentation
+
+See the [MCP Server README](./packages/mcp-server/README.md) for complete documentation.
 
 ---
 
@@ -340,12 +469,23 @@ npm run publish:all
 All packages are written in TypeScript and include full type definitions:
 
 ```typescript
-import { VybitAPIClient, Vybit, CreateVybitRequest } from '@vybit/api-sdk';
+import {
+  VybitAPIClient,
+  Vybit,
+  PublicVybit,
+  VybitCreateParams,
+  VybitFollow
+} from '@vybit/api-sdk';
 import { VybitOAuth2Client, TokenResponse } from '@vybit/oauth2-sdk';
 
 // Full IntelliSense and type checking
 const client: VybitAPIClient = new VybitAPIClient({ apiKey: 'key' });
+
+// Owned vybits return full Vybit type with triggerKey, etc.
 const vybit: Vybit = await client.getVybit('id');
+
+// Public discovery returns simplified PublicVybit type
+const publicVybits: PublicVybit[] = await client.listPublicVybits();
 ```
 
 ---
