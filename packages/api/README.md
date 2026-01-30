@@ -95,27 +95,6 @@ await client.updateVybit('vybit123abc', {
 await client.deleteVybit('vybit123abc');
 ```
 
-### Subscription Management
-
-```typescript
-// Browse public vybits
-const publicVybits = await client.listPublicVybits({ limit: 10 });
-
-// Subscribe to a vybit
-const follow = await client.createVybitFollow({
-  subscriptionKey: 'sub123abc456'
-});
-
-// List your subscriptions
-const follows = await client.listVybitFollows();
-
-// Disable a subscription
-await client.updateVybitFollow(follow.followingKey, { status: 'off' });
-
-// Unsubscribe
-await client.deleteVybitFollow(follow.followingKey);
-```
-
 ### Sound Search
 
 ```typescript
@@ -169,6 +148,27 @@ await client.acceptPeep('peep123abc');
 
 // Remove access
 await client.deletePeep('peep123abc');
+```
+
+### Subscription Management
+
+```typescript
+// Browse public vybits
+const publicVybits = await client.listPublicVybits({ limit: 10 });
+
+// Subscribe to a vybit
+const follow = await client.createVybitFollow({
+  subscriptionKey: 'sub123abc456'
+});
+
+// List your subscriptions
+const follows = await client.listVybitFollows();
+
+// Disable a subscription
+await client.updateVybitFollow(follow.followingKey, { status: 'off' });
+
+// Unsubscribe
+await client.deleteVybitFollow(follow.followingKey);
 ```
 
 ### Monitoring & Metrics

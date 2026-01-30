@@ -181,29 +181,49 @@ app.get('/dashboard', async (req, res) => {
               const response = await fetch('/api/trigger', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                  sessionId: '${sessionId}', 
-                  triggerKey, 
-                  payload 
+                body: JSON.stringify({
+                  sessionId: '${sessionId}',
+                  triggerKey,
+                  payload
                 })
               });
-              
+
               const result = await response.json();
-              
+
+              // Safe DOM manipulation to prevent XSS
+              const resultDiv = document.getElementById('result');
+              resultDiv.innerHTML = ''; // Clear previous content
+
               if (result.success) {
-                document.getElementById('result').innerHTML = 
-                  '<h3>✅ Notification Sent!</h3><pre>' + JSON.stringify(result.data, null, 2) + '</pre>';
+                const heading = document.createElement('h3');
+                heading.textContent = '✅ Notification Sent!';
+                const pre = document.createElement('pre');
+                pre.textContent = JSON.stringify(result.data, null, 2);
+                resultDiv.appendChild(heading);
+                resultDiv.appendChild(pre);
               } else {
-                document.getElementById('result').innerHTML = 
-                  '<h3>❌ Failed</h3><p>' + result.error + '</p>';
+                const heading = document.createElement('h3');
+                heading.textContent = '❌ Failed';
+                const para = document.createElement('p');
+                para.textContent = result.error || 'Unknown error';
+                resultDiv.appendChild(heading);
+                resultDiv.appendChild(para);
               }
-              
-              document.getElementById('result').style.display = 'block';
-              
+
+              resultDiv.style.display = 'block';
+
             } catch (error) {
-              document.getElementById('result').innerHTML = 
-                '<h3>❌ Error</h3><p>' + error.message + '</p>';
-              document.getElementById('result').style.display = 'block';
+              // Safe DOM manipulation to prevent XSS
+              const resultDiv = document.getElementById('result');
+              resultDiv.innerHTML = ''; // Clear previous content
+
+              const heading = document.createElement('h3');
+              heading.textContent = '❌ Error';
+              const para = document.createElement('p');
+              para.textContent = error.message || 'Unknown error';
+              resultDiv.appendChild(heading);
+              resultDiv.appendChild(para);
+              resultDiv.style.display = 'block';
             }
           });
         </script>

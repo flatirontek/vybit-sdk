@@ -6,6 +6,12 @@ OAuth 2.0 authentication SDK for Vybit.
 
 Complete OAuth2 implementation for Vybit authentication, including authorization URL generation, token exchange, and authenticated API calls.
 
+## Setup
+
+1. Create a [Vybit developer account](https://developer.vybit.net)
+2. Navigate to OAUTH CONFIGURATION and specify a service name
+3. Store your VYBIT_CLIENT_ID and VYBIT_CLIENT_SECRET (use environment variables)
+
 ## Installation
 
 ```bash

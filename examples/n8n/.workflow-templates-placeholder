@@ -1,0 +1,17 @@
+# n8n Workflow Templates
+
+The workflow JSON files will be added here as they are created from real use cases.
+
+To create a workflow template:
+
+1. Build the workflow in n8n
+2. Remove any sensitive credentials
+3. Export as JSON
+4. Add to this directory
+5. Document in README.md
+
+Expected workflow files:
+- server-monitoring.json
+- daily-summary.json
+- airtable-integration.json
+- webhook-to-notification.json

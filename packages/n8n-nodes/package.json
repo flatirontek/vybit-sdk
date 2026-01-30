@@ -1,0 +1,66 @@
+{
+  "name": "@vybit/n8n-nodes",
+  "version": "1.0.1",
+  "description": "Push notifications with personalized sounds - n8n community nodes for Vybit",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "author": "Flatirontek LLC",
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.com/flatirontek/vybit-sdk.git",
+    "directory": "packages/n8n-nodes"
+  },
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "vybit",
+    "push",
+    "notifications",
+    "audio",
+    "alerts",
+    "workflow",
+    "automation"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/VybitApi.credentials.js",
+      "dist/credentials/VybitOAuth2Api.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Vybit/Vybit.node.js"
+    ]
+  },
+  "scripts": {
+    "build": "npm run clean && rollup -c && npm run copy-assets",
+    "clean": "rm -rf dist",
+    "copy-assets": "mkdir -p dist/nodes/Vybit && cp src/nodes/Vybit/vybit.png dist/nodes/Vybit/ 2>/dev/null || true",
+    "dev": "rollup -c -w",
+    "lint": "eslint src --ext .ts",
+    "test": "echo \"Run 'npm run test:integration' for integration tests\"",
+    "test:integration": "node test/integration/test-runner.js",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "@vybit/api-sdk": "^1.0.0",
+    "@vybit/oauth2-sdk": "^1.0.0",
+    "@vybit/core": "^1.0.0",
+    "@rollup/plugin-commonjs": "^25.0.0",
+    "@rollup/plugin-json": "^6.0.0",
+    "@rollup/plugin-node-resolve": "^15.0.0",
+    "@types/node": "^20.0.0",
+    "rollup": "^4.0.0",
+    "rollup-plugin-esbuild": "^6.1.0",
+    "tslib": "^2.6.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
+}

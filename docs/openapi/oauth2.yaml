@@ -27,7 +27,7 @@ info:
     
     ## Getting Started
     
-    1. Create a developer account at [app.vybit.net](https://app.vybit.net)
+    1. Create a developer account at [developer.vybit.net](https://developer.vybit.net)
     2. Register your application to get client credentials
     3. Use the [@vybit/oauth2-sdk](https://www.npmjs.com/package/@vybit/oauth2-sdk) for easy integration
     

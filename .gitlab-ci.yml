@@ -5,6 +5,7 @@ stages:
   - build
   - test
   - security
+  - publish
 
 # Include GitLab security templates
 include:
@@ -66,3 +67,40 @@ lint:
   script:
     - npx eslint packages/*/src --ext .ts || echo "Lint warnings/errors found but not failing build"
   allow_failure: true
+
+# Auto-publish n8n-nodes when SDK dependencies are updated
+publish-n8n-nodes:
+  stage: publish
+  image: node:$NODE_VERSION
+  needs: ["build", "test"]
+  only:
+    refs:
+      - main
+      - master
+    changes:
+      - packages/core/**/*
+      - packages/oauth2-sdk/**/*
+      - packages/api-sdk/**/*
+      - packages/n8n-nodes/**/*
+  before_script:
+    - npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
+  script:
+    # Check if n8n-nodes version needs bumping
+    - |
+      cd packages/n8n-nodes
+      CURRENT_VERSION=$(node -p "require('./package.json').version")
+      PUBLISHED_VERSION=$(npm view @vybit/n8n-nodes version 2>/dev/null || echo "0.0.0")
+      echo "Current version: $CURRENT_VERSION"
+      echo "Published version: $PUBLISHED_VERSION"
+
+      if [ "$CURRENT_VERSION" = "$PUBLISHED_VERSION" ]; then
+        echo "Version unchanged - auto-bumping patch version"
+        npm version patch --no-git-tag-version
+      fi
+
+      # Publish to npm
+      npm publish --access public
+  when: manual  # Require manual approval in pipeline
+  environment:
+    name: npm-registry
+    url: https://www.npmjs.com/package/@vybit/n8n-nodes

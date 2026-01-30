@@ -566,6 +566,20 @@ const TOOLS: Tool[] = [
           type: 'string',
           description: 'The key of the vybit',
         },
+        search: {
+          type: 'string',
+          description: 'Search term to filter peeps',
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of peeps to return (default: 50)',
+          default: 50,
+        },
+        offset: {
+          type: 'number',
+          description: 'Number of peeps to skip for pagination (default: 0)',
+          default: 0,
+        },
       },
       required: ['vybitKey'],
     },
@@ -620,7 +634,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -632,7 +646,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -656,7 +670,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -679,7 +693,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -691,7 +705,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({ success: true, message: 'Vybit deleted successfully' }, null, 2),
+              text: JSON.stringify({ success: true, message: 'Vybit deleted successfully' }),
             },
           ],
         };
@@ -712,7 +726,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -728,7 +742,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -740,7 +754,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -752,7 +766,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -769,7 +783,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -781,7 +795,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -796,7 +810,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -812,7 +826,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -824,7 +838,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -846,7 +860,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -858,7 +872,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({ success: true, message: 'Unsubscribed successfully' }, null, 2),
+              text: JSON.stringify({ success: true, message: 'Unsubscribed successfully' }),
             },
           ],
         };
@@ -875,7 +889,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -887,7 +901,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -903,7 +917,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -919,7 +933,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -928,6 +942,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       // Peeps
       case 'peeps_list': {
         const result = await vybitClient.listPeeps({
+          search: args.search as string | undefined,
           limit: args.limit as number | undefined,
           offset: args.offset as number | undefined,
         });
@@ -935,7 +950,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -947,7 +962,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -962,7 +977,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };
@@ -974,19 +989,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({ success: true, message: 'Peep removed successfully' }, null, 2),
+              text: JSON.stringify({ success: true, message: 'Peep removed successfully' }),
             },
           ],
         };
       }
 
       case 'vybit_peeps_list': {
-        const result = await vybitClient.listVybitPeeps(args.vybitKey as string);
+        const result = await vybitClient.listVybitPeeps(args.vybitKey as string, {
+          search: args.search as string | undefined,
+          limit: args.limit as number | undefined,
+          offset: args.offset as number | undefined,
+        });
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(result, null, 2),
+              text: JSON.stringify(result),
             },
           ],
         };

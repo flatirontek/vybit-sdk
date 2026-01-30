@@ -1,6 +1,6 @@
 {
   "name": "@vybit/mcp-server",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Model Context Protocol (MCP) server for Vybit Developer API",
   "type": "module",
   "main": "dist/index.js",
@@ -24,7 +24,7 @@
     "claude",
     "notifications"
   ],
-  "author": "Vybit Team",
+  "author": "Flatirontek LLC",
   "license": "MIT",
   "repository": {
     "type": "git",

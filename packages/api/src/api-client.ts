@@ -475,10 +475,10 @@ export class VybitAPIClient {
 
   /**
    * List peeps (access invitations)
-   * @param params - Pagination parameters
+   * @param params - Pagination and search parameters
    * @returns Array of peeps
    */
-  async listPeeps(params?: PaginationParams): Promise<Peep[]> {
+  async listPeeps(params?: SearchParams): Promise<Peep[]> {
     const query = this.buildQueryParams(params);
     return this.request<Peep[]>(`/peeps${query}`);
   }
@@ -519,10 +519,10 @@ export class VybitAPIClient {
   /**
    * List peeps for a specific vybit
    * @param vybitKey - Vybit key
-   * @param params - Pagination parameters
+   * @param params - Pagination and search parameters
    * @returns Array of peeps for the vybit
    */
-  async listVybitPeeps(vybitKey: string, params?: PaginationParams): Promise<Peep[]> {
+  async listVybitPeeps(vybitKey: string, params?: SearchParams): Promise<Peep[]> {
     const query = this.buildQueryParams(params);
     return this.request<Peep[]>(`/peeps/${vybitKey}${query}`);
   }

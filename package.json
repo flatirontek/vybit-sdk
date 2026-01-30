@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build -w @vybit/core && npm run build -w @vybit/oauth2-sdk && npm run build -w @vybit/api-sdk && npm run build -w @vybit/mcp-server",
+    "build": "npm run build -w @vybit/core && npm run build -w @vybit/oauth2-sdk && npm run build -w @vybit/api-sdk && npm run build -w @vybit/mcp-server && npm run build -w @vybit/n8n-nodes",
     "test": "npm run test --workspaces",
     "test:integration": "jest --config jest.config.js --runInBand",
     "lint": "eslint packages/*/src --ext .ts",

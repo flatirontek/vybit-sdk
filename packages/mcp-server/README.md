@@ -15,12 +15,12 @@ This MCP server provides AI assistants with **full parity** with the Vybit Devel
 
 - **Manage Vybits**: Create, read, update, delete, and list owned vybits
 - **Trigger Notifications**: Send notifications with custom messages, images, and links
-- **Discover Public Vybits**: Browse and search public vybits created by others
-- **Manage Subscriptions**: Subscribe to public vybits, view subscriptions, and unsubscribe
 - **Browse Sounds**: Search and explore available notification sounds
 - **View Notification Logs**: See notification history for vybits and subscriptions
 - **Manage Access (Peeps)**: Invite people to private vybits and manage permissions
 - **Monitor Usage**: Check API usage and limits
+- **Discover Public Vybits**: Browse and search public vybits created by others
+- **Manage Subscriptions**: Subscribe to public vybits, view subscriptions, and unsubscribe
 
 ## Installation
 
@@ -28,10 +28,6 @@ This MCP server provides AI assistants with **full parity** with the Vybit Devel
 npm install -g @vybit/mcp-server
 ```
 
-Or install locally in your project:
-
-```bash
-npm install @vybit/mcp-server
 ```
 
 ## Setup
@@ -39,7 +35,7 @@ npm install @vybit/mcp-server
 ### 1. Get Your API Key
 
 1. Sign up at [developer.vybit.net](https://developer.vybit.net)
-2. Navigate to the Developer API section
+2. Navigate to the Developer API section, click "</> DEV" then "API Configuration
 3. Copy your API key
 
 ### 2. Configure Your MCP Client
@@ -65,7 +61,7 @@ Add to your Claude Desktop configuration file:
 }
 ```
 
-For development/testing environments, you can override the API URL:
+For development/testing environments create separate Vybit accounts and use different API keys:
 
 ```json
 {
@@ -75,7 +71,7 @@ For development/testing environments, you can override the API URL:
       "args": ["-y", "@vybit/mcp-server"],
       "env": {
         "VYBIT_API_KEY": "your-dev-api-key",
-        "VYBIT_API_URL": "https://dev.api.vybit.net/v1"
+        "VYBIT_API_URL": "https://api.vybit.net/v1"
       }
     }
   }
@@ -122,21 +118,6 @@ You: Trigger my "Server Alert" vybit with message "CPU usage at 95%"
 Claude: [Sends the notification]
 ```
 
-**Discover and Subscribe:**
-```
-You: What public vybits are available about weather?
-Claude: [Shows public vybits matching "weather"]
-
-You: Subscribe me to the "Daily Weather Updates" vybit
-Claude: [Subscribes and shows subscription details]
-
-You: What am I subscribed to?
-Claude: [Lists all your subscriptions]
-
-You: Unsubscribe me from "Daily Weather Updates"
-Claude: [Unsubscribes successfully]
-```
-
 **View Notification History:**
 ```
 You: Show me recent notifications for my Server Alert vybit
@@ -163,6 +144,20 @@ Claude: [Lists sounds matching "alert"]
 You: How much of my API quota have I used today?
 Claude: [Shows current usage and limits]
 ```
+**Discover and Subscribe:**
+```
+You: What public vybits are available about weather?
+Claude: [Shows public vybits matching "weather"]
+
+You: Subscribe me to the "Daily Weather Updates" vybit
+Claude: [Subscribes and shows subscription details]
+
+You: What am I subscribed to?
+Claude: [Lists all your subscriptions]
+
+You: Unsubscribe me from "Daily Weather Updates"
+Claude: [Unsubscribes successfully]
+```
 
 ## Available Tools
 
@@ -176,20 +171,6 @@ The MCP server exposes **26 tools** to AI assistants, providing full parity with
 - `vybit_update` - Update an existing vybit (name, description, status, etc.)
 - `vybit_delete` - Delete a vybit
 - `vybit_trigger` - Trigger a notification with optional custom content
-
-### Public Vybit Discovery (2 tools)
-
-- `vybits_browse_public` - Browse and search public vybits available for subscription
-- `vybit_get_public` - Get details about a public vybit by subscription key
-
-### Subscription Management (6 tools)
-
-- `subscription_create` - Subscribe to a public vybit using its subscription key
-- `subscriptions_list` - List all vybits you are subscribed to (following)
-- `subscription_get` - Get details about a specific subscription
-- `subscription_update` - Update subscription settings (enable/disable, permissions)
-- `subscription_delete` - Unsubscribe from a vybit
-- `subscription_get_public` - Get public vybit details before subscribing
 
 ### Sound Management (2 tools)
 
@@ -215,29 +196,27 @@ The MCP server exposes **26 tools** to AI assistants, providing full parity with
 
 - `meter_get` - Get API usage and limits (daily/monthly counts and caps)
 
+### Public Vybit Discovery (2 tools)
+
+- `vybits_browse_public` - Browse and search public vybits available for subscription
+- `vybit_get_public` - Get details about a public vybit by subscription key
+
+### Subscription Management (6 tools)
+
+- `subscription_create` - Subscribe to a public vybit using its subscription key
+- `subscriptions_list` - List all vybits you are subscribed to (following)
+- `subscription_get` - Get details about a specific subscription
+- `subscription_update` - Update subscription settings (enable/disable, permissions)
+- `subscription_delete` - Unsubscribe from a vybit
+- `subscription_get_public` - Get public vybit details before subscribing
+
+
 ## Environment Variables
 
 - `VYBIT_API_KEY` (required) - Your Vybit Developer API key
-- `VYBIT_API_URL` (optional) - Custom API base URL (defaults to `https://api.vybit.net/v1`). Use this for development or testing environments, e.g., `https://dev.api.vybit.net/v1`
+- `VYBIT_API_URL` (optional) - Custom API base URL (defaults to `https://api.vybit.net/v1`).
 
 ## Development
-
-### Run Locally
-
-```bash
-# Clone the repo
-git clone https://gitlab.com/flatirontek/vybit-sdk.git
-cd vybit-sdk/packages/mcp-server
-
-# Install dependencies
-npm install
-
-# Build
-npm run build
-
-# Run the server
-VYBIT_API_KEY=your-key node dist/index.js
-```
 
 ### Testing with MCP Inspector
 

@@ -43,11 +43,11 @@
 
     <script>
         // Dynamically set OpenAPI spec URL based on environment
-        // Dev/Local: Use local file from vybit-sdk repo
+        // Local: Use local file from vybit-sdk repo
         // Production: Use GitLab raw file URL
         (function() {
             const hostname = window.location.hostname;
-            const isDev = hostname.includes('localhost') || hostname.includes('dev.developer.vybit.net');
+            const isDev = hostname.includes('localhost');
 
             const specUrl = isDev
                 ? './developer-api.yaml'  // Local file served by Node

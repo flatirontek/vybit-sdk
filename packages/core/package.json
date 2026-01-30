@@ -1,6 +1,6 @@
 {
   "name": "@vybit/core",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Core utilities and types for Vybit SDKs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,7 +16,7 @@
     "core",
     "utilities"
   ],
-  "author": "Vybit Team",
+  "author": "Flatirontek LLC",
   "license": "MIT",
   "repository": {
     "type": "git",

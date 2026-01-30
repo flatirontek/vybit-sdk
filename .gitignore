@@ -35,3 +35,23 @@ logs/
 # Temporary test files
 TEST_RESULTS.md
 test-*.js
+
+# Internal documentation (not for public repository)
+internal/
+
+# Note: .gitlab-ci.yml is intentionally public (in root) for CI/CD to work
+
+# Security and internal analysis
+SECURITY*.md
+*AUDIT*.md
+*ANALYSIS*.md
+*INTERNAL*.md
+
+# Planning and notes
+TODO.md
+NOTES.md
+ROADMAP-INTERNAL.md
+
+# Local development
+.DS_Store
+*.local.*

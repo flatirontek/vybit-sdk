@@ -4,6 +4,7 @@ Official TypeScript/JavaScript SDKs for integrating with the Vybit notification 
 
 [![npm version](https://badge.fury.io/js/%40vybit%2Fapi-sdk.svg)](https://www.npmjs.com/package/@vybit/api-sdk)
 [![npm version](https://badge.fury.io/js/%40vybit%2Foauth2-sdk.svg)](https://www.npmjs.com/package/@vybit/oauth2-sdk)
+[![npm version](https://badge.fury.io/js/%40vybit%2Fn8n-nodes.svg)](https://www.npmjs.com/package/@vybit/n8n-nodes)
 [![npm version](https://badge.fury.io/js/%40vybit%2Fmcp-server.svg)](https://www.npmjs.com/package/@vybit/mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -15,6 +16,7 @@ Vybit provides multiple integration options for different use cases:
 |---------|----------|----------------|----------|
 | **[@vybit/api-sdk](./packages/api)** | Backend/automation | API Key | Server-to-server integrations, automation, monitoring systems |
 | **[@vybit/oauth2-sdk](./packages/oauth2)** | User-facing applications | OAuth 2.0 (user authorization) | Web apps, mobile apps where users connect their Vybit accounts |
+| **[@vybit/n8n-nodes](./packages/n8n-nodes)** | Workflow automation | API Key or OAuth2 | n8n workflows, no-code/low-code automation, integration platforms |
 | **[@vybit/mcp-server](./packages/mcp-server)** | AI assistants | API Key | Claude Desktop, Claude Code, and other MCP-compatible AI tools |
 
 All packages share common utilities from **[@vybit/core](./packages/core)**.
@@ -236,6 +238,93 @@ client.setAccessToken('existing-token');
 
 ---
 
+## n8n Community Nodes
+
+**For workflow automation and no-code/low-code integrations**
+
+### Installation
+
+**Self-Hosted n8n:**
+```bash
+npm install @vybit/n8n-nodes
+```
+Then restart your n8n instance.
+
+<!-- n8n Cloud support coming soon -->
+
+### Getting Started
+
+The Vybit n8n node supports both authentication methods:
+
+**Option 1: API Key (Recommended for Personal Automation)**
+1. Get your API key from [developer.vybit.net](https://developer.vybit.net)
+2. In n8n, add a Vybit node
+3. Select "API Key" authentication
+4. Create a new credential and paste your API key
+
+**Option 2: OAuth2 (For Multi-User Services)**
+1. Configure OAuth2 at [developer.vybit.net](https://developer.vybit.net)
+2. In n8n, select "OAuth2 Token" authentication
+3. Connect and authorize your Vybit account
+
+### Available Operations
+
+The n8n node provides access to **29 operations** across 6 resources:
+
+**Profile** (3 operations)
+- Get Profile
+- Get Usage Metrics
+- Check API Status
+
+**Vybits** (6 operations)
+- List, Get, Create, Update, Delete, Trigger
+
+**Logs** (4 operations)
+- List All, Get, List by Vybit, List by Subscription
+
+**Sounds** (2 operations)
+- Search, Get
+
+**Peeps** (5 operations)
+- List All, List by Vybit, Invite, Get, Delete
+
+**Subscriptions** (9 operations)
+- List Public, Get Public, Subscribe, List My Subscriptions, Get Subscription, Update Subscription, Unsubscribe, Send to Owner, Send to Group
+
+### Example Workflows
+
+**Alert on Server Error:**
+```
+HTTP Request (check API)
+  → IF (status != 200)
+  → Vybit (Trigger notification)
+  → Email (alert team)
+```
+
+**Daily Report:**
+```
+Schedule (daily 9am)
+  → Database Query (get metrics)
+  → Vybit (Trigger with summary)
+  → Slack (post to channel)
+```
+
+**Automated Vybit Creation:**
+```
+Airtable Trigger (new record)
+  → Vybit (Create vybit)
+  → Airtable (update record with trigger URL)
+```
+
+### Documentation
+
+- **📖 Node Documentation**: [packages/n8n-nodes/README.md](./packages/n8n-nodes/README.md)
+- **🚀 Deployment Guide**: [packages/n8n-nodes/DEPLOYMENT.md](./packages/n8n-nodes/DEPLOYMENT.md)
+- **📋 Integration Guide**: [docs/n8n-integration-guide.md](./docs/n8n-integration-guide.md)
+- **💡 Example Workflows**: [examples/n8n/](./examples/n8n/)
+
+---
+
 ## MCP Server
 
 **For AI assistants like Claude to interact with your Vybit notifications**
@@ -418,12 +507,17 @@ The `examples/` directory contains complete working examples:
 ### Developer API Examples
 - **developer-api-notifications.js** - Creating and triggering vybits
 - **simple-notifications.js** - Sending notifications with various options
-- **usage-monitoring.js** - Tracking API usage and limits
 
 ### OAuth2 Examples
 - **oauth2-simple.js** - Basic OAuth 2.0 flow
 - **oauth2-complete-flow.js** - Complete OAuth implementation with error handling
 - **oauth2-express-server.js** - Full Express.js integration with session management
+
+### n8n Workflow Examples
+- **n8n/server-monitoring.json** - Monitor server health and alert on errors
+- **n8n/daily-summary.json** - Send daily summary notifications
+- **n8n/airtable-integration.json** - Create vybits from Airtable records
+- **n8n/webhook-to-notification.json** - Convert webhook events to notifications
 
 ---
 

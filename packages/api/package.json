@@ -1,6 +1,6 @@
 {
   "name": "@vybit/api-sdk",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Developer API SDK for Vybit notification platform",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -19,7 +19,7 @@
     "notifications",
     "developer-api"
   ],
-  "author": "Vybit Team",
+  "author": "Flatirontek LLC",
   "license": "MIT",
   "repository": {
     "type": "git",

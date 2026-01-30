@@ -1,0 +1,29 @@
+# ⚠️  SECURITY WARNING - FOR LOCAL DEVELOPMENT ONLY
+# This configuration is designed for local testing and development.
+# DO NOT use these settings in production environments.
+# See README.md for security implications.
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n-vybit-test
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=false
+      - N8N_CUSTOM_EXTENSIONS=/data/custom-nodes
+      - N8N_LOG_LEVEL=debug
+      # ⚠️  SECURITY WARNING: Disables TLS certificate verification
+      # This is ONLY for local testing with self-signed certificates
+      # NEVER use NODE_TLS_REJECT_UNAUTHORIZED=0 in production!
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
+    volumes:
+      # Mount built node files to custom extensions directory
+      - ./dist:/data/custom-nodes/@vybit/n8n-nodes/dist:ro
+      - ./package.json:/data/custom-nodes/@vybit/n8n-nodes/package.json:ro
+      # Persist n8n data
+      - n8n_data:/home/node/.n8n
+    restart: unless-stopped
+
+volumes:
+  n8n_data:

@@ -1,0 +1,49 @@
+# Internal documentation (not for npm publishing)
+internal/
+SECURITY*.md
+*AUDIT*.md
+*ANALYSIS*.md
+*INTERNAL*.md
+TODO.md
+NOTES.md
+ROADMAP-INTERNAL.md
+
+# Development files
+.github/
+.gitlab/
+.claude/
+.vscode/
+.idea/
+
+# Test files
+*.test.ts
+*.test.js
+__tests__/
+test/
+tests/
+coverage/
+
+# Documentation source
+*.md
+!README.md
+
+# Config files
+.gitignore
+.eslintrc*
+.prettierrc*
+tsconfig*.json
+jest.config.js
+jest.setup.js
+*.tsbuildinfo
+
+# Examples (keep in git but not in npm)
+examples/
+
+# CI/CD (public on GitLab, but not needed in npm packages)
+.gitlab-ci.yml
+.github/
+
+# Development artifacts
+*.log
+npm-debug.log*
+.DS_Store
