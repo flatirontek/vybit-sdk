@@ -521,43 +521,6 @@ The `examples/` directory contains complete working examples:
 
 ---
 
-## Development
-
-### Setup
-
-```bash
-# Install dependencies
-npm install
-
-# Build all packages
-npm run build
-
-# Clean build artifacts
-npm run clean
-```
-
-### Testing
-
-```bash
-# Run unit tests
-npm run test
-
-# Run API integration tests
-node tests/test-api-complete-coverage.js
-
-# Lint code
-npm run lint
-```
-
-### Publishing
-
-```bash
-# Publish all packages to npm
-npm run publish:all
-```
-
----
-
 ## TypeScript Support
 
 All packages are written in TypeScript and include full type definitions:
@@ -581,6 +544,16 @@ const vybit: Vybit = await client.getVybit('id');
 // Public discovery returns simplified PublicVybit type
 const publicVybits: PublicVybit[] = await client.listPublicVybits();
 ```
+
+---
+
+## Contributing
+
+Interested in contributing? Check out our [Contributing Guide](./CONTRIBUTING.md) for:
+- Development setup and testing
+- Code style guidelines
+- Pull request process
+- How to report issues
 
 ---
 
