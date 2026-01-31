@@ -68,8 +68,8 @@ lint:
     - npx eslint packages/*/src --ext .ts || echo "Lint warnings/errors found but not failing build"
   allow_failure: true
 
-# Auto-publish n8n-nodes when SDK dependencies are updated
-publish-n8n-nodes:
+# Publish core package
+publish-core:
   stage: publish
   image: node:$NODE_VERSION
   needs: ["build", "test"]
@@ -79,13 +79,144 @@ publish-n8n-nodes:
       - master
     changes:
       - packages/core/**/*
-      - packages/oauth2-sdk/**/*
-      - packages/api-sdk/**/*
+  before_script:
+    - npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
+  script:
+    - |
+      cd packages/core
+      CURRENT_VERSION=$(node -p "require('./package.json').version")
+      PUBLISHED_VERSION=$(npm view @vybit/core version 2>/dev/null || echo "0.0.0")
+      echo "Current version: $CURRENT_VERSION"
+      echo "Published version: $PUBLISHED_VERSION"
+
+      if [ "$CURRENT_VERSION" = "$PUBLISHED_VERSION" ]; then
+        echo "Version unchanged - auto-bumping patch version"
+        npm version patch --no-git-tag-version
+      fi
+
+      npm publish --access public
+  when: manual
+  environment:
+    name: npm-registry
+    url: https://www.npmjs.com/package/@vybit/core
+
+# Publish OAuth2 SDK
+publish-oauth2:
+  stage: publish
+  image: node:$NODE_VERSION
+  needs: ["build", "test"]
+  only:
+    refs:
+      - main
+      - master
+    changes:
+      - packages/core/**/*
+      - packages/oauth2/**/*
+  before_script:
+    - npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
+  script:
+    - |
+      cd packages/oauth2
+      CURRENT_VERSION=$(node -p "require('./package.json').version")
+      PUBLISHED_VERSION=$(npm view @vybit/oauth2-sdk version 2>/dev/null || echo "0.0.0")
+      echo "Current version: $CURRENT_VERSION"
+      echo "Published version: $PUBLISHED_VERSION"
+
+      if [ "$CURRENT_VERSION" = "$PUBLISHED_VERSION" ]; then
+        echo "Version unchanged - auto-bumping patch version"
+        npm version patch --no-git-tag-version
+      fi
+
+      npm publish --access public
+  when: manual
+  environment:
+    name: npm-registry
+    url: https://www.npmjs.com/package/@vybit/oauth2-sdk
+
+# Publish API SDK
+publish-api:
+  stage: publish
+  image: node:$NODE_VERSION
+  needs: ["build", "test"]
+  only:
+    refs:
+      - main
+      - master
+    changes:
+      - packages/core/**/*
+      - packages/api/**/*
+  before_script:
+    - npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
+  script:
+    - |
+      cd packages/api
+      CURRENT_VERSION=$(node -p "require('./package.json').version")
+      PUBLISHED_VERSION=$(npm view @vybit/api-sdk version 2>/dev/null || echo "0.0.0")
+      echo "Current version: $CURRENT_VERSION"
+      echo "Published version: $PUBLISHED_VERSION"
+
+      if [ "$CURRENT_VERSION" = "$PUBLISHED_VERSION" ]; then
+        echo "Version unchanged - auto-bumping patch version"
+        npm version patch --no-git-tag-version
+      fi
+
+      npm publish --access public
+  when: manual
+  environment:
+    name: npm-registry
+    url: https://www.npmjs.com/package/@vybit/api-sdk
+
+# Publish MCP Server
+publish-mcp:
+  stage: publish
+  image: node:$NODE_VERSION
+  needs: ["build", "test"]
+  only:
+    refs:
+      - main
+      - master
+    changes:
+      - packages/core/**/*
+      - packages/api/**/*
+      - packages/mcp-server/**/*
+  before_script:
+    - npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
+  script:
+    - |
+      cd packages/mcp-server
+      CURRENT_VERSION=$(node -p "require('./package.json').version")
+      PUBLISHED_VERSION=$(npm view @vybit/mcp-server version 2>/dev/null || echo "0.0.0")
+      echo "Current version: $CURRENT_VERSION"
+      echo "Published version: $PUBLISHED_VERSION"
+
+      if [ "$CURRENT_VERSION" = "$PUBLISHED_VERSION" ]; then
+        echo "Version unchanged - auto-bumping patch version"
+        npm version patch --no-git-tag-version
+      fi
+
+      npm publish --access public
+  when: manual
+  environment:
+    name: npm-registry
+    url: https://www.npmjs.com/package/@vybit/mcp-server
+
+# Publish n8n nodes
+publish-n8n:
+  stage: publish
+  image: node:$NODE_VERSION
+  needs: ["build", "test"]
+  only:
+    refs:
+      - main
+      - master
+    changes:
+      - packages/core/**/*
+      - packages/oauth2/**/*
+      - packages/api/**/*
       - packages/n8n-nodes/**/*
   before_script:
     - npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
   script:
-    # Check if n8n-nodes version needs bumping
     - |
       cd packages/n8n-nodes
       CURRENT_VERSION=$(node -p "require('./package.json').version")
@@ -98,9 +229,8 @@ publish-n8n-nodes:
         npm version patch --no-git-tag-version
       fi
 
-      # Publish to npm
       npm publish --access public
-  when: manual  # Require manual approval in pipeline
+  when: manual
   environment:
     name: npm-registry
     url: https://www.npmjs.com/package/@vybit/n8n-nodes
