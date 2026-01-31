@@ -2,10 +2,17 @@ import esbuild from 'rollup-plugin-esbuild';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
+import replace from '@rollup/plugin-replace';
 
 const baseConfig = {
   external: ['n8n-workflow', 'n8n-core'],
   plugins: [
+    replace({
+      'process.env.VYBIT_API_KEY': 'undefined',
+      'process.env.VYBIT_API_URL': 'undefined',
+      'process.env.VYBIT_OAUTH2_TOKEN': 'undefined',
+      preventAssignment: true,
+    }),
     esbuild({
       target: 'es2020',
       minify: false,
@@ -16,7 +23,11 @@ const baseConfig = {
       preferBuiltins: true,
       browser: false,
     }),
-    commonjs(),
+    commonjs({
+      ignoreDynamicRequires: true,
+      transformMixedEsModules: true,
+      ignoreGlobal: true,
+    }),
   ],
 };
 

@@ -32,7 +32,7 @@ Then restart your n8n instance.
 
 ### For Multi-User Deployments
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for configuring OAuth2 credentials via environment variables to hide Client Secrets from users.
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for configuring credential sharing in multi-user n8n instances to centrally manage OAuth2 Client Secrets.
 
 ---
 
