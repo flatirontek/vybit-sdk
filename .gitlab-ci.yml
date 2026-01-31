@@ -77,8 +77,8 @@ publish-core:
     - main
     - master
   id_tokens:
-    SIGSTORE_ID_TOKEN:
-      aud: https://registry.npmjs.org
+    NPM_ID_TOKEN:
+      aud: npm:registry.npmjs.org
   before_script:
     - npm install -g npm@latest
     - npm --version
@@ -112,8 +112,8 @@ publish-oauth2:
     - main
     - master
   id_tokens:
-    SIGSTORE_ID_TOKEN:
-      aud: https://registry.npmjs.org
+    NPM_ID_TOKEN:
+      aud: npm:registry.npmjs.org
   before_script:
     - npm install -g npm@latest
     - npm --version
@@ -147,8 +147,8 @@ publish-api:
     - main
     - master
   id_tokens:
-    SIGSTORE_ID_TOKEN:
-      aud: https://registry.npmjs.org
+    NPM_ID_TOKEN:
+      aud: npm:registry.npmjs.org
   before_script:
     - npm install -g npm@latest
     - npm --version
@@ -182,8 +182,8 @@ publish-mcp:
     - main
     - master
   id_tokens:
-    SIGSTORE_ID_TOKEN:
-      aud: https://registry.npmjs.org
+    NPM_ID_TOKEN:
+      aud: npm:registry.npmjs.org
   before_script:
     - npm install -g npm@latest
     - npm --version
@@ -217,8 +217,8 @@ publish-n8n:
     - main
     - master
   id_tokens:
-    SIGSTORE_ID_TOKEN:
-      aud: https://registry.npmjs.org
+    NPM_ID_TOKEN:
+      aud: npm:registry.npmjs.org
   before_script:
     - npm install -g npm@latest
     - npm --version
