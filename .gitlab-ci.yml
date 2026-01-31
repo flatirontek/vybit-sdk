@@ -74,11 +74,8 @@ publish-core:
   image: node:$NODE_VERSION
   needs: ["build", "test"]
   only:
-    refs:
-      - main
-      - master
-    changes:
-      - packages/core/**/*
+    - main
+    - master
   before_script:
     - npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
   script:
@@ -106,12 +103,8 @@ publish-oauth2:
   image: node:$NODE_VERSION
   needs: ["build", "test"]
   only:
-    refs:
-      - main
-      - master
-    changes:
-      - packages/core/**/*
-      - packages/oauth2/**/*
+    - main
+    - master
   before_script:
     - npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
   script:
@@ -139,12 +132,8 @@ publish-api:
   image: node:$NODE_VERSION
   needs: ["build", "test"]
   only:
-    refs:
-      - main
-      - master
-    changes:
-      - packages/core/**/*
-      - packages/api/**/*
+    - main
+    - master
   before_script:
     - npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
   script:
@@ -172,13 +161,8 @@ publish-mcp:
   image: node:$NODE_VERSION
   needs: ["build", "test"]
   only:
-    refs:
-      - main
-      - master
-    changes:
-      - packages/core/**/*
-      - packages/api/**/*
-      - packages/mcp-server/**/*
+    - main
+    - master
   before_script:
     - npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
   script:
@@ -206,14 +190,8 @@ publish-n8n:
   image: node:$NODE_VERSION
   needs: ["build", "test"]
   only:
-    refs:
-      - main
-      - master
-    changes:
-      - packages/core/**/*
-      - packages/oauth2/**/*
-      - packages/api/**/*
-      - packages/n8n-nodes/**/*
+    - main
+    - master
   before_script:
     - npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
   script:
