@@ -16,8 +16,8 @@ variables:
   # Enable security scanning
   SECRET_DETECTION_ENABLED: 'true'
   SAST_ENABLED: 'true'
-  # Node.js version
-  NODE_VERSION: "18"
+  # Node.js version (20+ required for npm OIDC)
+  NODE_VERSION: "20"
 
 # Cache node_modules for faster builds
 cache:
@@ -76,8 +76,9 @@ publish-core:
   only:
     - main
     - master
-  before_script:
-    - npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
+  id_tokens:
+    SIGSTORE_ID_TOKEN:
+      aud: https://registry.npmjs.org
   script:
     - |
       cd packages/core
@@ -87,11 +88,13 @@ publish-core:
       echo "Published version: $PUBLISHED_VERSION"
 
       if [ "$CURRENT_VERSION" = "$PUBLISHED_VERSION" ]; then
-        echo "Version unchanged - auto-bumping patch version"
-        npm version patch --no-git-tag-version
+        echo "⚠️  Version unchanged ($CURRENT_VERSION) - skipping publish"
+        echo "Bump version in package.json before publishing"
+        exit 0
       fi
 
-      npm publish --access public
+      echo "Publishing $CURRENT_VERSION (currently $PUBLISHED_VERSION on npm)"
+      npm publish --provenance --access public
   when: manual
   environment:
     name: npm-registry
@@ -105,8 +108,9 @@ publish-oauth2:
   only:
     - main
     - master
-  before_script:
-    - npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
+  id_tokens:
+    SIGSTORE_ID_TOKEN:
+      aud: https://registry.npmjs.org
   script:
     - |
       cd packages/oauth2
@@ -116,11 +120,13 @@ publish-oauth2:
       echo "Published version: $PUBLISHED_VERSION"
 
       if [ "$CURRENT_VERSION" = "$PUBLISHED_VERSION" ]; then
-        echo "Version unchanged - auto-bumping patch version"
-        npm version patch --no-git-tag-version
+        echo "⚠️  Version unchanged ($CURRENT_VERSION) - skipping publish"
+        echo "Bump version in package.json before publishing"
+        exit 0
       fi
 
-      npm publish --access public
+      echo "Publishing $CURRENT_VERSION (currently $PUBLISHED_VERSION on npm)"
+      npm publish --provenance --access public
   when: manual
   environment:
     name: npm-registry
@@ -134,8 +140,9 @@ publish-api:
   only:
     - main
     - master
-  before_script:
-    - npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
+  id_tokens:
+    SIGSTORE_ID_TOKEN:
+      aud: https://registry.npmjs.org
   script:
     - |
       cd packages/api
@@ -145,11 +152,13 @@ publish-api:
       echo "Published version: $PUBLISHED_VERSION"
 
       if [ "$CURRENT_VERSION" = "$PUBLISHED_VERSION" ]; then
-        echo "Version unchanged - auto-bumping patch version"
-        npm version patch --no-git-tag-version
+        echo "⚠️  Version unchanged ($CURRENT_VERSION) - skipping publish"
+        echo "Bump version in package.json before publishing"
+        exit 0
       fi
 
-      npm publish --access public
+      echo "Publishing $CURRENT_VERSION (currently $PUBLISHED_VERSION on npm)"
+      npm publish --provenance --access public
   when: manual
   environment:
     name: npm-registry
@@ -163,8 +172,9 @@ publish-mcp:
   only:
     - main
     - master
-  before_script:
-    - npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
+  id_tokens:
+    SIGSTORE_ID_TOKEN:
+      aud: https://registry.npmjs.org
   script:
     - |
       cd packages/mcp-server
@@ -174,11 +184,13 @@ publish-mcp:
       echo "Published version: $PUBLISHED_VERSION"
 
       if [ "$CURRENT_VERSION" = "$PUBLISHED_VERSION" ]; then
-        echo "Version unchanged - auto-bumping patch version"
-        npm version patch --no-git-tag-version
+        echo "⚠️  Version unchanged ($CURRENT_VERSION) - skipping publish"
+        echo "Bump version in package.json before publishing"
+        exit 0
       fi
 
-      npm publish --access public
+      echo "Publishing $CURRENT_VERSION (currently $PUBLISHED_VERSION on npm)"
+      npm publish --provenance --access public
   when: manual
   environment:
     name: npm-registry
@@ -192,8 +204,9 @@ publish-n8n:
   only:
     - main
     - master
-  before_script:
-    - npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
+  id_tokens:
+    SIGSTORE_ID_TOKEN:
+      aud: https://registry.npmjs.org
   script:
     - |
       cd packages/n8n-nodes
@@ -203,11 +216,13 @@ publish-n8n:
       echo "Published version: $PUBLISHED_VERSION"
 
       if [ "$CURRENT_VERSION" = "$PUBLISHED_VERSION" ]; then
-        echo "Version unchanged - auto-bumping patch version"
-        npm version patch --no-git-tag-version
+        echo "⚠️  Version unchanged ($CURRENT_VERSION) - skipping publish"
+        echo "Bump version in package.json before publishing"
+        exit 0
       fi
 
-      npm publish --access public
+      echo "Publishing $CURRENT_VERSION (currently $PUBLISHED_VERSION on npm)"
+      npm publish --provenance --access public
   when: manual
   environment:
     name: npm-registry
