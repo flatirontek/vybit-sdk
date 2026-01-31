@@ -79,6 +79,9 @@ publish-core:
   id_tokens:
     SIGSTORE_ID_TOKEN:
       aud: https://registry.npmjs.org
+  before_script:
+    - npm install -g npm@latest
+    - npm --version
   script:
     - |
       cd packages/core
@@ -111,6 +114,9 @@ publish-oauth2:
   id_tokens:
     SIGSTORE_ID_TOKEN:
       aud: https://registry.npmjs.org
+  before_script:
+    - npm install -g npm@latest
+    - npm --version
   script:
     - |
       cd packages/oauth2
@@ -143,6 +149,9 @@ publish-api:
   id_tokens:
     SIGSTORE_ID_TOKEN:
       aud: https://registry.npmjs.org
+  before_script:
+    - npm install -g npm@latest
+    - npm --version
   script:
     - |
       cd packages/api
@@ -175,6 +184,9 @@ publish-mcp:
   id_tokens:
     SIGSTORE_ID_TOKEN:
       aud: https://registry.npmjs.org
+  before_script:
+    - npm install -g npm@latest
+    - npm --version
   script:
     - |
       cd packages/mcp-server
@@ -207,6 +219,9 @@ publish-n8n:
   id_tokens:
     SIGSTORE_ID_TOKEN:
       aud: https://registry.npmjs.org
+  before_script:
+    - npm install -g npm@latest
+    - npm --version
   script:
     - |
       cd packages/n8n-nodes
