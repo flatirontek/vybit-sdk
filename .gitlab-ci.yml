@@ -236,7 +236,7 @@ publish-n8n:
     - |
       cd packages/n8n-nodes
       CURRENT_VERSION=$(node -p "require('./package.json').version")
-      PUBLISHED_VERSION=$(npm view @vybit/n8n-nodes version 2>/dev/null || echo "0.0.0")
+      PUBLISHED_VERSION=$(npm view @vybit/n8n-nodes-vybit version 2>/dev/null || echo "0.0.0")
       echo "Current version: $CURRENT_VERSION"
       echo "Published version: $PUBLISHED_VERSION"
 
@@ -251,4 +251,4 @@ publish-n8n:
   when: manual
   environment:
     name: npm-registry
-    url: https://www.npmjs.com/package/@vybit/n8n-nodes
+    url: https://www.npmjs.com/package/@vybit/n8n-nodes-vybit

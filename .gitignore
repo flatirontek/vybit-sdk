@@ -51,6 +51,7 @@ SECURITY*.md
 TODO.md
 NOTES.md
 ROADMAP-INTERNAL.md
+CLAUDE.md
 
 # Local development
 .DS_Store

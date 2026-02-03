@@ -30,7 +30,7 @@ The Vybit n8n community node enables you to integrate personalized audio notific
 ### Self-Hosted n8n
 
 ```bash
-npm install @vybit/n8n-nodes
+npm install @vybit/n8n-nodes-vybit
 ```
 
 Then restart your n8n instance:
@@ -416,7 +416,7 @@ ELSE
 
 **Solutions:**
 - Check authentication type (some operations require API Key)
-- Verify you're using latest version: `npm update @vybit/n8n-nodes`
+- Verify you're using latest version: `npm update @vybit/n8n-nodes-vybit`
 - OAuth2 only supports: List Vybits, Trigger Vybit
 
 ### Execution Errors

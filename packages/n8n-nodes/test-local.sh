@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🧪 Testing @vybit/n8n-nodes locally with Docker"
+echo "🧪 Testing @vybit/n8n-nodes-vybit locally with Docker"
 echo ""
 
 # Colors

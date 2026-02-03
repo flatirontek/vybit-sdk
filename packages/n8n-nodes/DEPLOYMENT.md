@@ -11,7 +11,7 @@ This guide covers different deployment scenarios for the Vybit n8n community nod
 **n8n Plan:** Community (Free)
 
 **Setup:**
-1. Install the node: `npm install @vybit/n8n-nodes`
+1. Install the node: `npm install @vybit/n8n-nodes-vybit`
 2. Create an OAuth2 app at [developer.vybit.net](https://developer.vybit.net)
 3. Set redirect URL: `http://your-n8n-url/rest/oauth2-credential/callback`
 4. In n8n, add Vybit OAuth2 credential with your Client ID and Secret
@@ -74,7 +74,7 @@ This guide covers different deployment scenarios for the Vybit n8n community nod
 **Status:** Coming soon - pending n8n Cloud verification
 
 **Process:**
-1. Submit `@vybit/n8n-nodes` to n8n community nodes registry
+1. Submit `@vybit/n8n-nodes-vybit` to n8n community nodes registry
 2. Apply for verified node status
 3. n8n team configures OAuth2 credentials on their infrastructure
 4. Users get one-click OAuth connection

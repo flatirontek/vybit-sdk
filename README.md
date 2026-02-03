@@ -4,7 +4,7 @@ Official TypeScript/JavaScript SDKs for integrating with the Vybit notification 
 
 [![npm version](https://badge.fury.io/js/%40vybit%2Fapi-sdk.svg)](https://www.npmjs.com/package/@vybit/api-sdk)
 [![npm version](https://badge.fury.io/js/%40vybit%2Foauth2-sdk.svg)](https://www.npmjs.com/package/@vybit/oauth2-sdk)
-[![npm version](https://badge.fury.io/js/%40vybit%2Fn8n-nodes.svg)](https://www.npmjs.com/package/@vybit/n8n-nodes)
+[![npm version](https://badge.fury.io/js/%40vybit%2Fn8n-nodes-vybit.svg)](https://www.npmjs.com/package/@vybit/n8n-nodes-vybit)
 [![npm version](https://badge.fury.io/js/%40vybit%2Fmcp-server.svg)](https://www.npmjs.com/package/@vybit/mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -16,7 +16,7 @@ Vybit provides multiple integration options for different use cases:
 |---------|----------|----------------|----------|
 | **[@vybit/api-sdk](./packages/api)** | Backend/automation | API Key | Server-to-server integrations, automation, monitoring systems |
 | **[@vybit/oauth2-sdk](./packages/oauth2)** | User-facing applications | OAuth 2.0 (user authorization) | Web apps, mobile apps where users connect their Vybit accounts |
-| **[@vybit/n8n-nodes](./packages/n8n-nodes)** | Workflow automation | API Key or OAuth2 | n8n workflows, no-code/low-code automation, integration platforms |
+| **[@vybit/n8n-nodes-vybit](./packages/n8n-nodes)** | Workflow automation | API Key or OAuth2 | n8n workflows, no-code/low-code automation, integration platforms |
 | **[@vybit/mcp-server](./packages/mcp-server)** | AI assistants | API Key | Claude Desktop, Claude Code, and other MCP-compatible AI tools |
 
 All packages share common utilities from **[@vybit/core](./packages/core)**.
@@ -246,7 +246,7 @@ client.setAccessToken('existing-token');
 
 **Self-Hosted n8n:**
 ```bash
-npm install @vybit/n8n-nodes
+npm install @vybit/n8n-nodes-vybit
 ```
 Then restart your n8n instance.
 

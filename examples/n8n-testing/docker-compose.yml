@@ -19,8 +19,8 @@ services:
       - NODE_TLS_REJECT_UNAUTHORIZED=0
     volumes:
       # Mount built node files to custom extensions directory
-      - ./dist:/data/custom-nodes/@vybit/n8n-nodes/dist:ro
-      - ./package.json:/data/custom-nodes/@vybit/n8n-nodes/package.json:ro
+      - ../../packages/n8n-nodes/dist:/data/custom-nodes/@vybit/n8n-nodes-vybit/dist:ro
+      - ../../packages/n8n-nodes/package.json:/data/custom-nodes/@vybit/n8n-nodes-vybit/package.json:ro
       # Persist n8n data
       - n8n_data:/home/node/.n8n
     restart: unless-stopped

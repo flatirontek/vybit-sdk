@@ -1,8 +1,8 @@
-# @vybit/n8n-nodes
+# @vybit/n8n-nodes-vybit
 
 Official n8n community nodes for [Vybit](https://vybit.net) - the personalized audio notification platform.
 
-[![npm version](https://badge.fury.io/js/%40vybit%2Fn8n-nodes.svg)](https://www.npmjs.com/package/@vybit/n8n-nodes)
+[![npm version](https://badge.fury.io/js/%40vybit%2Fn8n-nodes-vybit.svg)](https://www.npmjs.com/package/@vybit/n8n-nodes-vybit)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Features
@@ -23,7 +23,7 @@ Official n8n community nodes for [Vybit](https://vybit.net) - the personalized a
 ### Self-Hosted n8n
 
 ```bash
-npm install @vybit/n8n-nodes
+npm install @vybit/n8n-nodes-vybit
 ```
 
 Then restart your n8n instance.
@@ -185,7 +185,7 @@ npm run build
 ```bash
 npm link
 cd /path/to/n8n
-npm link @vybit/n8n-nodes
+npm link @vybit/n8n-nodes-vybit
 n8n start
 ```
 

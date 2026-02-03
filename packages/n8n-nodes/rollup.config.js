@@ -41,7 +41,7 @@ export default [
     },
     output: {
       dir: 'dist',
-      format: 'cjs',
+      format: 'es',
       sourcemap: false,
       exports: 'auto',
       preserveModules: false,
@@ -55,7 +55,7 @@ export default [
     },
     output: {
       dir: 'dist',
-      format: 'cjs',
+      format: 'es',
       sourcemap: false,
       exports: 'auto',
       preserveModules: false,

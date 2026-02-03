@@ -1,6 +1,6 @@
 {
-  "name": "@vybit/n8n-nodes",
-  "version": "1.0.2",
+  "name": "@vybit/n8n-nodes-vybit",
+  "version": "2.0.0",
   "description": "Push notifications with personalized sounds - n8n community nodes for Vybit",
   "license": "MIT",
   "type": "module",
