@@ -77,6 +77,7 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for configuring credential sharing in multi
    - Authentication: "OAuth2 (For Multi-User Services)"
    - Create OAuth2 credential with your client ID/secret
 4. Users authorize their Vybit accounts to connect
+5. After connecting, click the **refresh icon** (circular arrow) next to the "Vybit" dropdown to load your vybits
 
 ---
 

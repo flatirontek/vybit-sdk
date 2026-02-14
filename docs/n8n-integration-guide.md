@@ -97,6 +97,7 @@ sudo systemctl restart n8n
    - Click "Connect my account"
    - Authorize access in the popup window
    - Click "Save"
+   - Back on the node, click the **refresh icon** (circular arrow) next to the "Vybit" dropdown to load your vybits
 
 3. **Verify Connection**
    - Set Operation to "Vybits" → "List"

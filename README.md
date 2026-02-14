@@ -2,6 +2,8 @@
 
 Official TypeScript/JavaScript SDKs for integrating with the Vybit notification platform.
 
+[Vybit](https://www.vybit.net) is a push notification service with personalized sounds that can be recorded or chosen from a library of thousands of searchable sounds (via [freesound.org](https://freesound.org)).
+
 [![npm version](https://badge.fury.io/js/%40vybit%2Fapi-sdk.svg)](https://www.npmjs.com/package/@vybit/api-sdk)
 [![npm version](https://badge.fury.io/js/%40vybit%2Foauth2-sdk.svg)](https://www.npmjs.com/package/@vybit/oauth2-sdk)
 [![npm version](https://badge.fury.io/js/%40vybit%2Fn8n-nodes-vybit.svg)](https://www.npmjs.com/package/@vybit/n8n-nodes-vybit)
