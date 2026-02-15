@@ -31,6 +31,108 @@ const vybitClient = new VybitAPIClient({
   ...(API_URL && { baseUrl: API_URL })
 });
 
+// Shared schema fragments
+const PAGINATION_SCHEMA = {
+  search: {
+    type: 'string',
+    description: 'Search term to filter results',
+  },
+  limit: {
+    type: 'number',
+    description: 'Maximum number of results to return (default: 50)',
+    default: 50,
+  },
+  offset: {
+    type: 'number',
+    description: 'Number of results to skip for pagination (default: 0)',
+    default: 0,
+  },
+} as const;
+
+const TRIGGER_SETTINGS_SCHEMA = {
+  type: 'object',
+  description: 'Configuration specific to the trigger type. For schedule triggers, contains crons array. Example: {"crons": [{"cron": "5 14 * * 0", "timeZone": "America/Denver"}]}. Cron format: minute hour day month dayOfWeek (0=Sunday).',
+  properties: {
+    crons: {
+      type: 'array',
+      description: 'Array of cron schedule definitions (for triggerType="schedule")',
+      items: {
+        type: 'object',
+        properties: {
+          cron: {
+            type: 'string',
+            description: 'Cron expression: minute hour day month dayOfWeek. Example: "0 9 * * *" = every day at 9:00 AM',
+          },
+          timeZone: {
+            type: 'string',
+            description: 'IANA timezone identifier. Example: "America/Denver"',
+          },
+        },
+      },
+    },
+  },
+} as const;
+
+const GEOFENCE_SCHEMA = {
+  type: 'object',
+  description: 'Geofence configuration. Required when triggerType is "geofence", null otherwise.',
+  properties: {
+    lat: {
+      type: 'number',
+      description: 'Latitude of geofence center in decimal format',
+    },
+    lon: {
+      type: 'number',
+      description: 'Longitude of geofence center in decimal format',
+    },
+    radius: {
+      type: 'number',
+      description: 'Geofence radius value',
+    },
+    radiusUnits: {
+      type: 'string',
+      enum: ['meters', 'kilometers', 'miles'],
+      description: 'Units for the radius measurement',
+    },
+    type: {
+      type: 'string',
+      enum: ['enter', 'exit'],
+      description: 'Trigger on entry or exit from geofence',
+    },
+    timeThrottle: {
+      type: 'string',
+      description: 'Minimum seconds between triggers (default "0" = no throttle)',
+    },
+    subscribable: {
+      type: 'string',
+      enum: ['yes', 'no'],
+      description: 'Whether others can subscribe to this geofenced vybit',
+    },
+  },
+} as const;
+
+// Apply defaults for geofence configuration
+function normalizeGeofence(geofence: any): any {
+  if (geofence.radius !== undefined && !geofence.displayRadius) {
+    geofence.displayRadius = String(geofence.radius);
+  }
+  if (!geofence.subscribable) geofence.subscribable = 'yes';
+  if (!geofence.timeThrottle) geofence.timeThrottle = '0';
+  return geofence;
+}
+
+// Wrap a result as an MCP JSON text response
+function jsonResponse(result: any) {
+  return {
+    content: [
+      {
+        type: 'text' as const,
+        text: JSON.stringify(result),
+      },
+    ],
+  };
+}
+
 // Define available tools
 const TOOLS: Tool[] = [
   {
@@ -38,22 +140,7 @@ const TOOLS: Tool[] = [
     description: 'List vybits with optional search and pagination. Returns a list of vybits owned by the authenticated user.',
     inputSchema: {
       type: 'object',
-      properties: {
-        search: {
-          type: 'string',
-          description: 'Search term to filter vybits by name',
-        },
-        limit: {
-          type: 'number',
-          description: 'Maximum number of vybits to return (default: 50)',
-          default: 50,
-        },
-        offset: {
-          type: 'number',
-          description: 'Number of vybits to skip for pagination (default: 0)',
-          default: 0,
-        },
-      },
+      properties: { ...PAGINATION_SCHEMA },
     },
   },
   {
@@ -115,6 +202,8 @@ const TOOLS: Tool[] = [
           type: 'string',
           description: 'Default URL to open when notification is tapped',
         },
+        triggerSettings: TRIGGER_SETTINGS_SCHEMA,
+        geofence: GEOFENCE_SCHEMA,
       },
       required: ['name'],
     },
@@ -155,6 +244,8 @@ const TOOLS: Tool[] = [
           type: 'string',
           description: 'Default message displayed with notifications',
         },
+        triggerSettings: TRIGGER_SETTINGS_SCHEMA,
+        geofence: GEOFENCE_SCHEMA,
       },
       required: ['vybitId'],
     },
@@ -208,22 +299,7 @@ const TOOLS: Tool[] = [
     description: 'List available sounds with optional search and pagination',
     inputSchema: {
       type: 'object',
-      properties: {
-        search: {
-          type: 'string',
-          description: 'Search term to filter sounds',
-        },
-        limit: {
-          type: 'number',
-          description: 'Maximum number of sounds to return (default: 50)',
-          default: 50,
-        },
-        offset: {
-          type: 'number',
-          description: 'Number of sounds to skip for pagination (default: 0)',
-          default: 0,
-        },
-      },
+      properties: { ...PAGINATION_SCHEMA },
     },
   },
   {
@@ -255,22 +331,7 @@ const TOOLS: Tool[] = [
     description: 'Browse public vybits available for subscription. Returns simplified PublicVybit objects.',
     inputSchema: {
       type: 'object',
-      properties: {
-        search: {
-          type: 'string',
-          description: 'Search term to filter public vybits',
-        },
-        limit: {
-          type: 'number',
-          description: 'Maximum number of vybits to return (default: 50)',
-          default: 50,
-        },
-        offset: {
-          type: 'number',
-          description: 'Number of vybits to skip for pagination (default: 0)',
-          default: 0,
-        },
-      },
+      properties: { ...PAGINATION_SCHEMA },
     },
   },
   {
@@ -308,22 +369,7 @@ const TOOLS: Tool[] = [
     description: 'List all vybits you are subscribed to (following)',
     inputSchema: {
       type: 'object',
-      properties: {
-        search: {
-          type: 'string',
-          description: 'Search term to filter subscriptions',
-        },
-        limit: {
-          type: 'number',
-          description: 'Maximum number of subscriptions to return (default: 50)',
-          default: 50,
-        },
-        offset: {
-          type: 'number',
-          description: 'Number of subscriptions to skip for pagination (default: 0)',
-          default: 0,
-        },
-      },
+      properties: { ...PAGINATION_SCHEMA },
     },
   },
   {
@@ -397,22 +443,7 @@ const TOOLS: Tool[] = [
     description: 'List all notification logs with optional search and pagination',
     inputSchema: {
       type: 'object',
-      properties: {
-        search: {
-          type: 'string',
-          description: 'Search term to filter logs',
-        },
-        limit: {
-          type: 'number',
-          description: 'Maximum number of logs to return (default: 50)',
-          default: 50,
-        },
-        offset: {
-          type: 'number',
-          description: 'Number of logs to skip for pagination (default: 0)',
-          default: 0,
-        },
-      },
+      properties: { ...PAGINATION_SCHEMA },
     },
   },
   {
@@ -439,20 +470,7 @@ const TOOLS: Tool[] = [
           type: 'string',
           description: 'The key of the vybit',
         },
-        search: {
-          type: 'string',
-          description: 'Search term to filter logs',
-        },
-        limit: {
-          type: 'number',
-          description: 'Maximum number of logs to return (default: 50)',
-          default: 50,
-        },
-        offset: {
-          type: 'number',
-          description: 'Number of logs to skip for pagination (default: 0)',
-          default: 0,
-        },
+        ...PAGINATION_SCHEMA,
       },
       required: ['vybitKey'],
     },
@@ -467,20 +485,7 @@ const TOOLS: Tool[] = [
           type: 'string',
           description: 'The followingKey of the subscription',
         },
-        search: {
-          type: 'string',
-          description: 'Search term to filter logs',
-        },
-        limit: {
-          type: 'number',
-          description: 'Maximum number of logs to return (default: 50)',
-          default: 50,
-        },
-        offset: {
-          type: 'number',
-          description: 'Number of logs to skip for pagination (default: 0)',
-          default: 0,
-        },
+        ...PAGINATION_SCHEMA,
       },
       required: ['followingKey'],
     },
@@ -492,22 +497,7 @@ const TOOLS: Tool[] = [
     description: 'List all peeps (people you have shared vybits with)',
     inputSchema: {
       type: 'object',
-      properties: {
-        search: {
-          type: 'string',
-          description: 'Search term to filter peeps',
-        },
-        limit: {
-          type: 'number',
-          description: 'Maximum number of peeps to return (default: 50)',
-          default: 50,
-        },
-        offset: {
-          type: 'number',
-          description: 'Number of peeps to skip for pagination (default: 0)',
-          default: 0,
-        },
-      },
+      properties: { ...PAGINATION_SCHEMA },
     },
   },
   {
@@ -566,20 +556,7 @@ const TOOLS: Tool[] = [
           type: 'string',
           description: 'The key of the vybit',
         },
-        search: {
-          type: 'string',
-          description: 'Search term to filter peeps',
-        },
-        limit: {
-          type: 'number',
-          description: 'Maximum number of peeps to return (default: 50)',
-          default: 50,
-        },
-        offset: {
-          type: 'number',
-          description: 'Number of peeps to skip for pagination (default: 0)',
-          default: 0,
-        },
+        ...PAGINATION_SCHEMA,
       },
       required: ['vybitKey'],
     },
@@ -624,33 +601,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     switch (name) {
-      case 'vybit_list': {
-        const result = await vybitClient.listVybits({
+      case 'vybit_list':
+        return jsonResponse(await vybitClient.listVybits({
           search: args.search as string | undefined,
           limit: args.limit as number | undefined,
           offset: args.offset as number | undefined,
-        });
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      }
+        }));
 
-      case 'vybit_get': {
-        const result = await vybitClient.getVybit(args.vybitId as string);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      }
+      case 'vybit_get':
+        return jsonResponse(await vybitClient.getVybit(args.vybitId as string));
 
       case 'vybit_create': {
         const createData: any = {
@@ -664,16 +623,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (args.message !== undefined) createData.message = args.message;
         if (args.imageUrl) createData.imageUrl = args.imageUrl;
         if (args.linkUrl) createData.linkUrl = args.linkUrl;
+        if (args.triggerSettings) createData.triggerSettings = args.triggerSettings;
+        if (args.geofence) createData.geofence = normalizeGeofence(args.geofence);
 
-        const result = await vybitClient.createVybit(createData);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
+        return jsonResponse(await vybitClient.createVybit(createData));
       }
 
       case 'vybit_update': {
@@ -684,32 +637,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (args.status) updateData.status = args.status;
         if (args.access) updateData.access = args.access;
         if (args.message !== undefined) updateData.message = args.message;
+        if (args.triggerSettings) updateData.triggerSettings = args.triggerSettings;
+        if (args.geofence) updateData.geofence = normalizeGeofence(args.geofence);
 
-        const result = await vybitClient.patchVybit(
+        return jsonResponse(await vybitClient.patchVybit(
           args.vybitId as string,
           updateData
-        );
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
+        ));
       }
 
-      case 'vybit_delete': {
+      case 'vybit_delete':
         await vybitClient.deleteVybit(args.vybitId as string);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({ success: true, message: 'Vybit deleted successfully' }),
-            },
-          ],
-        };
-      }
+        return jsonResponse({ success: true, message: 'Vybit deleted successfully' });
 
       case 'vybit_trigger': {
         const options: any = {};
@@ -718,131 +657,51 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (args.linkUrl) options.linkUrl = args.linkUrl;
         if (args.log) options.log = args.log;
 
-        const result = await vybitClient.triggerVybit(
+        return jsonResponse(await vybitClient.triggerVybit(
           args.triggerKey as string,
           Object.keys(options).length > 0 ? options : undefined
-        );
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
+        ));
       }
 
-      case 'sounds_list': {
-        const result = await vybitClient.searchSounds({
+      case 'sounds_list':
+        return jsonResponse(await vybitClient.searchSounds({
           search: args.search as string | undefined,
           limit: args.limit as number | undefined,
           offset: args.offset as number | undefined,
-        });
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      }
+        }));
 
-      case 'sound_get': {
-        const result = await vybitClient.getSound(args.soundKey as string);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      }
+      case 'sound_get':
+        return jsonResponse(await vybitClient.getSound(args.soundKey as string));
 
-      case 'meter_get': {
-        const result = await vybitClient.getMeter();
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      }
+      case 'meter_get':
+        return jsonResponse(await vybitClient.getMeter());
 
       // Public Vybit Discovery
-      case 'vybits_browse_public': {
-        const result = await vybitClient.listPublicVybits({
+      case 'vybits_browse_public':
+        return jsonResponse(await vybitClient.listPublicVybits({
           search: args.search as string | undefined,
           limit: args.limit as number | undefined,
           offset: args.offset as number | undefined,
-        });
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      }
+        }));
 
-      case 'vybit_get_public': {
-        const result = await vybitClient.getPublicVybit(args.subscriptionKey as string);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      }
+      case 'vybit_get_public':
+        return jsonResponse(await vybitClient.getPublicVybit(args.subscriptionKey as string));
 
       // Subscription Management
-      case 'subscription_create': {
-        const result = await vybitClient.createVybitFollow(
+      case 'subscription_create':
+        return jsonResponse(await vybitClient.createVybitFollow(
           args.subscriptionKey as string
-        );
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      }
+        ));
 
-      case 'subscriptions_list': {
-        const result = await vybitClient.listVybitFollows({
+      case 'subscriptions_list':
+        return jsonResponse(await vybitClient.listVybitFollows({
           search: args.search as string | undefined,
           limit: args.limit as number | undefined,
           offset: args.offset as number | undefined,
-        });
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      }
+        }));
 
-      case 'subscription_get': {
-        const result = await vybitClient.getVybitFollow(args.followingKey as string);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      }
+      case 'subscription_get':
+        return jsonResponse(await vybitClient.getVybitFollow(args.followingKey as string));
 
       case 'subscription_update': {
         const updateData: any = {};
@@ -852,164 +711,68 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (args.imageUrl) updateData.imageUrl = args.imageUrl;
         if (args.linkUrl) updateData.linkUrl = args.linkUrl;
 
-        const result = await vybitClient.updateVybitFollow(
+        return jsonResponse(await vybitClient.updateVybitFollow(
           args.followingKey as string,
           updateData
-        );
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
+        ));
       }
 
-      case 'subscription_delete': {
+      case 'subscription_delete':
         await vybitClient.deleteVybitFollow(args.followingKey as string);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({ success: true, message: 'Unsubscribed successfully' }),
-            },
-          ],
-        };
-      }
+        return jsonResponse({ success: true, message: 'Unsubscribed successfully' });
 
       // Logs
-      case 'logs_list': {
-        const result = await vybitClient.listLogs({
+      case 'logs_list':
+        return jsonResponse(await vybitClient.listLogs({
           search: args.search as string | undefined,
           limit: args.limit as number | undefined,
           offset: args.offset as number | undefined,
-        });
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      }
+        }));
 
-      case 'log_get': {
-        const result = await vybitClient.getLog(args.logKey as string);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      }
+      case 'log_get':
+        return jsonResponse(await vybitClient.getLog(args.logKey as string));
 
-      case 'vybit_logs': {
-        const result = await vybitClient.listVybitLogs(args.vybitKey as string, {
+      case 'vybit_logs':
+        return jsonResponse(await vybitClient.listVybitLogs(args.vybitKey as string, {
           search: args.search as string | undefined,
           limit: args.limit as number | undefined,
           offset: args.offset as number | undefined,
-        });
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      }
+        }));
 
-      case 'subscription_logs': {
-        const result = await vybitClient.listVybitFollowLogs(args.followingKey as string, {
+      case 'subscription_logs':
+        return jsonResponse(await vybitClient.listVybitFollowLogs(args.followingKey as string, {
           search: args.search as string | undefined,
           limit: args.limit as number | undefined,
           offset: args.offset as number | undefined,
-        });
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      }
+        }));
 
       // Peeps
-      case 'peeps_list': {
-        const result = await vybitClient.listPeeps({
+      case 'peeps_list':
+        return jsonResponse(await vybitClient.listPeeps({
           search: args.search as string | undefined,
           limit: args.limit as number | undefined,
           offset: args.offset as number | undefined,
-        });
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      }
+        }));
 
-      case 'peep_get': {
-        const result = await vybitClient.getPeep(args.peepKey as string);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      }
+      case 'peep_get':
+        return jsonResponse(await vybitClient.getPeep(args.peepKey as string));
 
-      case 'peep_create': {
-        const result = await vybitClient.createPeep(
+      case 'peep_create':
+        return jsonResponse(await vybitClient.createPeep(
           args.vybitKey as string,
           args.email as string
-        );
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      }
+        ));
 
-      case 'peep_delete': {
+      case 'peep_delete':
         await vybitClient.deletePeep(args.peepKey as string);
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({ success: true, message: 'Peep removed successfully' }),
-            },
-          ],
-        };
-      }
+        return jsonResponse({ success: true, message: 'Peep removed successfully' });
 
-      case 'vybit_peeps_list': {
-        const result = await vybitClient.listVybitPeeps(args.vybitKey as string, {
+      case 'vybit_peeps_list':
+        return jsonResponse(await vybitClient.listVybitPeeps(args.vybitKey as string, {
           search: args.search as string | undefined,
           limit: args.limit as number | undefined,
           offset: args.offset as number | undefined,
-        });
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(result),
-            },
-          ],
-        };
-      }
+        }));
 
       default:
         throw new Error(`Unknown tool: ${name}`);
