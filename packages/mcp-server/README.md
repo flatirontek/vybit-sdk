@@ -28,14 +28,12 @@ This MCP server provides AI assistants with **full parity** with the Vybit Devel
 npm install -g @vybit/mcp-server
 ```
 
-```
-
 ## Setup
 
 ### 1. Get Your API Key
 
 1. Sign up at [developer.vybit.net](https://developer.vybit.net)
-2. Navigate to the Developer API section, click "</> DEV" then "API Configuration
+2. Navigate to the Developer API section, click "</> DEV" then "API Configuration"
 3. Copy your API key
 
 ### 2. Configure Your MCP Client
@@ -99,6 +97,36 @@ Add to `.claude/mcp.json` in your project:
 ### 3. Restart Your MCP Client
 
 After configuration, restart Claude Desktop or your editor to load the server.
+
+### Troubleshooting: nvm Users
+
+GUI applications like Claude Desktop do not source your shell profile (`.bashrc`/`.zshrc`), so `node` and `npx` may resolve to the wrong Node version. If you see errors like `SyntaxError: Unexpected token {` or `Cannot find module 'node:path'`, this is likely the cause.
+
+To fix this, skip `npx` and use `node` directly with absolute paths:
+
+```bash
+# Find your node and global modules paths
+which node
+npm root -g
+```
+
+Then use those paths in your config:
+
+```json
+{
+  "mcpServers": {
+    "vybit": {
+      "command": "/Users/you/.nvm/versions/node/v24.6.0/bin/node",
+      "args": ["/Users/you/.nvm/versions/node/v24.6.0/lib/node_modules/@vybit/mcp-server/dist/index.js"],
+      "env": {
+        "VYBIT_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+Node 18+ is required.
 
 ## Usage
 

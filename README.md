@@ -373,6 +373,8 @@ Add to your MCP client configuration:
 }
 ```
 
+> **nvm users:** Claude Desktop doesn't source your shell profile, so `node`/`npx` may resolve to the wrong version. Use `which node` and `npm root -g` to find your paths, then use `node` directly instead of `npx`. See the [MCP Server README](./packages/mcp-server/README.md#troubleshooting-nvm-users) for details.
+
 ### What You Can Do
 
 Once configured, you can ask your AI assistant to:
