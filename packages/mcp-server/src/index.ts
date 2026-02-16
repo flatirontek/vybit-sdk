@@ -133,6 +133,10 @@ function jsonResponse(result: any) {
   };
 }
 
+// Tool annotation constants
+const READ_ONLY_ANNOTATIONS = { readOnlyHint: true } as const;
+const MUTATING_ANNOTATIONS = { readOnlyHint: false, destructiveHint: true } as const;
+
 // Define available tools
 const TOOLS: Tool[] = [
   {
@@ -142,6 +146,7 @@ const TOOLS: Tool[] = [
       type: 'object',
       properties: { ...PAGINATION_SCHEMA },
     },
+    annotations: READ_ONLY_ANNOTATIONS,
   },
   {
     name: 'vybit_get',
@@ -156,6 +161,7 @@ const TOOLS: Tool[] = [
       },
       required: ['vybitId'],
     },
+    annotations: READ_ONLY_ANNOTATIONS,
   },
   {
     name: 'vybit_create',
@@ -207,6 +213,7 @@ const TOOLS: Tool[] = [
       },
       required: ['name'],
     },
+    annotations: MUTATING_ANNOTATIONS,
   },
   {
     name: 'vybit_update',
@@ -249,6 +256,7 @@ const TOOLS: Tool[] = [
       },
       required: ['vybitId'],
     },
+    annotations: MUTATING_ANNOTATIONS,
   },
   {
     name: 'vybit_delete',
@@ -263,6 +271,7 @@ const TOOLS: Tool[] = [
       },
       required: ['vybitId'],
     },
+    annotations: MUTATING_ANNOTATIONS,
   },
   {
     name: 'vybit_trigger',
@@ -293,6 +302,7 @@ const TOOLS: Tool[] = [
       },
       required: ['triggerKey'],
     },
+    annotations: MUTATING_ANNOTATIONS,
   },
   {
     name: 'sounds_list',
@@ -301,6 +311,7 @@ const TOOLS: Tool[] = [
       type: 'object',
       properties: { ...PAGINATION_SCHEMA },
     },
+    annotations: READ_ONLY_ANNOTATIONS,
   },
   {
     name: 'sound_get',
@@ -315,6 +326,7 @@ const TOOLS: Tool[] = [
       },
       required: ['soundKey'],
     },
+    annotations: READ_ONLY_ANNOTATIONS,
   },
   {
     name: 'meter_get',
@@ -323,6 +335,7 @@ const TOOLS: Tool[] = [
       type: 'object',
       properties: {},
     },
+    annotations: READ_ONLY_ANNOTATIONS,
   },
 
   // Public Vybit Discovery
@@ -333,6 +346,7 @@ const TOOLS: Tool[] = [
       type: 'object',
       properties: { ...PAGINATION_SCHEMA },
     },
+    annotations: READ_ONLY_ANNOTATIONS,
   },
   {
     name: 'vybit_get_public',
@@ -347,6 +361,7 @@ const TOOLS: Tool[] = [
       },
       required: ['subscriptionKey'],
     },
+    annotations: READ_ONLY_ANNOTATIONS,
   },
 
   // Subscription Management
@@ -363,6 +378,7 @@ const TOOLS: Tool[] = [
       },
       required: ['subscriptionKey'],
     },
+    annotations: MUTATING_ANNOTATIONS,
   },
   {
     name: 'subscriptions_list',
@@ -371,6 +387,7 @@ const TOOLS: Tool[] = [
       type: 'object',
       properties: { ...PAGINATION_SCHEMA },
     },
+    annotations: READ_ONLY_ANNOTATIONS,
   },
   {
     name: 'subscription_get',
@@ -385,6 +402,7 @@ const TOOLS: Tool[] = [
       },
       required: ['followingKey'],
     },
+    annotations: READ_ONLY_ANNOTATIONS,
   },
   {
     name: 'subscription_update',
@@ -421,6 +439,7 @@ const TOOLS: Tool[] = [
       },
       required: ['followingKey'],
     },
+    annotations: MUTATING_ANNOTATIONS,
   },
   {
     name: 'subscription_delete',
@@ -435,6 +454,7 @@ const TOOLS: Tool[] = [
       },
       required: ['followingKey'],
     },
+    annotations: MUTATING_ANNOTATIONS,
   },
 
   // Logs
@@ -445,6 +465,7 @@ const TOOLS: Tool[] = [
       type: 'object',
       properties: { ...PAGINATION_SCHEMA },
     },
+    annotations: READ_ONLY_ANNOTATIONS,
   },
   {
     name: 'log_get',
@@ -459,6 +480,7 @@ const TOOLS: Tool[] = [
       },
       required: ['logKey'],
     },
+    annotations: READ_ONLY_ANNOTATIONS,
   },
   {
     name: 'vybit_logs',
@@ -474,6 +496,7 @@ const TOOLS: Tool[] = [
       },
       required: ['vybitKey'],
     },
+    annotations: READ_ONLY_ANNOTATIONS,
   },
   {
     name: 'subscription_logs',
@@ -489,6 +512,7 @@ const TOOLS: Tool[] = [
       },
       required: ['followingKey'],
     },
+    annotations: READ_ONLY_ANNOTATIONS,
   },
 
   // Peeps (Access Control)
@@ -499,6 +523,7 @@ const TOOLS: Tool[] = [
       type: 'object',
       properties: { ...PAGINATION_SCHEMA },
     },
+    annotations: READ_ONLY_ANNOTATIONS,
   },
   {
     name: 'peep_get',
@@ -513,6 +538,7 @@ const TOOLS: Tool[] = [
       },
       required: ['peepKey'],
     },
+    annotations: READ_ONLY_ANNOTATIONS,
   },
   {
     name: 'peep_create',
@@ -531,6 +557,7 @@ const TOOLS: Tool[] = [
       },
       required: ['vybitKey', 'email'],
     },
+    annotations: MUTATING_ANNOTATIONS,
   },
   {
     name: 'peep_delete',
@@ -545,6 +572,7 @@ const TOOLS: Tool[] = [
       },
       required: ['peepKey'],
     },
+    annotations: MUTATING_ANNOTATIONS,
   },
   {
     name: 'vybit_peeps_list',
@@ -560,6 +588,7 @@ const TOOLS: Tool[] = [
       },
       required: ['vybitKey'],
     },
+    annotations: READ_ONLY_ANNOTATIONS,
   },
 ];
 
@@ -570,7 +599,7 @@ const VYBIT_ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAA
 const server = new Server(
   {
     name: 'vybit-mcp-server',
-    version: '1.2.1',
+    version: '1.2.2',
     icons: [
       {
         src: VYBIT_ICON,

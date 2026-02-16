@@ -1,0 +1,77 @@
+{
+  "manifest_version": "0.3",
+  "name": "vybit-mcp-server",
+  "display_name": "Vybit Notifications",
+  "version": "1.2.2",
+  "description": "Send push notifications with personalized sounds via the Vybit platform",
+  "long_description": "Integrates Claude with the Vybit notification platform. Create and manage notification endpoints (vybits), trigger push notifications with custom sounds, browse and subscribe to public vybits, manage access permissions, view notification logs, and monitor API usage.",
+  "author": {
+    "name": "Flatirontek LLC",
+    "email": "developer@vybit.net",
+    "url": "https://developer.vybit.net"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.com/flatirontek/vybit-sdk.git"
+  },
+  "homepage": "https://developer.vybit.net",
+  "documentation": "https://developer.vybit.net/api-reference",
+  "support": "https://gitlab.com/flatirontek/vybit-sdk/-/issues",
+  "icon": "icon.png",
+  "license": "MIT",
+  "privacy_policies": ["https://vybit.net/privacy"],
+  "keywords": ["notifications", "push-notifications", "sounds", "alerts", "vybit", "webhook", "monitoring"],
+  "server": {
+    "type": "node",
+    "entry_point": "dist/bundle.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/bundle.js"],
+      "env": {
+        "VYBIT_API_KEY": "${user_config.vybit_api_key}"
+      }
+    }
+  },
+  "user_config": {
+    "vybit_api_key": {
+      "type": "string",
+      "title": "Vybit API Key",
+      "description": "Your Vybit Developer API key from developer.vybit.net",
+      "sensitive": true,
+      "required": true
+    }
+  },
+  "tools": [
+    { "name": "vybit_list", "description": "List vybits with optional search and pagination" },
+    { "name": "vybit_get", "description": "Get detailed information about a specific vybit" },
+    { "name": "vybit_create", "description": "Create a new vybit notification" },
+    { "name": "vybit_update", "description": "Update an existing vybit" },
+    { "name": "vybit_delete", "description": "Delete a vybit" },
+    { "name": "vybit_trigger", "description": "Trigger a vybit notification" },
+    { "name": "sounds_list", "description": "List available notification sounds" },
+    { "name": "sound_get", "description": "Get details about a specific sound" },
+    { "name": "meter_get", "description": "Get current API usage and limits" },
+    { "name": "vybits_browse_public", "description": "Browse public vybits available for subscription" },
+    { "name": "vybit_get_public", "description": "Get details about a public vybit" },
+    { "name": "subscription_create", "description": "Subscribe to a public vybit" },
+    { "name": "subscriptions_list", "description": "List all subscriptions" },
+    { "name": "subscription_get", "description": "Get subscription details" },
+    { "name": "subscription_update", "description": "Update a subscription" },
+    { "name": "subscription_delete", "description": "Unsubscribe from a vybit" },
+    { "name": "logs_list", "description": "List notification logs" },
+    { "name": "log_get", "description": "Get log entry details" },
+    { "name": "vybit_logs", "description": "List logs for a specific vybit" },
+    { "name": "subscription_logs", "description": "List logs for a subscription" },
+    { "name": "peeps_list", "description": "List all peeps (shared access)" },
+    { "name": "peep_get", "description": "Get peep details" },
+    { "name": "peep_create", "description": "Invite someone to a private vybit by email" },
+    { "name": "peep_delete", "description": "Revoke access from a peep" },
+    { "name": "vybit_peeps_list", "description": "List peeps for a specific vybit" }
+  ],
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
+  }
+}

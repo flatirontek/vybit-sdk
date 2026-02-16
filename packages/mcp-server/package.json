@@ -1,6 +1,6 @@
 {
   "name": "@vybit/mcp-server",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Model Context Protocol (MCP) server for Vybit Developer API",
   "type": "module",
   "main": "dist/index.js",
@@ -10,6 +10,7 @@
   },
   "scripts": {
     "build": "tsc -b",
+    "bundle": "esbuild dist/index.js --bundle --platform=node --format=esm --outfile=dist/bundle.js --banner:js='#!/usr/bin/env node'",
     "clean": "rm -rf dist *.tsbuildinfo",
     "dev": "tsc --watch",
     "test": "jest --config ../../jest.config.js --rootDir ../..",
@@ -40,7 +41,9 @@
   },
   "files": [
     "dist/**/*",
-    "README.md"
+    "README.md",
+    "manifest.json",
+    "icon.png"
   ],
   "engines": {
     "node": ">=18.0.0"
@@ -50,6 +53,7 @@
     "@vybit/api-sdk": "^1.1.0"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0"
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.27.3"
   }
 }

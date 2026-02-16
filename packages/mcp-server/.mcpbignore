@@ -1,0 +1,13 @@
+src/
+tsconfig.json
+*.tsbuildinfo
+*.map
+*.d.ts
+*.test.ts
+*.test.js
+*.spec.ts
+__tests__/
+coverage/
+.mcpbignore
+dist/index.js
+dist/index.d.ts
