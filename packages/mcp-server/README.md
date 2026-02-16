@@ -22,23 +22,25 @@ This MCP server provides AI assistants with **full parity** with the Vybit Devel
 - **Discover Public Vybits**: Browse and search public vybits created by others
 - **Manage Subscriptions**: Subscribe to public vybits, view subscriptions, and unsubscribe
 
-## Installation
-
-```bash
-npm install -g @vybit/mcp-server
-```
-
-## Setup
-
-### 1. Get Your API Key
+## Prerequisites
 
 1. Sign up at [developer.vybit.net](https://developer.vybit.net)
 2. Navigate to the Developer API section, click "</> DEV" then "API Configuration"
 3. Copy your API key
 
-### 2. Configure Your MCP Client
+## Installation
 
-#### Claude Desktop
+### Claude Desktop (MCPB — Recommended)
+
+Download the latest `.mcpb` bundle from the [releases page](https://gitlab.com/flatirontek/vybit-sdk/-/releases) and double-click to install. Claude Desktop will prompt you for your Vybit API key during setup.
+
+### Claude Desktop (Manual)
+
+Install the package globally:
+
+```bash
+npm install -g @vybit/mcp-server
+```
 
 Add to your Claude Desktop configuration file:
 
@@ -59,26 +61,15 @@ Add to your Claude Desktop configuration file:
 }
 ```
 
-For development/testing environments create separate Vybit accounts and use different API keys:
+Restart Claude Desktop to load the server.
 
-```json
-{
-  "mcpServers": {
-    "vybit": {
-      "command": "npx",
-      "args": ["-y", "@vybit/mcp-server"],
-      "env": {
-        "VYBIT_API_KEY": "your-dev-api-key",
-        "VYBIT_API_URL": "https://api.vybit.net/v1"
-      }
-    }
-  }
-}
+### Claude Code
+
+```bash
+claude mcp add vybit -e VYBIT_API_KEY=your-api-key-here -- npx -y @vybit/mcp-server
 ```
 
-#### Claude Code / Cline
-
-Add to `.claude/mcp.json` in your project:
+Or add to `.claude/mcp.json` in your project:
 
 ```json
 {
@@ -94,9 +85,9 @@ Add to `.claude/mcp.json` in your project:
 }
 ```
 
-### 3. Restart Your MCP Client
+### Other MCP Clients (Cline, Zed, Continue.dev, etc.)
 
-After configuration, restart Claude Desktop or your editor to load the server.
+Install globally with `npm install -g @vybit/mcp-server`, then configure your client to run `npx -y @vybit/mcp-server` with `VYBIT_API_KEY` set in the environment.
 
 ### Troubleshooting: nvm Users
 
@@ -189,7 +180,7 @@ Claude: [Unsubscribes successfully]
 
 ## Available Tools
 
-The MCP server exposes **26 tools** to AI assistants, providing full parity with the Vybit Developer API:
+The MCP server exposes **25 tools** to AI assistants, providing full parity with the Vybit Developer API:
 
 ### Vybit Management (6 tools)
 
@@ -229,14 +220,13 @@ The MCP server exposes **26 tools** to AI assistants, providing full parity with
 - `vybits_browse_public` - Browse and search public vybits available for subscription
 - `vybit_get_public` - Get details about a public vybit by subscription key
 
-### Subscription Management (6 tools)
+### Subscription Management (5 tools)
 
 - `subscription_create` - Subscribe to a public vybit using its subscription key
 - `subscriptions_list` - List all vybits you are subscribed to (following)
 - `subscription_get` - Get details about a specific subscription
 - `subscription_update` - Update subscription settings (enable/disable, permissions)
 - `subscription_delete` - Unsubscribe from a vybit
-- `subscription_get_public` - Get public vybit details before subscribing
 
 
 ## Environment Variables
@@ -259,7 +249,7 @@ VYBIT_API_KEY=your-key npx @modelcontextprotocol/inspector node dist/index.js
 ## Security Best Practices
 
 1. **Never commit API keys** - Always use environment variables
-2. **Use separate keys** - Create different API keys for development and production
+2. **Use separate keys** - Create different Vybit accounts with respective API keys for development and production
 3. **Rotate regularly** - Rotate your API keys periodically
 4. **Monitor usage** - Use the `meter_get` tool to track API usage
 
