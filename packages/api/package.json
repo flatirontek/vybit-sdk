@@ -1,6 +1,6 @@
 {
   "name": "@vybit/api-sdk",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "Developer API SDK for Vybit notification platform",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

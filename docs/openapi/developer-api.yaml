@@ -282,7 +282,7 @@ paths:
                   example: "newsound123"
                 triggerType:
                   type: string
-                  enum: ["webhook", "schedule", "geofence", "integration"]
+                  enum: ["webhook", "schedule", "geofence", "integration", "reminders"]
                   example: "schedule"
                 triggerSettings:
                   type: object
@@ -468,6 +468,292 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /vybit/{key}/reminders:
+    post:
+      summary: Create Reminder
+      description: |
+        Create a new one-off scheduled reminder on a vybit.
+
+        Each reminder gets its own scheduled job that fires once at the specified cron time,
+        sends a notification with the reminder's params, then self-destructs
+        (the job is deleted and the reminder is removed from the vybit's triggerSettings).
+
+        The vybit must have `triggerType: "reminders"`.
+
+      operationId: createReminder
+      tags:
+        - Reminders
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The unique key of the vybit
+          schema:
+            type: string
+            example: "abc123def456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cron
+              properties:
+                cron:
+                  type: string
+                  description: |
+                    Cron expression for when the reminder should fire.
+                    Format: minute hour day month dayOfWeek
+                  pattern: '^\S+\s+\S+\s+\S+\s+\S+\s+\S+$'
+                  example: "30 14 20 2 *"
+                timeZone:
+                  type: string
+                  description: IANA timezone identifier
+                  default: "UTC"
+                  example: "America/Denver"
+                message:
+                  type: string
+                  nullable: true
+                  maxLength: 256
+                  description: Notification message for this reminder (max 256 characters)
+                  example: "Don't forget the meeting"
+                imageUrl:
+                  type: string
+                  format: uri
+                  nullable: true
+                  maxLength: 512
+                  description: Image URL for this reminder's notification (max 512 characters). URLs without a protocol will have https:// prepended.
+                  example: "https://example.com/image.jpg"
+                linkUrl:
+                  type: string
+                  format: uri
+                  nullable: true
+                  maxLength: 512
+                  description: Link URL for this reminder's notification (max 512 characters). URLs without a protocol will have https:// prepended.
+                  example: "https://example.com/meeting"
+                log:
+                  type: string
+                  nullable: true
+                  maxLength: 1024
+                  description: Log content for this reminder's notification (max 1024 characters)
+                  example: null
+      responses:
+        '201':
+          description: Reminder created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: integer
+                    example: 1
+                  reminder:
+                    $ref: '#/components/schemas/Reminder'
+        '400':
+          description: Invalid request (missing cron, invalid cron format, wrong triggerType, invalid URL, or field exceeds max length)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Vybit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: List Reminders
+      description: |
+        List all reminders on a vybit.
+
+        Returns the array of reminders from the vybit's triggerSettings, or an
+        empty array if none exist.
+
+      operationId: listReminders
+      tags:
+        - Reminders
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The unique key of the vybit
+          schema:
+            type: string
+            example: "abc123def456"
+      responses:
+        '200':
+          description: List of reminders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: integer
+                    example: 1
+                  reminders:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Reminder'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Vybit not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /vybit/{key}/reminders/{reminderId}:
+    patch:
+      summary: Update Reminder
+      description: |
+        Update an existing reminder on a vybit.
+
+        Only include the fields you want to update. If the cron or timeZone is changed,
+        the scheduled job is automatically recreated with the new schedule.
+
+      operationId: updateReminder
+      tags:
+        - Reminders
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The unique key of the vybit
+          schema:
+            type: string
+            example: "abc123def456"
+        - name: reminderId
+          in: path
+          required: true
+          description: The unique ID of the reminder
+          schema:
+            type: string
+            example: "a3f2b1c9d0e4"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cron:
+                  type: string
+                  description: Updated cron expression (5 fields: minute hour day month dayOfWeek)
+                  pattern: '^\S+\s+\S+\s+\S+\s+\S+\s+\S+$'
+                  example: "0 15 20 2 *"
+                timeZone:
+                  type: string
+                  description: Updated IANA timezone
+                  example: "America/New_York"
+                message:
+                  type: string
+                  nullable: true
+                  maxLength: 256
+                  description: Updated notification message (max 256 characters)
+                  example: "Meeting in 30 minutes"
+                imageUrl:
+                  type: string
+                  format: uri
+                  nullable: true
+                  maxLength: 512
+                  description: Updated image URL (max 512 characters). URLs without a protocol will have https:// prepended.
+                linkUrl:
+                  type: string
+                  format: uri
+                  nullable: true
+                  maxLength: 512
+                  description: Updated link URL (max 512 characters). URLs without a protocol will have https:// prepended.
+                log:
+                  type: string
+                  nullable: true
+                  maxLength: 1024
+                  description: Updated log content (max 1024 characters)
+      responses:
+        '200':
+          description: Reminder updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: integer
+                    example: 1
+                  reminder:
+                    $ref: '#/components/schemas/Reminder'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Vybit or reminder not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete Reminder
+      description: |
+        Delete a reminder from a vybit.
+
+        Removes the reminder from the vybit's triggerSettings and deletes the
+        associated scheduled job. This action cannot be undone.
+
+      operationId: deleteReminder
+      tags:
+        - Reminders
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: key
+          in: path
+          required: true
+          description: The unique key of the vybit
+          schema:
+            type: string
+            example: "abc123def456"
+        - name: reminderId
+          in: path
+          required: true
+          description: The unique ID of the reminder
+          schema:
+            type: string
+            example: "a3f2b1c9d0e4"
+      responses:
+        '200':
+          description: Reminder deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: integer
+                    example: 1
+                  message:
+                    type: string
+                    example: "Reminder deleted"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Vybit or reminder not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /vybit:
     post:
       summary: Create Vybit
@@ -515,7 +801,7 @@ paths:
                   example: "on"
                 triggerType:
                   type: string
-                  enum: ["webhook", "schedule", "geofence", "integration"]
+                  enum: ["webhook", "schedule", "geofence", "integration", "reminders"]
                   description: How this vybit is triggered
                   default: "webhook"
                   example: "webhook"
@@ -524,6 +810,7 @@ paths:
                   description: |
                     Configuration for scheduled triggers.
                     Required when triggerType is "schedule", null otherwise.
+                    For triggerType "reminders", reminders are managed via the Reminders endpoints.
                   nullable: true
                   properties:
                     crons:
@@ -1167,7 +1454,7 @@ paths:
                   description: "Clean notification sound"
                   type: "mp3"
                   status: "public"
-                  url: "https://api.vybit.net/v1/sound/sound123abc/play"
+                  proxyUrl: "https://api.vybit.net/v1/sound/sound123abc/play"
                   vybitKey: "vybit456def"
                   meta: null
                 - key: "sound789xyz"
@@ -1175,7 +1462,7 @@ paths:
                   description: "Gentle alert sound"
                   type: "mp3"
                   status: "public"
-                  url: "https://api.vybit.net/v1/sound/sound789xyz/play"
+                  proxyUrl: "https://api.vybit.net/v1/sound/sound789xyz/play"
                   vybitKey: null
                   meta: null
         '401':
@@ -1881,7 +2168,7 @@ components:
           example: "sub123abc456"
         triggerType:
           type: string
-          enum: ["webhook", "schedule", "geofence", "integration"]
+          enum: ["webhook", "schedule", "geofence", "integration", "reminders"]
           description: How this vybit is triggered
           example: "webhook"
         triggerSettings:
@@ -1890,6 +2177,7 @@ components:
             Configuration specific to the trigger type.
 
             **For schedule triggers**: Contains cron expressions and timezone.
+            **For reminders triggers**: Contains an array of one-off scheduled reminders.
             **For other triggers**: null or trigger-specific configuration.
           nullable: true
           properties:
@@ -1910,6 +2198,11 @@ components:
                     type: string
                     description: IANA timezone for the cron schedule
                     example: "America/Denver"
+            reminders:
+              type: array
+              description: Array of one-off scheduled reminders (for triggerType="reminders"). Managed via the Reminders endpoints.
+              items:
+                $ref: '#/components/schemas/Reminder'
           example:
             crons:
               - cron: "0 9 * * *"
@@ -2185,10 +2478,10 @@ components:
           type: string
           description: Sound status
           example: "public"
-        url:
+        proxyUrl:
           type: string
           format: uri
-          description: URL to play/download the sound
+          description: URL to play/download the sound via Vybit proxy
           example: "https://api.vybit.net/v1/sound/sound123abc/play"
         vybitKey:
           type: string
@@ -2327,6 +2620,54 @@ components:
           description: When the subscription was last updated
           example: "2024-01-20T14:45:00Z"
 
+    Reminder:
+      type: object
+      required:
+        - id
+        - cron
+        - timeZone
+      properties:
+        id:
+          type: string
+          description: Unique reminder identifier (12-char hex)
+          example: "a3f2b1c9d0e4"
+        cron:
+          type: string
+          description: |
+            Cron expression for when the reminder fires.
+            Format: minute hour day month dayOfWeek
+          example: "30 14 20 2 *"
+        timeZone:
+          type: string
+          description: IANA timezone identifier
+          example: "America/Denver"
+        message:
+          type: string
+          nullable: true
+          maxLength: 256
+          description: Notification message sent when the reminder fires (max 256 characters)
+          example: "Don't forget the meeting"
+        imageUrl:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 512
+          description: Image URL for the reminder notification (max 512 characters)
+          example: "https://example.com/image.jpg"
+        linkUrl:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 512
+          description: Link URL for the reminder notification (max 512 characters)
+          example: "https://example.com/meeting"
+        log:
+          type: string
+          nullable: true
+          maxLength: 1024
+          description: Log content for the reminder notification (max 1024 characters)
+          example: null
+
     ErrorResponse:
       type: object
       required:
@@ -2377,6 +2718,13 @@ tags:
       Peeps are all users who follow your vybits, whether they subscribed via
       public discovery, unlisted subscription links, or private invitations.
       Use these endpoints to view, invite, and manage subscribers.
+
+  - name: Reminders
+    description: |
+      Manage one-off scheduled reminders on vybits with triggerType="reminders".
+      Each reminder fires once at its scheduled time, sends a notification with
+      the reminder's params (message, imageUrl, linkUrl, log), then self-destructs.
+      The vybit remains active after all reminders have fired.
 
   - name: Subscriptions
     description: |

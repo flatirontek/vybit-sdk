@@ -21,6 +21,7 @@ This MCP server provides AI assistants with **full parity** with the Vybit Devel
 - **Monitor Usage**: Check API usage and limits
 - **Discover Public Vybits**: Browse and search public vybits created by others
 - **Manage Subscriptions**: Subscribe to public vybits, view subscriptions, and unsubscribe
+- **Manage Reminders**: Create, list, update, and delete scheduled reminders on vybits
 
 ## Prerequisites
 
@@ -163,6 +164,21 @@ Claude: [Lists sounds matching "alert"]
 You: How much of my API quota have I used today?
 Claude: [Shows current usage and limits]
 ```
+**Set Up Reminders:**
+```
+You: Create a vybit called "Daily Standup" with trigger type reminders
+Claude: [Creates the vybit with triggerType=reminders]
+
+You: Add a reminder to fire every weekday at 9am Denver time
+Claude: [Creates reminder with cron "0 9 * * 1-5" and timezone "America/Denver"]
+
+You: Change it to 9:30am instead
+Claude: [Updates the reminder's cron to "30 9 * * 1-5"]
+
+You: What reminders are set on my Daily Standup vybit?
+Claude: [Lists all reminders on that vybit]
+```
+
 **Discover and Subscribe:**
 ```
 You: What public vybits are available about weather?
@@ -180,7 +196,7 @@ Claude: [Unsubscribes successfully]
 
 ## Available Tools
 
-The MCP server exposes **25 tools** to AI assistants, providing full parity with the Vybit Developer API:
+The MCP server exposes **29 tools** to AI assistants, providing full parity with the Vybit Developer API:
 
 ### Vybit Management (6 tools)
 
@@ -190,6 +206,13 @@ The MCP server exposes **25 tools** to AI assistants, providing full parity with
 - `vybit_update` - Update an existing vybit (name, description, status, etc.)
 - `vybit_delete` - Delete a vybit
 - `vybit_trigger` - Trigger a notification with optional custom content
+
+### Reminder Management (4 tools)
+
+- `reminder_create` - Create a scheduled reminder on a vybit (must have triggerType=reminders)
+- `reminder_list` - List all reminders on a vybit
+- `reminder_update` - Update an existing reminder (cron, timezone, message, etc.)
+- `reminder_delete` - Delete a reminder
 
 ### Sound Management (2 tools)
 

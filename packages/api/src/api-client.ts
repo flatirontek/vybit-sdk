@@ -25,6 +25,10 @@ import {
   Log,
   Peep,
   DeleteResponse,
+  ReminderCreateParams,
+  ReminderUpdateParams,
+  ReminderResponse,
+  RemindersListResponse,
 } from './types';
 
 /**
@@ -261,6 +265,73 @@ export class VybitAPIClient {
     return this.request<VybitTriggerResponse>(`/vybit/${key}/trigger`, {
       method: 'POST',
       body: params ? JSON.stringify(params) : undefined,
+    });
+  }
+
+  // ==================== Reminders ====================
+
+  /**
+   * Create a one-off scheduled reminder on a vybit
+   *
+   * The vybit must have triggerType='reminders'. Each reminder gets its own
+   * scheduled job that fires once, sends a notification, then self-destructs.
+   *
+   * @param vybKey - Vybit key
+   * @param params - Reminder creation parameters (cron is required)
+   * @returns Created reminder
+   *
+   * @example
+   * ```typescript
+   * const result = await client.createReminder('vybit123', {
+   *   cron: '30 14 20 2 *',
+   *   timeZone: 'America/Denver',
+   *   message: "Don't forget the meeting"
+   * });
+   * console.log('Reminder ID:', result.reminder.id);
+   * ```
+   */
+  async createReminder(vybKey: string, params: ReminderCreateParams): Promise<ReminderResponse> {
+    return this.request<ReminderResponse>(`/vybit/${vybKey}/reminders`, {
+      method: 'POST',
+      body: JSON.stringify(params),
+    });
+  }
+
+  /**
+   * List all reminders on a vybit
+   * @param vybKey - Vybit key
+   * @returns Array of reminders
+   */
+  async listReminders(vybKey: string): Promise<RemindersListResponse> {
+    return this.request<RemindersListResponse>(`/vybit/${vybKey}/reminders`);
+  }
+
+  /**
+   * Update an existing reminder
+   *
+   * If cron or timeZone is changed, the scheduled job is automatically recreated.
+   *
+   * @param vybKey - Vybit key
+   * @param reminderId - Reminder ID
+   * @param params - Fields to update
+   * @returns Updated reminder
+   */
+  async updateReminder(vybKey: string, reminderId: string, params: ReminderUpdateParams): Promise<ReminderResponse> {
+    return this.request<ReminderResponse>(`/vybit/${vybKey}/reminders/${reminderId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(params),
+    });
+  }
+
+  /**
+   * Delete a reminder and its scheduled job
+   * @param vybKey - Vybit key
+   * @param reminderId - Reminder ID
+   * @returns Delete confirmation
+   */
+  async deleteReminder(vybKey: string, reminderId: string): Promise<DeleteResponse> {
+    return this.request<DeleteResponse>(`/vybit/${vybKey}/reminders/${reminderId}`, {
+      method: 'DELETE',
     });
   }
 

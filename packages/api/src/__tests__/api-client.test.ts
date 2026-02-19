@@ -340,6 +340,254 @@ describe('VybitAPIClient Unit Tests', () => {
     });
   });
 
+  describe('Reminders', () => {
+    test('should create reminder with required params', async () => {
+      const mockResponse = {
+        result: 1,
+        reminder: {
+          id: 'a3f2b1c9d0e4',
+          cron: '30 14 20 2 *',
+          timeZone: 'America/Denver',
+          message: 'Test reminder',
+          imageUrl: null,
+          linkUrl: null,
+          log: null,
+        },
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        json: async () => mockResponse,
+      } as Response);
+
+      const result = await client.createReminder('vyb123', {
+        cron: '30 14 20 2 *',
+        timeZone: 'America/Denver',
+        message: 'Test reminder',
+      });
+
+      expect(result.result).toBe(1);
+      expect(result.reminder.id).toBe('a3f2b1c9d0e4');
+      expect(result.reminder.cron).toBe('30 14 20 2 *');
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.vybit.net/v1/vybit/vyb123/reminders',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            cron: '30 14 20 2 *',
+            timeZone: 'America/Denver',
+            message: 'Test reminder',
+          }),
+        })
+      );
+    });
+
+    test('should list reminders', async () => {
+      const mockResponse = {
+        result: 1,
+        reminders: [
+          { id: 'abc123', cron: '0 9 * * *', timeZone: 'UTC', message: 'Morning', imageUrl: null, linkUrl: null, log: null },
+          { id: 'def456', cron: '0 17 * * *', timeZone: 'UTC', message: 'Evening', imageUrl: null, linkUrl: null, log: null },
+        ],
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockResponse,
+      } as Response);
+
+      const result = await client.listReminders('vyb123');
+
+      expect(result.result).toBe(1);
+      expect(result.reminders).toHaveLength(2);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.vybit.net/v1/vybit/vyb123/reminders',
+        expect.any(Object)
+      );
+    });
+
+    test('should update reminder', async () => {
+      const mockResponse = {
+        result: 1,
+        reminder: {
+          id: 'abc123',
+          cron: '0 10 * * *',
+          timeZone: 'America/New_York',
+          message: 'Updated',
+          imageUrl: null,
+          linkUrl: null,
+          log: null,
+        },
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockResponse,
+      } as Response);
+
+      const result = await client.updateReminder('vyb123', 'abc123', {
+        cron: '0 10 * * *',
+        timeZone: 'America/New_York',
+        message: 'Updated',
+      });
+
+      expect(result.result).toBe(1);
+      expect(result.reminder.cron).toBe('0 10 * * *');
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.vybit.net/v1/vybit/vyb123/reminders/abc123',
+        expect.objectContaining({
+          method: 'PATCH',
+          body: JSON.stringify({
+            cron: '0 10 * * *',
+            timeZone: 'America/New_York',
+            message: 'Updated',
+          }),
+        })
+      );
+    });
+
+    test('should delete reminder', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ result: 1, message: 'Reminder deleted' }),
+      } as Response);
+
+      const result = await client.deleteReminder('vyb123', 'abc123');
+
+      expect(result.result).toBe(1);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.vybit.net/v1/vybit/vyb123/reminders/abc123',
+        expect.objectContaining({
+          method: 'DELETE',
+        })
+      );
+    });
+
+    test('should throw error for wrong trigger type', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ result: 0, message: 'Vybit trigger type must be reminders' }),
+      } as Response);
+
+      await expect(
+        client.createReminder('vyb123', { cron: '0 9 * * *' })
+      ).rejects.toThrow(VybitAPIError);
+    });
+
+    test('should throw error for non-existent reminder', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        json: async () => ({ result: 0, message: 'Reminder not found' }),
+      } as Response);
+
+      await expect(
+        client.updateReminder('vyb123', 'invalid', { message: 'test' })
+      ).rejects.toThrow(VybitAPIError);
+    });
+
+    test('should throw 400 error for invalid cron on create', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ result: 0, message: 'Invalid cron expression. Expected 5 fields: minute hour day month dayOfWeek' }),
+      } as Response);
+
+      await expect(
+        client.createReminder('vyb123', { cron: 'not a cron' })
+      ).rejects.toThrow(VybitAPIError);
+    });
+
+    test('should throw 400 error for invalid cron on update', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ result: 0, message: 'Invalid cron expression. Expected 5 fields: minute hour day month dayOfWeek' }),
+      } as Response);
+
+      await expect(
+        client.updateReminder('vyb123', 'abc123', { cron: '* * *' })
+      ).rejects.toThrow(VybitAPIError);
+    });
+
+    test('should throw 400 error for message exceeding 256 characters', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ result: 0, message: 'message must be 256 characters or fewer' }),
+      } as Response);
+
+      await expect(
+        client.createReminder('vyb123', { cron: '0 9 * * *', message: 'a'.repeat(257) })
+      ).rejects.toThrow(VybitAPIError);
+    });
+
+    test('should throw 400 error for imageUrl exceeding 512 characters', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ result: 0, message: 'imageUrl must be 512 characters or fewer' }),
+      } as Response);
+
+      await expect(
+        client.createReminder('vyb123', { cron: '0 9 * * *', imageUrl: 'https://example.com/' + 'a'.repeat(500) })
+      ).rejects.toThrow(VybitAPIError);
+    });
+
+    test('should throw 400 error for linkUrl exceeding 512 characters', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ result: 0, message: 'linkUrl must be 512 characters or fewer' }),
+      } as Response);
+
+      await expect(
+        client.createReminder('vyb123', { cron: '0 9 * * *', linkUrl: 'https://example.com/' + 'a'.repeat(500) })
+      ).rejects.toThrow(VybitAPIError);
+    });
+
+    test('should throw 400 error for log exceeding 1024 characters', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ result: 0, message: 'log must be 1024 characters or fewer' }),
+      } as Response);
+
+      await expect(
+        client.createReminder('vyb123', { cron: '0 9 * * *', log: 'a'.repeat(1025) })
+      ).rejects.toThrow(VybitAPIError);
+    });
+
+    test('should throw 400 error for invalid imageUrl format', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ result: 0, message: 'imageUrl must be a valid URL' }),
+      } as Response);
+
+      await expect(
+        client.createReminder('vyb123', { cron: '0 9 * * *', imageUrl: 'not a url' })
+      ).rejects.toThrow(VybitAPIError);
+    });
+
+    test('should throw 400 error for invalid linkUrl format', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ result: 0, message: 'linkUrl must be a valid URL' }),
+      } as Response);
+
+      await expect(
+        client.createReminder('vyb123', { cron: '0 9 * * *', linkUrl: 'not a url' })
+      ).rejects.toThrow(VybitAPIError);
+    });
+  });
+
   describe('error handling', () => {
     test('should throw VybitAuthError on 401', async () => {
       mockFetch.mockResolvedValueOnce({

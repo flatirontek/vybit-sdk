@@ -31,6 +31,9 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
   // Helper to add delay between API calls to avoid rate limiting
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+  // Helper to generate unique test names to avoid duplicate_name errors
+  const testName = (label: string) => `API Test - ${label} ${Date.now()}`;
+
   beforeAll(() => {
     if (!hasApiKey) return;
 
@@ -72,7 +75,7 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
         // Ignore cleanup errors
       }
     }
-  });
+  }, 30000);
 
   describe('Basic Endpoints', () => {
     test('getStatus should return up', async () => {
@@ -107,12 +110,11 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
 
   describe('Vybit CRUD Operations', () => {
     test('createVybit with minimal params (name only)', async () => {
-      const result = await client.createVybit({
-        name: 'API Test - Minimal',
-      });
+      const name = testName('Minimal');
+      const result = await client.createVybit({ name });
 
       expect(result).toHaveProperty('key');
-      expect(result.name).toBe('API Test - Minimal');
+      expect(result.name).toBe(name);
       expect(result).toHaveProperty('soundKey'); // Should have default
       expect(result).toHaveProperty('triggerType'); // Should have default
       expect(result).toHaveProperty('triggerKey');
@@ -122,15 +124,16 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
     });
 
     test('createVybit with all optional fields', async () => {
+      const name = testName('Full');
       const result = await client.createVybit({
-        name: 'API Test - Full',
+        name,
         description: 'Test description',
         status: 'off',
         access: 'private',
         message: 'Test message',
       });
 
-      expect(result.name).toBe('API Test - Full');
+      expect(result.name).toBe(name);
       expect(result.description).toBe('Test description');
       expect(result.status).toBe('off');
       expect(result.access).toBe('private');
@@ -140,18 +143,19 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
     });
 
     test('getVybit should retrieve created vybit', async () => {
-      const created = await client.createVybit({ name: 'API Test - Get' });
+      const name = testName('Get');
+      const created = await client.createVybit({ name });
       createdResources.vybits.push(created.key);
 
       await delay(150);
       const result = await client.getVybit(created.key);
 
       expect(result.key).toBe(created.key);
-      expect(result.name).toBe('API Test - Get');
+      expect(result.name).toBe(name);
     });
 
     test('patchVybit should update status field', async () => {
-      const created = await client.createVybit({ name: 'API Test - Update' });
+      const created = await client.createVybit({ name: testName('Update') });
       createdResources.vybits.push(created.key);
 
       await delay(150);
@@ -163,17 +167,18 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
     });
 
     test('patchVybit should update multiple fields', async () => {
-      const created = await client.createVybit({ name: 'API Test - Multi' });
+      const created = await client.createVybit({ name: testName('Multi') });
       createdResources.vybits.push(created.key);
 
       await delay(150);
+      const updatedName = testName('Updated');
       const result = await client.patchVybit(created.key, {
-        name: 'Updated Name',
+        name: updatedName,
         status: 'off',
         message: 'Updated message',
       });
 
-      expect(result.name).toBe('Updated Name');
+      expect(result.name).toBe(updatedName);
       expect(result.status).toBe('off');
       expect(result.message).toBe('Updated message');
     });
@@ -186,7 +191,7 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
     });
 
     test('deleteVybit should remove vybit', async () => {
-      const created = await client.createVybit({ name: 'API Test - Delete' });
+      const created = await client.createVybit({ name: testName('Delete') });
 
       await delay(150);
       const result = await client.deleteVybit(created.key);
@@ -227,7 +232,7 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
         expect(result[0]).toHaveProperty('name');
         expect(result[0]).toHaveProperty('type');
         expect(result[0]).toHaveProperty('status');
-        expect(result[0]).toHaveProperty('url');
+        expect(result[0]).toHaveProperty('proxyUrl');
       }
     });
 
@@ -244,7 +249,7 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
       expect(result.key).toBe(sounds[0].key);
       expect(result).toHaveProperty('name');
       expect(result).toHaveProperty('type');
-      expect(result).toHaveProperty('url');
+      expect(result).toHaveProperty('proxyUrl');
     });
 
     test('getSoundPlayUrl should return correct URL', () => {
@@ -261,7 +266,7 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
       if (!hasApiKey) return;
 
       testVybit = await client.createVybit({
-        name: 'API Test - Trigger',
+        name: testName('Trigger'),
         status: 'on',
       });
       createdResources.vybits.push(testVybit.key);
@@ -283,6 +288,127 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
 
       expect(result.result).toBe(1);
       expect(result).toHaveProperty('plk');
+    });
+  });
+
+  describe('Reminders', () => {
+    let reminderVybit: any;
+
+    beforeAll(async () => {
+      if (!hasApiKey) return;
+
+      reminderVybit = await client.createVybit({
+        name: testName('Reminders'),
+        triggerType: 'reminders',
+        status: 'on',
+      });
+      createdResources.vybits.push(reminderVybit.key);
+      await delay(200);
+    }, 15000);
+
+    test('createReminder should create a reminder', async () => {
+      const result = await client.createReminder(reminderVybit.key, {
+        cron: '0 0 1 1 *',
+        timeZone: 'America/Denver',
+        message: 'Integration test reminder',
+      });
+
+      expect(result.result).toBe(1);
+      expect(result.reminder).toHaveProperty('id');
+      expect(result.reminder.cron).toBe('0 0 1 1 *');
+      expect(result.reminder.timeZone).toBe('America/Denver');
+      expect(result.reminder.message).toBe('Integration test reminder');
+    });
+
+    test('listReminders should return created reminders', async () => {
+      const result = await client.listReminders(reminderVybit.key);
+
+      expect(result.result).toBe(1);
+      expect(Array.isArray(result.reminders)).toBe(true);
+      expect(result.reminders.length).toBeGreaterThanOrEqual(1);
+      expect(result.reminders[0]).toHaveProperty('id');
+      expect(result.reminders[0]).toHaveProperty('cron');
+      expect(result.reminders[0]).toHaveProperty('timeZone');
+    });
+
+    test('updateReminder should update fields', async () => {
+      // Get current reminders to find the ID
+      const list = await client.listReminders(reminderVybit.key);
+      const reminderId = list.reminders[0].id;
+
+      await delay(200);
+      const result = await client.updateReminder(reminderVybit.key, reminderId, {
+        message: 'Updated reminder message',
+      });
+
+      expect(result.result).toBe(1);
+      expect(result.reminder.id).toBe(reminderId);
+      expect(result.reminder.message).toBe('Updated reminder message');
+    });
+
+    test('deleteReminder should remove reminder', async () => {
+      // Create a second reminder to delete
+      const created = await client.createReminder(reminderVybit.key, {
+        cron: '0 0 31 12 *',
+        timeZone: 'UTC',
+        message: 'Delete me',
+      });
+      const reminderId = created.reminder.id;
+
+      await delay(200);
+      const result = await client.deleteReminder(reminderVybit.key, reminderId);
+      expect(result.result).toBe(1);
+
+      // Verify it's gone
+      await delay(200);
+      const list = await client.listReminders(reminderVybit.key);
+      const found = list.reminders.find((r: any) => r.id === reminderId);
+      expect(found).toBeUndefined();
+    });
+
+    test('createReminder should fail on non-reminder vybit', async () => {
+      const webhookVybit = await client.createVybit({
+        name: testName('Webhook Only'),
+        triggerType: 'webhook',
+      });
+      createdResources.vybits.push(webhookVybit.key);
+
+      await delay(200);
+      await expect(
+        client.createReminder(webhookVybit.key, { cron: '0 9 * * *' })
+      ).rejects.toThrow();
+    });
+
+    test('changing triggerType should clean up reminders', async () => {
+      // Create a fresh reminder vybit
+      const vybit = await client.createVybit({
+        name: testName('Cleanup'),
+        triggerType: 'reminders',
+        status: 'on',
+      });
+      createdResources.vybits.push(vybit.key);
+
+      // Add a reminder
+      await delay(200);
+      await client.createReminder(vybit.key, {
+        cron: '0 0 1 1 *',
+        timeZone: 'UTC',
+        message: 'Should be cleaned up',
+      });
+
+      // Verify reminder exists
+      await delay(200);
+      const before = await client.listReminders(vybit.key);
+      expect(before.reminders.length).toBe(1);
+
+      // Switch triggerType to webhook — server should clean up reminders
+      await delay(200);
+      await client.patchVybit(vybit.key, { triggerType: 'webhook' });
+
+      // Cleanup runs async on server — wait for it to complete
+      await delay(2000);
+      const after = await client.listReminders(vybit.key);
+      expect(after.reminders.length).toBe(0);
     });
   });
 

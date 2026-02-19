@@ -14,6 +14,7 @@ Official n8n community nodes for [Vybit](https://vybit.net) - the personalized a
 - 🎵 **Sound Management**: Search and manage custom audio files
 - 👥 **Subscription Management**: Subscribe to and share vybits
 - 🔐 **Peeps Management**: Invite users to follow your vybits and and control access
+- ⏰ **Reminders**: Create and manage scheduled reminders on vybits
 - ✅ **Zero Dependencies**: Built with zero runtime dependencies
 
 ---
@@ -141,6 +142,15 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for configuring credential sharing in multi
 | **Unsubscribe** | Unsubscribe from a vybit |
 | **Send to Owner** | Send notification to vybit owner |
 | **Send to Group** | Send notification to all subscribers |
+
+### Reminders Resource (API Key Only)
+
+| Operation | Description |
+|-----------|-------------|
+| **List** | List all reminders on a vybit |
+| **Create** | Create a new scheduled reminder |
+| **Update** | Update an existing reminder |
+| **Delete** | Delete a reminder |
 
 ---
 

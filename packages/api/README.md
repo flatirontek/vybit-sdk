@@ -8,6 +8,7 @@ The **@vybit/api-sdk** provides a complete TypeScript/JavaScript SDK for the Vyb
 
 Use this SDK to:
 - Manage vybits (notifications) - create, update, delete
+- Manage scheduled reminders on vybits
 - Handle vybit subscriptions (follows)
 - Search and manage sounds
 - Retrieve notification logs
@@ -150,6 +151,36 @@ await client.acceptPeep('peep123abc');
 await client.deletePeep('peep123abc');
 ```
 
+### Reminders
+
+```typescript
+// Create a vybit with reminders trigger type
+const vybit = await client.createVybit({
+  name: 'Daily Standup',
+  triggerType: 'reminders'
+});
+
+// Add a reminder (cron: every weekday at 9am Denver time)
+const result = await client.createReminder(vybit.key, {
+  cron: '0 9 * * 1-5',
+  timeZone: 'America/Denver',
+  message: 'Time for standup!'
+});
+console.log('Reminder ID:', result.reminder.id);
+
+// List all reminders on a vybit
+const { reminders } = await client.listReminders(vybit.key);
+
+// Update a reminder
+await client.updateReminder(vybit.key, result.reminder.id, {
+  cron: '30 9 * * 1-5',
+  message: 'Updated standup time!'
+});
+
+// Delete a reminder
+await client.deleteReminder(vybit.key, result.reminder.id);
+```
+
 ### Subscription Management
 
 ```typescript
@@ -243,6 +274,8 @@ import {
   Sound,
   Log,
   Peep,
+  Reminder,
+  ReminderCreateParams,
   SearchParams
 } from '@vybit/api-sdk';
 
@@ -311,6 +344,12 @@ The OpenAPI spec provides:
 - `createPeep(params)` - Create peep invitation
 - `acceptPeep(key)` - Accept invitation
 - `deletePeep(key)` - Remove peep
+
+### Reminders
+- `createReminder(vybKey, params)` - Create a scheduled reminder on a vybit
+- `listReminders(vybKey)` - List all reminders on a vybit
+- `updateReminder(vybKey, reminderId, params)` - Update a reminder
+- `deleteReminder(vybKey, reminderId)` - Delete a reminder
 
 ### Vybit Peeps (Nested)
 - `listVybitPeeps(vybKey)` - List peeps for vybit

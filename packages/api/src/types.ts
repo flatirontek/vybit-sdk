@@ -91,7 +91,7 @@ export interface Vybit {
   /** Unique key for subscribing to this vybit */
   subscriptionKey?: string;
   /** How this vybit is triggered */
-  triggerType: 'webhook' | 'schedule' | 'geofence' | 'integration';
+  triggerType: 'webhook' | 'schedule' | 'geofence' | 'integration' | 'reminders';
   /** Configuration specific to the trigger type */
   triggerSettings?: any;
   /** Vybit visibility and access control */
@@ -129,7 +129,7 @@ export interface VybitCreateParams {
   /** Vybit status (on = active, off = disabled, defaults to "on") */
   status?: 'on' | 'off';
   /** How this vybit is triggered (defaults to "webhook") */
-  triggerType?: 'webhook' | 'schedule' | 'geofence' | 'integration';
+  triggerType?: 'webhook' | 'schedule' | 'geofence' | 'integration' | 'reminders';
   /** Configuration specific to the trigger type */
   triggerSettings?: any;
   /** Vybit visibility and access control (defaults to "private") */
@@ -159,7 +159,7 @@ export interface VybitUpdateParams {
   /** Vybit status (on = active, off = disabled) */
   status?: 'on' | 'off';
   /** How this vybit is triggered */
-  triggerType?: 'webhook' | 'schedule' | 'geofence' | 'integration';
+  triggerType?: 'webhook' | 'schedule' | 'geofence' | 'integration' | 'reminders';
   /** Configuration specific to the trigger type */
   triggerSettings?: any;
   /** Vybit visibility and access control */
@@ -281,7 +281,7 @@ export interface Sound {
   /** Sound status */
   status: string;
   /** URL to play/download the sound via Vybit proxy */
-  url: string;
+  proxyUrl: string;
   /** Key of first vybit using this sound (null if unused) */
   vybitKey?: string | null;
   /** Additional metadata about the sound */
@@ -404,6 +404,82 @@ export interface SubscriberSendResponse {
   result: number;
   /** Primary log key for the triggered notification */
   plk?: string;
+}
+
+/**
+ * A one-off scheduled reminder on a vybit
+ */
+export interface Reminder {
+  /** Unique reminder identifier (12-char hex) */
+  id: string;
+  /** Cron expression for when the reminder fires */
+  cron: string;
+  /** IANA timezone identifier */
+  timeZone: string;
+  /** Notification message */
+  message?: string | null;
+  /** Image URL for the notification */
+  imageUrl?: string | null;
+  /** Link URL for the notification */
+  linkUrl?: string | null;
+  /** Log content for the notification */
+  log?: string | null;
+}
+
+/**
+ * Parameters for creating a reminder
+ */
+export interface ReminderCreateParams {
+  /** Cron expression for when the reminder should fire (5 fields: minute hour day month dayOfWeek) */
+  cron: string;
+  /** IANA timezone identifier (defaults to UTC) */
+  timeZone?: string;
+  /** Notification message (max 256 characters) */
+  message?: string;
+  /** Image URL for the notification (max 512 characters, must be a valid URL) */
+  imageUrl?: string;
+  /** Link URL for the notification (max 512 characters, must be a valid URL) */
+  linkUrl?: string;
+  /** Log content for the notification (max 1024 characters) */
+  log?: string;
+}
+
+/**
+ * Parameters for updating a reminder
+ */
+export interface ReminderUpdateParams {
+  /** Updated cron expression (5 fields: minute hour day month dayOfWeek) */
+  cron?: string;
+  /** Updated IANA timezone */
+  timeZone?: string;
+  /** Updated notification message (max 256 characters) */
+  message?: string | null;
+  /** Updated image URL (max 512 characters, must be a valid URL) */
+  imageUrl?: string | null;
+  /** Updated link URL (max 512 characters, must be a valid URL) */
+  linkUrl?: string | null;
+  /** Updated log content (max 1024 characters) */
+  log?: string | null;
+}
+
+/**
+ * Response from creating or updating a reminder
+ */
+export interface ReminderResponse {
+  /** Result code (1 = success) */
+  result: number;
+  /** The created or updated reminder */
+  reminder: Reminder;
+}
+
+/**
+ * Response from listing reminders
+ */
+export interface RemindersListResponse {
+  /** Result code (1 = success) */
+  result: number;
+  /** Array of reminders */
+  reminders: Reminder[];
 }
 
 /**

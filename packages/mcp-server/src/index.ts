@@ -185,7 +185,7 @@ const TOOLS: Tool[] = [
         triggerType: {
           type: 'string',
           description: 'Type of trigger (defaults to "webhook" if not provided)',
-          enum: ['webhook', 'schedule', 'geofence', 'integration'],
+          enum: ['webhook', 'schedule', 'geofence', 'integration', 'reminders'],
         },
         description: {
           type: 'string',
@@ -241,6 +241,11 @@ const TOOLS: Tool[] = [
           type: 'string',
           description: 'Vybit status (on = active, off = disabled)',
           enum: ['on', 'off'],
+        },
+        triggerType: {
+          type: 'string',
+          description: 'Type of trigger',
+          enum: ['webhook', 'schedule', 'geofence', 'integration', 'reminders'],
         },
         access: {
           type: 'string',
@@ -304,6 +309,124 @@ const TOOLS: Tool[] = [
     },
     annotations: MUTATING_ANNOTATIONS,
   },
+  // Reminders
+  {
+    name: 'reminder_create',
+    description: 'Create a reminder on a vybit (the vybit must have triggerType=reminders). Each reminder gets its own cron schedule.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        vybitKey: {
+          type: 'string',
+          description: 'The key of the vybit to add a reminder to',
+        },
+        cron: {
+          type: 'string',
+          description: 'Cron expression (5 fields): minute hour day month dayOfWeek. Example: "0 9 * * *" = every day at 9:00 AM',
+        },
+        timeZone: {
+          type: 'string',
+          description: 'IANA timezone identifier (defaults to UTC). Example: "America/Denver"',
+        },
+        message: {
+          type: 'string',
+          description: 'Notification message for this reminder (max 256 characters)',
+        },
+        imageUrl: {
+          type: 'string',
+          description: 'Image URL for the notification (max 512 characters, must be a valid URL)',
+        },
+        linkUrl: {
+          type: 'string',
+          description: 'URL to open when notification is tapped (max 512 characters, must be a valid URL)',
+        },
+        log: {
+          type: 'string',
+          description: 'Log content for the notification (max 1024 characters)',
+        },
+      },
+      required: ['vybitKey', 'cron'],
+    },
+    annotations: MUTATING_ANNOTATIONS,
+  },
+  {
+    name: 'reminder_list',
+    description: 'List all reminders on a vybit',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        vybitKey: {
+          type: 'string',
+          description: 'The key of the vybit',
+        },
+      },
+      required: ['vybitKey'],
+    },
+    annotations: READ_ONLY_ANNOTATIONS,
+  },
+  {
+    name: 'reminder_update',
+    description: 'Update an existing reminder on a vybit',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        vybitKey: {
+          type: 'string',
+          description: 'The key of the vybit',
+        },
+        reminderId: {
+          type: 'string',
+          description: 'The unique identifier of the reminder to update',
+        },
+        cron: {
+          type: 'string',
+          description: 'Cron expression (5 fields): minute hour day month dayOfWeek. Example: "0 9 * * *" = every day at 9:00 AM',
+        },
+        timeZone: {
+          type: 'string',
+          description: 'IANA timezone identifier. Example: "America/Denver"',
+        },
+        message: {
+          type: 'string',
+          description: 'Notification message for this reminder (max 256 characters)',
+        },
+        imageUrl: {
+          type: 'string',
+          description: 'Image URL for the notification (max 512 characters, must be a valid URL)',
+        },
+        linkUrl: {
+          type: 'string',
+          description: 'URL to open when notification is tapped (max 512 characters, must be a valid URL)',
+        },
+        log: {
+          type: 'string',
+          description: 'Log content for the notification (max 1024 characters)',
+        },
+      },
+      required: ['vybitKey', 'reminderId'],
+    },
+    annotations: MUTATING_ANNOTATIONS,
+  },
+  {
+    name: 'reminder_delete',
+    description: 'Delete a reminder from a vybit',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        vybitKey: {
+          type: 'string',
+          description: 'The key of the vybit',
+        },
+        reminderId: {
+          type: 'string',
+          description: 'The unique identifier of the reminder to delete',
+        },
+      },
+      required: ['vybitKey', 'reminderId'],
+    },
+    annotations: MUTATING_ANNOTATIONS,
+  },
+
   {
     name: 'sounds_list',
     description: 'List available sounds with optional search and pagination',
@@ -599,7 +722,7 @@ const VYBIT_ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAA
 const server = new Server(
   {
     name: 'vybit-mcp-server',
-    version: '1.2.4',
+    version: '1.2.5',
     icons: [
       {
         src: VYBIT_ICON,
@@ -675,6 +798,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (args.description) updateData.description = args.description;
         if (args.soundKey) updateData.soundKey = args.soundKey;
         if (args.status) updateData.status = args.status;
+        if (args.triggerType) updateData.triggerType = args.triggerType;
         if (args.access) updateData.access = args.access;
         if (args.message !== undefined) updateData.message = args.message;
         if (args.triggerSettings) updateData.triggerSettings = args.triggerSettings;
@@ -702,6 +826,49 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           Object.keys(options).length > 0 ? options : undefined
         ));
       }
+
+      // Reminders
+      case 'reminder_create': {
+        const params: any = {
+          cron: args.cron as string,
+        };
+        if (args.timeZone) params.timeZone = args.timeZone;
+        if (args.message !== undefined) params.message = args.message;
+        if (args.imageUrl) params.imageUrl = args.imageUrl;
+        if (args.linkUrl) params.linkUrl = args.linkUrl;
+        if (args.log) params.log = args.log;
+
+        return jsonResponse(await vybitClient.createReminder(
+          args.vybitKey as string,
+          params
+        ));
+      }
+
+      case 'reminder_list':
+        return jsonResponse(await vybitClient.listReminders(args.vybitKey as string));
+
+      case 'reminder_update': {
+        const params: any = {};
+        if (args.cron) params.cron = args.cron;
+        if (args.timeZone) params.timeZone = args.timeZone;
+        if (args.message !== undefined) params.message = args.message;
+        if (args.imageUrl !== undefined) params.imageUrl = args.imageUrl;
+        if (args.linkUrl !== undefined) params.linkUrl = args.linkUrl;
+        if (args.log !== undefined) params.log = args.log;
+
+        return jsonResponse(await vybitClient.updateReminder(
+          args.vybitKey as string,
+          args.reminderId as string,
+          params
+        ));
+      }
+
+      case 'reminder_delete':
+        await vybitClient.deleteReminder(
+          args.vybitKey as string,
+          args.reminderId as string
+        );
+        return jsonResponse({ success: true, message: 'Reminder deleted successfully' });
 
       case 'sounds_list':
         return jsonResponse(await vybitClient.searchSounds({

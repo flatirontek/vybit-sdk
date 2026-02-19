@@ -138,6 +138,12 @@ export class Vybit implements INodeType {
 						description: 'Manage vybit subscriptions',
 						action: 'Manage subscriptions',
 					},
+					{
+						name: 'Reminders',
+						value: 'reminders',
+						description: 'Manage scheduled reminders on vybits',
+						action: 'Manage reminders',
+					},
 				],
 				default: 'vybits',
 			},
@@ -393,6 +399,41 @@ export class Vybit implements INodeType {
 				],
 				default: 'listAll',
 			},
+			// ===== REMINDERS OPERATIONS =====
+			{
+				displayName: 'Operation',
+				name: 'apiOperation',
+				type: 'options',
+				noDataExpression: true,
+				displayOptions: {
+					show: {
+						actionType: ['reminders'],
+					},
+				},
+				options: [
+					{
+						name: 'List',
+						value: 'list',
+						description: 'List all reminders on a vybit',
+					},
+					{
+						name: 'Create',
+						value: 'create',
+						description: 'Create a new scheduled reminder',
+					},
+					{
+						name: 'Update',
+						value: 'update',
+						description: 'Update an existing reminder',
+					},
+					{
+						name: 'Delete',
+						value: 'delete',
+						description: 'Delete a reminder',
+					},
+				],
+				default: 'list',
+			},
 			// ===== COMMON PARAMETER FIELDS =====
 
 			// Vybit Key (used by vybits, logs, peeps resources)
@@ -529,6 +570,109 @@ export class Vybit implements INodeType {
 				},
 				default: '',
 				description: 'The unique key of the peep',
+			},
+
+			// Vybit Key for reminders (all operations need it)
+			{
+				displayName: 'Vybit Key',
+				name: 'vybitKey',
+				type: 'string',
+				required: true,
+				displayOptions: {
+					show: {
+						actionType: ['reminders'],
+					},
+				},
+				default: '',
+				description: 'The unique key of the vybit',
+			},
+			// Reminder ID (for update and delete)
+			{
+				displayName: 'Reminder ID',
+				name: 'reminderId',
+				type: 'string',
+				required: true,
+				displayOptions: {
+					show: {
+						actionType: ['reminders'],
+						apiOperation: ['update', 'delete'],
+					},
+				},
+				default: '',
+				description: 'The unique ID of the reminder',
+			},
+			// Cron expression (required for create)
+			{
+				displayName: 'Cron Expression',
+				name: 'cron',
+				type: 'string',
+				required: true,
+				displayOptions: {
+					show: {
+						actionType: ['reminders'],
+						apiOperation: ['create'],
+					},
+				},
+				default: '',
+				description: "Cron expression: minute hour day month dayOfWeek. Example: '0 9 * * *' = every day at 9:00 AM",
+			},
+			// Optional fields for reminder create/update
+			{
+				displayName: 'Optional Fields',
+				name: 'optionalFields',
+				type: 'collection',
+				placeholder: 'Add Field',
+				displayOptions: {
+					show: {
+						actionType: ['reminders'],
+						apiOperation: ['create', 'update'],
+					},
+				},
+				default: {},
+				options: [
+					{
+						displayName: 'Cron Expression',
+						name: 'cron',
+						type: 'string',
+						default: '',
+						description: "Updated cron expression (for update only). Example: '0 9 * * *' = every day at 9:00 AM",
+					},
+					{
+						displayName: 'Time Zone',
+						name: 'timeZone',
+						type: 'string',
+						default: '',
+						description: 'IANA timezone identifier (e.g. America/New_York). Defaults to UTC',
+					},
+					{
+						displayName: 'Message',
+						name: 'message',
+						type: 'string',
+						default: '',
+						description: 'Message to display with the reminder notification (max 256 characters)',
+					},
+					{
+						displayName: 'Image URL',
+						name: 'imageUrl',
+						type: 'string',
+						default: '',
+						description: 'Image URL to attach to the reminder notification (max 512 characters, must be a valid URL)',
+					},
+					{
+						displayName: 'Link URL',
+						name: 'linkUrl',
+						type: 'string',
+						default: '',
+						description: 'URL to open when the reminder notification is tapped (max 512 characters, must be a valid URL)',
+					},
+					{
+						displayName: 'Log',
+						name: 'log',
+						type: 'string',
+						default: '',
+						description: 'Content to append to the vybit log (max 1024 characters)',
+					},
+				],
 			},
 
 			// ===== LIST/SEARCH OPTIONS =====
@@ -864,6 +1008,7 @@ export class Vybit implements INodeType {
 							{ name: 'Schedule', value: 'schedule' },
 							{ name: 'Geofence', value: 'geofence' },
 							{ name: 'Integration', value: 'integration' },
+							{ name: 'Reminders', value: 'reminders' },
 						],
 						default: 'webhook',
 						description: 'How this vybit is triggered',
@@ -1284,6 +1429,41 @@ export class Vybit implements INodeType {
 						const peepKey = this.getNodeParameter('peepKey', i) as string;
 						await (client as VybitAPIClient).deletePeep(peepKey);
 						returnData.push({ json: { success: true, peepKey } });
+					}
+				} else if (actionType === 'reminders') {
+					const apiOperation = this.getNodeParameter('apiOperation', i) as string;
+					const vybitKey = this.getNodeParameter('vybitKey', i) as string;
+
+					if (apiOperation === 'list') {
+						const reminders = await (client as VybitAPIClient).listReminders(vybitKey);
+						returnData.push({ json: reminders });
+					} else if (apiOperation === 'create') {
+						const cron = this.getNodeParameter('cron', i) as string;
+						const optionalFields = this.getNodeParameter('optionalFields', i, {}) as any;
+						const params: any = { cron };
+						if (optionalFields.timeZone) params.timeZone = optionalFields.timeZone;
+						if (optionalFields.message) params.message = optionalFields.message;
+						if (optionalFields.imageUrl) params.imageUrl = optionalFields.imageUrl;
+						if (optionalFields.linkUrl) params.linkUrl = optionalFields.linkUrl;
+						if (optionalFields.log) params.log = optionalFields.log;
+						const result = await (client as VybitAPIClient).createReminder(vybitKey, params);
+						returnData.push({ json: result });
+					} else if (apiOperation === 'update') {
+						const reminderId = this.getNodeParameter('reminderId', i) as string;
+						const optionalFields = this.getNodeParameter('optionalFields', i, {}) as any;
+						const params: any = {};
+						if (optionalFields.cron) params.cron = optionalFields.cron;
+						if (optionalFields.timeZone) params.timeZone = optionalFields.timeZone;
+						if (optionalFields.message) params.message = optionalFields.message;
+						if (optionalFields.imageUrl) params.imageUrl = optionalFields.imageUrl;
+						if (optionalFields.linkUrl) params.linkUrl = optionalFields.linkUrl;
+						if (optionalFields.log) params.log = optionalFields.log;
+						const result = await (client as VybitAPIClient).updateReminder(vybitKey, reminderId, params);
+						returnData.push({ json: result });
+					} else if (apiOperation === 'delete') {
+						const reminderId = this.getNodeParameter('reminderId', i) as string;
+						await (client as VybitAPIClient).deleteReminder(vybitKey, reminderId);
+						returnData.push({ json: { success: true, vybitKey, reminderId } });
 					}
 				}
 			} catch (error) {

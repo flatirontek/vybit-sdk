@@ -271,7 +271,7 @@ The Vybit n8n node supports both authentication methods:
 
 ### Available Operations
 
-The n8n node provides access to **29 operations** across 6 resources:
+The n8n node provides access to **33 operations** across 7 resources:
 
 **Profile** (3 operations)
 - Get Profile
@@ -292,6 +292,9 @@ The n8n node provides access to **29 operations** across 6 resources:
 
 **Subscriptions** (9 operations)
 - List Public, Get Public, Subscribe, List My Subscriptions, Get Subscription, Update Subscription, Unsubscribe, Send to Owner, Send to Group
+
+**Reminders** (4 operations)
+- List, Create, Update, Delete
 
 ### Example Workflows
 
@@ -386,6 +389,7 @@ Once configured, you can ask your AI assistant to:
 - **Browse Sounds**: Search available notification sounds
 - **View Logs**: See notification history for your vybits and subscriptions
 - **Manage Access**: Invite people to private vybits and control permissions
+- **Manage Reminders**: Create, update, and delete scheduled reminders on vybits
 - **Monitor Usage**: Check your API usage and quota limits
 
 ### Example Conversations
@@ -409,10 +413,11 @@ Claude: [Lists notification logs]
 
 ### Features
 
-The MCP server provides **26 tools** across all Vybit API features:
+The MCP server provides **29 tools** across all Vybit API features:
 - Vybit management (6 tools)
+- Reminder management (4 tools)
 - Public vybit discovery (2 tools)
-- Subscription management (6 tools)
+- Subscription management (5 tools)
 - Sound browsing (2 tools)
 - Notification logs (4 tools)
 - Access control / peeps (5 tools)
@@ -535,7 +540,8 @@ import {
   Vybit,
   PublicVybit,
   VybitCreateParams,
-  VybitFollow
+  VybitFollow,
+  Reminder
 } from '@vybit/api-sdk';
 import { VybitOAuth2Client, TokenResponse } from '@vybit/oauth2-sdk';
 

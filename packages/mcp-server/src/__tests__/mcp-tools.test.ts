@@ -164,6 +164,11 @@ describe('MCP Server Handler Logic', () => {
       createPeep: jest.fn(),
       deletePeep: jest.fn(),
       listVybitPeeps: jest.fn(),
+      // Reminder methods
+      createReminder: jest.fn(),
+      listReminders: jest.fn(),
+      updateReminder: jest.fn(),
+      deleteReminder: jest.fn(),
     } as any;
 
     // Mock the constructor
@@ -709,6 +714,111 @@ describe('MCP Server Handler Logic', () => {
         expect(mockClient.listVybitPeeps).toHaveBeenCalledWith('vybit123', {
           limit: 10,
         });
+      });
+    });
+  });
+
+  describe('Reminder handlers', () => {
+    describe('reminder_create handler', () => {
+      test('should create reminder with required params', async () => {
+        const mockResponse = {
+          result: 1,
+          reminder: {
+            id: 'abc123def456',
+            cron: '0 9 * * *',
+            timeZone: 'UTC',
+          },
+        };
+
+        mockClient.createReminder.mockResolvedValue(mockResponse);
+
+        const params = { cron: '0 9 * * *' };
+        await mockClient.createReminder('vybit123', params);
+
+        expect(mockClient.createReminder).toHaveBeenCalledWith('vybit123', {
+          cron: '0 9 * * *',
+        });
+      });
+
+      test('should include optional fields when provided', async () => {
+        const mockResponse = {
+          result: 1,
+          reminder: {
+            id: 'abc123def456',
+            cron: '0 9 * * *',
+            timeZone: 'America/Denver',
+            message: 'Daily standup',
+            imageUrl: 'https://example.com/img.png',
+            linkUrl: 'https://example.com',
+            log: 'Reminder fired',
+          },
+        };
+
+        mockClient.createReminder.mockResolvedValue(mockResponse);
+
+        const params = {
+          cron: '0 9 * * *',
+          timeZone: 'America/Denver',
+          message: 'Daily standup',
+          imageUrl: 'https://example.com/img.png',
+          linkUrl: 'https://example.com',
+          log: 'Reminder fired',
+        };
+        await mockClient.createReminder('vybit123', params);
+
+        expect(mockClient.createReminder).toHaveBeenCalledWith('vybit123', params);
+      });
+    });
+
+    describe('reminder_list handler', () => {
+      test('should list reminders for a vybit', async () => {
+        const mockResponse = {
+          result: 1,
+          reminders: [
+            { id: 'rem1', cron: '0 9 * * *', timeZone: 'UTC' },
+            { id: 'rem2', cron: '0 17 * * 1-5', timeZone: 'America/Denver' },
+          ],
+        };
+
+        mockClient.listReminders.mockResolvedValue(mockResponse);
+
+        await mockClient.listReminders('vybit123');
+
+        expect(mockClient.listReminders).toHaveBeenCalledWith('vybit123');
+      });
+    });
+
+    describe('reminder_update handler', () => {
+      test('should update reminder with provided fields', async () => {
+        const mockResponse = {
+          result: 1,
+          reminder: {
+            id: 'abc123def456',
+            cron: '30 10 * * *',
+            timeZone: 'America/Denver',
+          },
+        };
+
+        mockClient.updateReminder.mockResolvedValue(mockResponse);
+
+        const params = { cron: '30 10 * * *', timeZone: 'America/Denver' };
+        await mockClient.updateReminder('vybit123', 'abc123def456', params);
+
+        expect(mockClient.updateReminder).toHaveBeenCalledWith(
+          'vybit123',
+          'abc123def456',
+          { cron: '30 10 * * *', timeZone: 'America/Denver' }
+        );
+      });
+    });
+
+    describe('reminder_delete handler', () => {
+      test('should delete reminder by id', async () => {
+        mockClient.deleteReminder.mockResolvedValue({ result: 1 });
+
+        await mockClient.deleteReminder('vybit123', 'abc123def456');
+
+        expect(mockClient.deleteReminder).toHaveBeenCalledWith('vybit123', 'abc123def456');
       });
     });
   });
