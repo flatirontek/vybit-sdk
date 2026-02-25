@@ -296,6 +296,10 @@ const TOOLS: Tool[] = [
           type: 'string',
           description: 'Optional image URL to attach to the notification',
         },
+        runOnce: {
+          type: 'boolean',
+          description: 'If true, the vybit is automatically disabled after this trigger fires',
+        },
         linkUrl: {
           type: 'string',
           description: 'Optional URL to open when notification is tapped',
@@ -327,6 +331,10 @@ const TOOLS: Tool[] = [
         timeZone: {
           type: 'string',
           description: 'IANA timezone identifier (defaults to UTC). Example: "America/Denver"',
+        },
+        year: {
+          type: 'number',
+          description: 'Year for the reminder (defaults to current year). Used for one-time reminders.',
         },
         message: {
           type: 'string',
@@ -820,6 +828,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (args.imageUrl) options.imageUrl = args.imageUrl;
         if (args.linkUrl) options.linkUrl = args.linkUrl;
         if (args.log) options.log = args.log;
+        if (args.runOnce !== undefined) options.runOnce = args.runOnce;
 
         return jsonResponse(await vybitClient.triggerVybit(
           args.triggerKey as string,
@@ -833,6 +842,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           cron: args.cron as string,
         };
         if (args.timeZone) params.timeZone = args.timeZone;
+        if (args.year !== undefined) params.year = args.year;
         if (args.message !== undefined) params.message = args.message;
         if (args.imageUrl) params.imageUrl = args.imageUrl;
         if (args.linkUrl) params.linkUrl = args.linkUrl;

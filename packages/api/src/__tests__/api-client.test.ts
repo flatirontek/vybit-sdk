@@ -338,6 +338,78 @@ describe('VybitAPIClient Unit Tests', () => {
         })
       );
     });
+
+    test('should trigger vybit with runOnce param', async () => {
+      const mockResponse = { result: 1, plk: 'log789' };
+      const params = { runOnce: true };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockResponse,
+      } as Response);
+
+      const result = await client.triggerVybit('vyb123', params);
+
+      expect(result).toEqual(mockResponse);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.vybit.net/v1/vybit/vyb123/trigger',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ runOnce: true }),
+        })
+      );
+    });
+
+    test('should trigger vybit with log param', async () => {
+      const mockResponse = { result: 1, plk: 'log101' };
+      const params = { log: 'Triggered from test' };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockResponse,
+      } as Response);
+
+      const result = await client.triggerVybit('vyb123', params);
+
+      expect(result).toEqual(mockResponse);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.vybit.net/v1/vybit/vyb123/trigger',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ log: 'Triggered from test' }),
+        })
+      );
+    });
+
+    test('should trigger vybit with all params including runOnce and log', async () => {
+      const mockResponse = { result: 1, plk: 'log202' };
+      const params = {
+        message: 'Full trigger',
+        imageUrl: 'https://example.com/img.jpg',
+        linkUrl: 'https://example.com',
+        log: 'Full test',
+        runOnce: true,
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockResponse,
+      } as Response);
+
+      const result = await client.triggerVybit('vyb123', params);
+
+      expect(result).toEqual(mockResponse);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.vybit.net/v1/vybit/vyb123/trigger',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify(params),
+        })
+      );
+    });
   });
 
   describe('Reminders', () => {
@@ -379,6 +451,98 @@ describe('VybitAPIClient Unit Tests', () => {
             timeZone: 'America/Denver',
             message: 'Test reminder',
           }),
+        })
+      );
+    });
+
+    test('should create reminder with year param', async () => {
+      const mockResponse = {
+        result: 1,
+        reminder: {
+          id: 'b4c3d2e1f0a5',
+          cron: '0 9 25 12 *',
+          timeZone: 'UTC',
+          year: 2027,
+          message: 'Future reminder',
+          imageUrl: null,
+          linkUrl: null,
+          log: null,
+        },
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        json: async () => mockResponse,
+      } as Response);
+
+      const result = await client.createReminder('vyb123', {
+        cron: '0 9 25 12 *',
+        timeZone: 'UTC',
+        year: 2027,
+        message: 'Future reminder',
+      });
+
+      expect(result.result).toBe(1);
+      expect(result.reminder.year).toBe(2027);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.vybit.net/v1/vybit/vyb123/reminders',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            cron: '0 9 25 12 *',
+            timeZone: 'UTC',
+            year: 2027,
+            message: 'Future reminder',
+          }),
+        })
+      );
+    });
+
+    test('should create reminder with all fields including year', async () => {
+      const mockResponse = {
+        result: 1,
+        reminder: {
+          id: 'c5d4e3f2a1b6',
+          cron: '30 14 20 6 *',
+          timeZone: 'America/New_York',
+          year: 2027,
+          message: 'Full reminder',
+          imageUrl: 'https://example.com/img.jpg',
+          linkUrl: 'https://example.com/event',
+          log: 'Test log entry',
+        },
+      };
+
+      const params = {
+        cron: '30 14 20 6 *',
+        timeZone: 'America/New_York',
+        year: 2027,
+        message: 'Full reminder',
+        imageUrl: 'https://example.com/img.jpg',
+        linkUrl: 'https://example.com/event',
+        log: 'Test log entry',
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        json: async () => mockResponse,
+      } as Response);
+
+      const result = await client.createReminder('vyb123', params);
+
+      expect(result.result).toBe(1);
+      expect(result.reminder.year).toBe(2027);
+      expect(result.reminder.message).toBe('Full reminder');
+      expect(result.reminder.imageUrl).toBe('https://example.com/img.jpg');
+      expect(result.reminder.linkUrl).toBe('https://example.com/event');
+      expect(result.reminder.log).toBe('Test log entry');
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.vybit.net/v1/vybit/vyb123/reminders',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify(params),
         })
       );
     });
@@ -585,6 +749,140 @@ describe('VybitAPIClient Unit Tests', () => {
       await expect(
         client.createReminder('vyb123', { cron: '0 9 * * *', linkUrl: 'not a url' })
       ).rejects.toThrow(VybitAPIError);
+    });
+
+    test('should throw 400 error for reminder more than one year in the future', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ result: 0, message: 'Reminder must be within one year from today' }),
+      } as Response);
+
+      await expect(
+        client.createReminder('vyb123', { cron: '0 12 1 1 *', year: new Date().getFullYear() + 2 })
+      ).rejects.toThrow(VybitAPIError);
+    });
+  });
+
+  describe('Schedule triggerType', () => {
+    test('should create vybit with schedule triggerType and triggerSettings', async () => {
+      const createParams = {
+        name: 'Schedule Test',
+        triggerType: 'schedule' as const,
+        triggerSettings: {
+          crons: [
+            { cron: '0 9 * * *', timeZone: 'America/Denver' },
+          ],
+        },
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ ...createParams, key: 'vyb789' }),
+      } as Response);
+
+      const result = await client.createVybit(createParams);
+
+      expect(result.triggerType).toBe('schedule');
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.vybit.net/v1/vybit',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify(createParams),
+        })
+      );
+    });
+
+    test('should update vybit triggerSettings for schedule type', async () => {
+      const updateParams = {
+        triggerSettings: {
+          crons: [
+            { cron: '0 10 * * 1-5', timeZone: 'America/New_York' },
+            { cron: '0 12 * * 6', timeZone: 'America/New_York' },
+          ],
+        },
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          key: 'vyb789',
+          name: 'Schedule Test',
+          triggerType: 'schedule',
+          ...updateParams,
+        }),
+      } as Response);
+
+      const result = await client.patchVybit('vyb789', updateParams);
+
+      expect(result.triggerSettings.crons).toHaveLength(2);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.vybit.net/v1/vybit/vyb789',
+        expect.objectContaining({
+          method: 'PATCH',
+          body: JSON.stringify(updateParams),
+        })
+      );
+    });
+
+    test('should remove a cron entry by patching with reduced crons array', async () => {
+      const updateParams = {
+        triggerSettings: {
+          crons: [
+            { cron: '0 10 * * 1-5', timeZone: 'America/New_York' },
+          ],
+        },
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          key: 'vyb789',
+          name: 'Schedule Test',
+          triggerType: 'schedule',
+          ...updateParams,
+        }),
+      } as Response);
+
+      // Previously had 2 crons, now sending only 1 to remove the second
+      const result = await client.patchVybit('vyb789', updateParams);
+
+      expect(result.triggerSettings.crons).toHaveLength(1);
+      expect(result.triggerSettings.crons[0].cron).toBe('0 10 * * 1-5');
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.vybit.net/v1/vybit/vyb789',
+        expect.objectContaining({
+          method: 'PATCH',
+          body: JSON.stringify(updateParams),
+        })
+      );
+    });
+
+    test('should create vybit with reminders triggerType', async () => {
+      const createParams = {
+        name: 'Reminders Test',
+        triggerType: 'reminders' as const,
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ ...createParams, key: 'vyb101' }),
+      } as Response);
+
+      const result = await client.createVybit(createParams);
+
+      expect(result.triggerType).toBe('reminders');
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.vybit.net/v1/vybit',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify(createParams),
+        })
+      );
     });
   });
 

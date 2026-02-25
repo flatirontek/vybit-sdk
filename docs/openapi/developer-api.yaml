@@ -287,7 +287,31 @@ paths:
                 triggerSettings:
                   type: object
                   nullable: true
-                  example: {"cron": "0 9 * * *"}
+                  description: |
+                    Configuration for scheduled triggers. The crons array replaces the
+                    existing array entirely — to remove a cron entry, send the array without it.
+                    Removed entries have their scheduled jobs automatically deleted.
+                  properties:
+                    crons:
+                      type: array
+                      items:
+                        type: object
+                        required:
+                          - cron
+                          - timeZone
+                        properties:
+                          cron:
+                            type: string
+                            description: Cron expression (minute hour day month dayOfWeek)
+                            example: "0 9 * * *"
+                          timeZone:
+                            type: string
+                            description: IANA timezone identifier
+                            example: "America/Denver"
+                  example:
+                    crons:
+                      - cron: "0 9 * * *"
+                        timeZone: "America/Denver"
                 access:
                   type: string
                   enum: ["public", "private", "unlisted"]
@@ -425,6 +449,14 @@ paths:
                   format: uri
                   description: Custom link URL
                   example: "https://example.com/status"
+                log:
+                  type: string
+                  description: Log entry to append to the vybit log
+                  example: "Triggered via API"
+                runOnce:
+                  type: boolean
+                  description: If true, the vybit is automatically disabled (status set to "off") after this trigger fires. For schedule trigger types, the scheduled job is also paused.
+                  example: false
       responses:
         '200':
           description: Notification sent successfully
@@ -514,6 +546,10 @@ paths:
                   description: IANA timezone identifier
                   default: "UTC"
                   example: "America/Denver"
+                year:
+                  type: integer
+                  description: Year for the reminder (defaults to current year). Used for one-time reminders — expired reminders are automatically garbage-collected.
+                  example: 2026
                 message:
                   type: string
                   nullable: true
@@ -2641,6 +2677,10 @@ components:
           type: string
           description: IANA timezone identifier
           example: "America/Denver"
+        year:
+          type: integer
+          description: Year for the reminder (defaults to current year). Used for one-time reminders — expired reminders are automatically garbage-collected.
+          example: 2026
         message:
           type: string
           nullable: true

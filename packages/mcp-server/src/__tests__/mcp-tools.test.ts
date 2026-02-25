@@ -48,12 +48,13 @@ describe('MCP Server Tool Schemas', () => {
     });
 
     test('should have correct enum values for triggerType', () => {
-      const triggerTypeEnum = ['webhook', 'schedule', 'geofence', 'integration'];
+      const triggerTypeEnum = ['webhook', 'schedule', 'geofence', 'integration', 'reminders'];
       expect(triggerTypeEnum).toContain('webhook');
       expect(triggerTypeEnum).toContain('schedule');
       expect(triggerTypeEnum).toContain('geofence');
       expect(triggerTypeEnum).toContain('integration');
-      expect(triggerTypeEnum).toHaveLength(4);
+      expect(triggerTypeEnum).toContain('reminders');
+      expect(triggerTypeEnum).toHaveLength(5);
     });
 
     test('should have correct enum values for access', () => {
@@ -113,6 +114,7 @@ describe('MCP Server Tool Schemas', () => {
           imageUrl: { type: 'string' },
           linkUrl: { type: 'string' },
           log: { type: 'string' },
+          runOnce: { type: 'boolean' },
         },
         required: ['triggerKey'],
       };
@@ -121,6 +123,31 @@ describe('MCP Server Tool Schemas', () => {
       expect(vybitTriggerSchema.properties.message).toBeDefined();
       expect(vybitTriggerSchema.properties.imageUrl).toBeDefined();
       expect(vybitTriggerSchema.properties.linkUrl).toBeDefined();
+      expect(vybitTriggerSchema.properties.runOnce).toBeDefined();
+    });
+  });
+
+  describe('reminder_create schema', () => {
+    test('should require vybitKey and cron', () => {
+      const reminderCreateSchema = {
+        type: 'object',
+        properties: {
+          vybitKey: { type: 'string' },
+          cron: { type: 'string' },
+          timeZone: { type: 'string' },
+          year: { type: 'number' },
+          message: { type: 'string' },
+          imageUrl: { type: 'string' },
+          linkUrl: { type: 'string' },
+          log: { type: 'string' },
+        },
+        required: ['vybitKey', 'cron'],
+      };
+
+      expect(reminderCreateSchema.required).toEqual(['vybitKey', 'cron']);
+      expect(reminderCreateSchema.properties.year).toBeDefined();
+      expect(reminderCreateSchema.properties.timeZone).toBeDefined();
+      expect(reminderCreateSchema.properties.message).toBeDefined();
     });
   });
 });
@@ -344,6 +371,75 @@ describe('MCP Server Handler Logic', () => {
       );
 
       expect(mockClient.triggerVybit).toHaveBeenCalledWith('trigger123', undefined);
+    });
+
+    test('should pass runOnce param when provided', async () => {
+      mockClient.triggerVybit.mockResolvedValue({ result: 1, plk: 'log123' });
+
+      const args = {
+        triggerKey: 'trigger123',
+        message: 'One-time alert',
+        runOnce: true,
+      };
+
+      const options: any = {};
+      if (args.message) options.message = args.message;
+      if (args.runOnce !== undefined) options.runOnce = args.runOnce;
+
+      await mockClient.triggerVybit(args.triggerKey, options);
+
+      expect(mockClient.triggerVybit).toHaveBeenCalledWith('trigger123', {
+        message: 'One-time alert',
+        runOnce: true,
+      });
+    });
+
+    test('should pass log param when provided', async () => {
+      mockClient.triggerVybit.mockResolvedValue({ result: 1, plk: 'log123' });
+
+      const args = {
+        triggerKey: 'trigger123',
+        log: 'Build completed successfully',
+      };
+
+      const options: any = {};
+      if (args.log) options.log = args.log;
+
+      await mockClient.triggerVybit(args.triggerKey, options);
+
+      expect(mockClient.triggerVybit).toHaveBeenCalledWith('trigger123', {
+        log: 'Build completed successfully',
+      });
+    });
+
+    test('should pass all optional params including runOnce and log', async () => {
+      mockClient.triggerVybit.mockResolvedValue({ result: 1, plk: 'log123' });
+
+      const args = {
+        triggerKey: 'trigger123',
+        message: 'Deploy complete',
+        imageUrl: 'https://example.com/img.png',
+        linkUrl: 'https://example.com',
+        log: 'Deployment log entry',
+        runOnce: true,
+      };
+
+      const options: any = {};
+      if (args.message) options.message = args.message;
+      if (args.imageUrl) options.imageUrl = args.imageUrl;
+      if (args.linkUrl) options.linkUrl = args.linkUrl;
+      if (args.log) options.log = args.log;
+      if (args.runOnce !== undefined) options.runOnce = args.runOnce;
+
+      await mockClient.triggerVybit(args.triggerKey, options);
+
+      expect(mockClient.triggerVybit).toHaveBeenCalledWith('trigger123', {
+        message: 'Deploy complete',
+        imageUrl: 'https://example.com/img.png',
+        linkUrl: 'https://example.com',
+        log: 'Deployment log entry',
+        runOnce: true,
+      });
     });
   });
 
@@ -763,6 +859,64 @@ describe('MCP Server Handler Logic', () => {
           imageUrl: 'https://example.com/img.png',
           linkUrl: 'https://example.com',
           log: 'Reminder fired',
+        };
+        await mockClient.createReminder('vybit123', params);
+
+        expect(mockClient.createReminder).toHaveBeenCalledWith('vybit123', params);
+      });
+
+      test('should pass year param when provided', async () => {
+        const mockResponse = {
+          result: 1,
+          reminder: {
+            id: 'abc123def456',
+            cron: '0 0 25 12 *',
+            timeZone: 'America/Denver',
+            year: 2027,
+          },
+        };
+
+        mockClient.createReminder.mockResolvedValue(mockResponse);
+
+        const params = {
+          cron: '0 0 25 12 *',
+          timeZone: 'America/Denver',
+          year: 2027,
+        };
+        await mockClient.createReminder('vybit123', params);
+
+        expect(mockClient.createReminder).toHaveBeenCalledWith('vybit123', {
+          cron: '0 0 25 12 *',
+          timeZone: 'America/Denver',
+          year: 2027,
+        });
+      });
+
+      test('should pass all fields including year', async () => {
+        const mockResponse = {
+          result: 1,
+          reminder: {
+            id: 'abc123def456',
+            cron: '0 9 * * 1',
+            timeZone: 'America/Denver',
+            year: 2026,
+            message: 'Monday reminder',
+            imageUrl: 'https://example.com/img.png',
+            linkUrl: 'https://example.com',
+            log: 'Weekly check-in',
+          },
+        };
+
+        mockClient.createReminder.mockResolvedValue(mockResponse);
+
+        const params = {
+          cron: '0 9 * * 1',
+          timeZone: 'America/Denver',
+          year: 2026,
+          message: 'Monday reminder',
+          imageUrl: 'https://example.com/img.png',
+          linkUrl: 'https://example.com',
+          log: 'Weekly check-in',
         };
         await mockClient.createReminder('vybit123', params);
 

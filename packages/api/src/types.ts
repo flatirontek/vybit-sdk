@@ -370,6 +370,10 @@ export interface VybitTriggerParams {
   imageUrl?: string;
   /** Custom link URL */
   linkUrl?: string;
+  /** Log entry to append to the vybit log */
+  log?: string;
+  /** If true, the vybit is automatically disabled (status set to "off") after this trigger fires */
+  runOnce?: boolean;
 }
 
 /**
@@ -416,6 +420,8 @@ export interface Reminder {
   cron: string;
   /** IANA timezone identifier */
   timeZone: string;
+  /** Year for the reminder (defaults to current year). Used for one-time reminders — expired reminders are automatically garbage-collected. */
+  year?: number;
   /** Notification message */
   message?: string | null;
   /** Image URL for the notification */
@@ -434,6 +440,8 @@ export interface ReminderCreateParams {
   cron: string;
   /** IANA timezone identifier (defaults to UTC) */
   timeZone?: string;
+  /** Year for the reminder (defaults to current year). Used for one-time reminders. */
+  year?: number;
   /** Notification message (max 256 characters) */
   message?: string;
   /** Image URL for the notification (max 512 characters, must be a valid URL) */
