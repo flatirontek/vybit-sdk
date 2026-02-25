@@ -55,7 +55,7 @@ async function main() {
     console.log('5. Triggering vybit notification as owner...');
     const triggerResult = await client.triggerVybit(vybit.key, {
       message: 'Hello from the Developer API SDK!',
-      imageUrl: 'https://picsum.photos/400/300',
+      imageUrl: 'https://example.com/alert.jpg',  // Must be a direct link to a JPG, PNG, or GIF image
       linkUrl: 'https://vybit.net'
     });
     console.log(`   ✅ Notification sent! Log key: ${triggerResult.plk}\n`);
@@ -112,7 +112,7 @@ async function main() {
       try {
         const groupResult = await client.sendToGroup(followKey, {
           message: 'Group announcement: Check out this update!',
-          imageUrl: 'https://picsum.photos/500/300'
+          imageUrl: 'https://example.com/update.png'  // Must be a direct link to a JPG, PNG, or GIF image
         });
         console.log(`    ✅ Notification sent to group! Log key: ${groupResult.plk}\n`);
       } catch (error) {

@@ -656,7 +656,7 @@ export class Vybit implements INodeType {
 						name: 'imageUrl',
 						type: 'string',
 						default: '',
-						description: 'Image URL to attach to the reminder notification (max 512 characters, must be a valid URL)',
+						description: 'Image URL to attach to the reminder notification (must be a direct link to a JPG, PNG, or GIF image, max 512 characters)',
 					},
 					{
 						displayName: 'Link URL',
@@ -887,7 +887,7 @@ export class Vybit implements INodeType {
 						name: 'image',
 						type: 'string',
 						default: '',
-						description: 'Optional image URL to attach to notification',
+						description: 'Optional image URL to attach to notification (must be a direct link to a JPG, PNG, or GIF image)',
 					},
 					{
 						displayName: 'Link URL',
@@ -931,7 +931,7 @@ export class Vybit implements INodeType {
 						name: 'image',
 						type: 'string',
 						default: '',
-						description: 'Optional image URL to attach to notification',
+						description: 'Optional image URL to attach to notification (must be a direct link to a JPG, PNG, or GIF image)',
 					},
 					{
 						displayName: 'Link URL',
@@ -1048,7 +1048,7 @@ export class Vybit implements INodeType {
 						name: 'imageUrl',
 						type: 'string',
 						default: '',
-						description: 'Default image URL for notifications',
+						description: 'Default image URL for notifications (must be a direct link to a JPG, PNG, or GIF image)',
 					},
 					{
 						displayName: 'Link URL',

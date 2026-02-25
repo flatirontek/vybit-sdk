@@ -66,11 +66,19 @@ Restart Claude Desktop to load the server.
 
 ### Claude Code
 
+Add to the current project:
+
 ```bash
 claude mcp add vybit -e VYBIT_API_KEY=your-api-key-here -- npx -y @vybit/mcp-server
 ```
 
-Or add to `.claude/mcp.json` in your project:
+Or add across all projects (user-scoped):
+
+```bash
+claude mcp add vybit -s user -e VYBIT_API_KEY=your-api-key-here -- npx -y @vybit/mcp-server
+```
+
+You can also add manually to `.claude/mcp.json` in your project:
 
 ```json
 {

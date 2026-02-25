@@ -381,7 +381,7 @@ components:
         imageUrl:
           type: string
           format: uri
-          description: Optional image URL to attach to notification
+          description: Optional image URL to attach to notification (must be a direct link to a JPG, PNG, or GIF image)
           example: "https://example.com/image.jpg"
         linkUrl:
           type: string

@@ -202,7 +202,7 @@ const TOOLS: Tool[] = [
         },
         imageUrl: {
           type: 'string',
-          description: 'Default image URL for notifications',
+          description: 'Default image URL for notifications (must be a direct link to a JPG, PNG, or GIF image)',
         },
         linkUrl: {
           type: 'string',
@@ -294,7 +294,7 @@ const TOOLS: Tool[] = [
         },
         imageUrl: {
           type: 'string',
-          description: 'Optional image URL to attach to the notification',
+          description: 'Optional image URL to attach to the notification (must be a direct link to a JPG, PNG, or GIF image)',
         },
         runOnce: {
           type: 'boolean',
@@ -342,7 +342,7 @@ const TOOLS: Tool[] = [
         },
         imageUrl: {
           type: 'string',
-          description: 'Image URL for the notification (max 512 characters, must be a valid URL)',
+          description: 'Image URL for the notification (must be a direct link to a JPG, PNG, or GIF image, max 512 characters)',
         },
         linkUrl: {
           type: 'string',
@@ -400,7 +400,7 @@ const TOOLS: Tool[] = [
         },
         imageUrl: {
           type: 'string',
-          description: 'Image URL for the notification (max 512 characters, must be a valid URL)',
+          description: 'Image URL for the notification (must be a direct link to a JPG, PNG, or GIF image, max 512 characters)',
         },
         linkUrl: {
           type: 'string',
@@ -561,7 +561,7 @@ const TOOLS: Tool[] = [
         },
         imageUrl: {
           type: 'string',
-          description: 'Custom image URL (only if subscribers can send)',
+          description: 'Custom image URL (must be a direct link to a JPG, PNG, or GIF image, only if subscribers can send)',
         },
         linkUrl: {
           type: 'string',

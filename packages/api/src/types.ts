@@ -98,7 +98,7 @@ export interface Vybit {
   access?: 'public' | 'private' | 'unlisted';
   /** Default message displayed with notifications */
   message?: string;
-  /** Default image URL for notifications */
+  /** Default image URL for notifications (must be a direct link to a JPG, PNG, or GIF image) */
   imageUrl?: string;
   /** Default URL to open when notification is tapped */
   linkUrl?: string;
@@ -136,7 +136,7 @@ export interface VybitCreateParams {
   access?: 'public' | 'private' | 'unlisted';
   /** Default message displayed with notifications */
   message?: string;
-  /** Default image URL for notifications */
+  /** Default image URL for notifications (must be a direct link to a JPG, PNG, or GIF image) */
   imageUrl?: string;
   /** Default URL to open when notification is tapped */
   linkUrl?: string;
@@ -166,7 +166,7 @@ export interface VybitUpdateParams {
   access?: 'public' | 'private' | 'unlisted';
   /** Default message displayed with notifications */
   message?: string;
-  /** Default image URL for notifications */
+  /** Default image URL for notifications (must be a direct link to a JPG, PNG, or GIF image) */
   imageUrl?: string;
   /** Default URL to open when notification is tapped */
   linkUrl?: string;
@@ -202,7 +202,7 @@ export interface VybitFollow {
   access?: 'public' | 'private' | 'unlisted';
   /** Default message for this vybit */
   message?: string;
-  /** Default image URL */
+  /** Default image URL (must be a direct link to a JPG, PNG, or GIF image) */
   imageUrl?: string;
   /** Default link URL */
   linkUrl?: string;
@@ -232,7 +232,7 @@ export interface VybitFollowUpdateParams {
   accessStatus?: 'granted' | 'declined';
   /** Custom notification message (only if subscribers can send notifications) */
   message?: string;
-  /** Custom image URL (only if subscribers can send notifications) */
+  /** Custom image URL (must be a direct link to a JPG, PNG, or GIF image, only if subscribers can send notifications) */
   imageUrl?: string;
   /** Custom link URL (only if subscribers can send notifications) */
   linkUrl?: string;
@@ -252,7 +252,7 @@ export interface PublicVybit {
   soundKey: string;
   /** Type of sound file */
   soundType?: string;
-  /** Default image URL for notifications */
+  /** Default image URL for notifications (must be a direct link to a JPG, PNG, or GIF image) */
   imageUrl?: string | null;
   /** Default URL to open when notification is tapped */
   linkUrl?: string | null;
@@ -310,7 +310,7 @@ export interface Log {
   senderName: string;
   /** Notification message */
   notification?: string;
-  /** Custom image URL */
+  /** Custom image URL (must be a direct link to a JPG, PNG, or GIF image) */
   imageUrl?: string | null;
   /** Custom link URL */
   linkUrl?: string | null;
@@ -342,7 +342,7 @@ export interface Peep {
   accessStatus?: 'denied' | 'public' | 'invited' | 'granted';
   /** Custom notification message */
   message?: string | null;
-  /** Custom image URL */
+  /** Custom image URL (must be a direct link to a JPG, PNG, or GIF image) */
   imageUrl?: string | null;
   /** Custom link URL */
   linkUrl?: string | null;
@@ -366,7 +366,7 @@ export interface PeepCreateParams {
 export interface VybitTriggerParams {
   /** Custom notification message */
   message?: string;
-  /** Custom image URL */
+  /** Custom image URL (must be a direct link to a JPG, PNG, or GIF image) */
   imageUrl?: string;
   /** Custom link URL */
   linkUrl?: string;
@@ -394,7 +394,7 @@ export interface VybitTriggerResponse {
 export interface SubscriberSendParams {
   /** Notification message to send */
   message?: string;
-  /** Custom image URL */
+  /** Custom image URL (must be a direct link to a JPG, PNG, or GIF image) */
   imageUrl?: string;
   /** Custom link URL */
   linkUrl?: string;
@@ -424,7 +424,7 @@ export interface Reminder {
   year?: number;
   /** Notification message */
   message?: string | null;
-  /** Image URL for the notification */
+  /** Image URL for the notification (must be a direct link to a JPG, PNG, or GIF image) */
   imageUrl?: string | null;
   /** Link URL for the notification */
   linkUrl?: string | null;
@@ -444,7 +444,7 @@ export interface ReminderCreateParams {
   year?: number;
   /** Notification message (max 256 characters) */
   message?: string;
-  /** Image URL for the notification (max 512 characters, must be a valid URL) */
+  /** Image URL for the notification (must be a direct link to a JPG, PNG, or GIF image, max 512 characters) */
   imageUrl?: string;
   /** Link URL for the notification (max 512 characters, must be a valid URL) */
   linkUrl?: string;
@@ -462,7 +462,7 @@ export interface ReminderUpdateParams {
   timeZone?: string;
   /** Updated notification message (max 256 characters) */
   message?: string | null;
-  /** Updated image URL (max 512 characters, must be a valid URL) */
+  /** Updated image URL (must be a direct link to a JPG, PNG, or GIF image, max 512 characters) */
   imageUrl?: string | null;
   /** Updated link URL (max 512 characters, must be a valid URL) */
   linkUrl?: string | null;

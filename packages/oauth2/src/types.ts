@@ -42,7 +42,7 @@ export interface AuthorizationUrlOptions {
 export interface TriggerOptions {
   /** Custom message text for the notification */
   message?: string;
-  /** URL to an image to display with the notification */
+  /** URL to an image to display with the notification (must be a direct link to a JPG, PNG, or GIF image) */
   imageUrl?: string;
   /** URL to open when the notification is clicked */
   linkUrl?: string;

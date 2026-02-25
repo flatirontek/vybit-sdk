@@ -91,7 +91,7 @@ await client.triggerVybit('trigger-key');
 // Trigger with custom content
 await client.triggerVybit('trigger-key', {
   message: 'Server CPU usage at 95%',
-  imageUrl: 'https://example.com/graph.png',
+  imageUrl: 'https://example.com/graph.png',  // Must be a direct link to a JPG, PNG, or GIF image
   linkUrl: 'https://dashboard.example.com',
   log: 'CPU spike detected on web-server-01'
 });
@@ -218,7 +218,7 @@ const vybits = await client.getVybitList();
 // Trigger a vybit on behalf of the user
 const result = await client.sendVybitNotification('trigger-key', {
   message: 'Hello from your app!',
-  imageUrl: 'https://example.com/image.jpg',
+  imageUrl: 'https://example.com/image.jpg',  // Must be a direct link to a JPG, PNG, or GIF image
   linkUrl: 'https://example.com/details'
 });
 ```

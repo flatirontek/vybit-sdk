@@ -208,6 +208,18 @@ describe('VybitAPIClient Unit Tests', () => {
         })
       );
     });
+
+    test('should throw 400 error for non-image imageUrl format', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ result: 0, message: 'imageUrl must be a direct link to a JPG, PNG, or GIF image' }),
+      } as Response);
+
+      await expect(
+        client.createVybit({ name: 'Test', imageUrl: 'https://example.com/page' })
+      ).rejects.toThrow(VybitAPIError);
+    });
   });
 
   describe('patchVybit', () => {
@@ -236,6 +248,18 @@ describe('VybitAPIClient Unit Tests', () => {
           body: JSON.stringify({ status: 'off' }),
         })
       );
+    });
+
+    test('should throw 400 error for non-image imageUrl format', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ result: 0, message: 'imageUrl must be a direct link to a JPG, PNG, or GIF image' }),
+      } as Response);
+
+      await expect(
+        client.patchVybit('vyb123', { imageUrl: 'https://example.com/page' })
+      ).rejects.toThrow(VybitAPIError);
     });
   });
 
@@ -409,6 +433,20 @@ describe('VybitAPIClient Unit Tests', () => {
           body: JSON.stringify(params),
         })
       );
+    });
+
+    test('should silently ignore non-image imageUrl', async () => {
+      // Trigger endpoint accepts any URL but silently ignores non-image URLs
+      const mockResponse = { result: 1, plk: 'log303' };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => mockResponse,
+      } as Response);
+
+      const result = await client.triggerVybit('vyb123', { imageUrl: 'https://example.com/page' });
+      expect(result).toEqual(mockResponse);
     });
   });
 
@@ -760,6 +798,30 @@ describe('VybitAPIClient Unit Tests', () => {
 
       await expect(
         client.createReminder('vyb123', { cron: '0 12 1 1 *', year: new Date().getFullYear() + 2 })
+      ).rejects.toThrow(VybitAPIError);
+    });
+
+    test('should throw 400 error for non-image imageUrl on createReminder', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ result: 0, message: 'imageUrl must be a direct link to a JPG, PNG, or GIF image' }),
+      } as Response);
+
+      await expect(
+        client.createReminder('vyb123', { cron: '0 9 * * *', imageUrl: 'https://example.com/page' })
+      ).rejects.toThrow(VybitAPIError);
+    });
+
+    test('should throw 400 error for non-image imageUrl on updateReminder', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ result: 0, message: 'imageUrl must be a direct link to a JPG, PNG, or GIF image' }),
+      } as Response);
+
+      await expect(
+        client.updateReminder('vyb123', 'rem456', { imageUrl: 'https://example.com/page' })
       ).rejects.toThrow(VybitAPIError);
     });
   });

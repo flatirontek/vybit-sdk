@@ -132,7 +132,7 @@ interface TokenResponse {
 
 interface TriggerOptions {
   message?: string;
-  imageUrl?: string;
+  imageUrl?: string;  // Must be a direct link to a JPG, PNG, or GIF image
   linkUrl?: string;
   log?: string;
 }

@@ -661,6 +661,117 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
     });
   });
 
+  describe('imageUrl Validation', () => {
+    let imageTestVybit: any;
+
+    beforeAll(async () => {
+      if (!hasApiKey) return;
+
+      // Reuse an existing vybit to avoid hitting the vybit creation cap.
+      // Find one or convert one to reminders triggerType.
+      const vybits = await client.listVybits({ limit: 50 });
+      const existing = vybits.find((v: any) => v.triggerType === 'reminders');
+      if (existing) {
+        imageTestVybit = existing;
+      } else if (vybits.length > 0) {
+        // Convert last vybit to reminders type
+        imageTestVybit = await client.patchVybit(vybits[vybits.length - 1].key, {
+          triggerType: 'reminders',
+          status: 'on',
+        });
+      } else {
+        imageTestVybit = await client.createVybit({
+          name: testName('ImageUrl'),
+          triggerType: 'reminders',
+          status: 'on',
+        });
+        createdResources.vybits.push(imageTestVybit.key);
+      }
+      await delay(200);
+    }, 15000);
+
+    test('patchVybit should reject non-image imageUrl', async () => {
+      await expect(
+        client.patchVybit(imageTestVybit.key, {
+          imageUrl: 'https://example.com/document.pdf',
+        })
+      ).rejects.toThrow();
+    });
+
+    test('patchVybit should accept valid .png imageUrl', async () => {
+      const result = await client.patchVybit(imageTestVybit.key, {
+        imageUrl: 'https://example.com/icon.png',
+      });
+
+      expect(result.imageUrl).toContain('example.com/icon.png');
+    });
+
+    test('triggerVybit should silently ignore non-image imageUrl', async () => {
+      // Trigger endpoint accepts any URL but silently ignores non-image URLs
+      const result = await client.triggerVybit(imageTestVybit.key, {
+        message: 'Non-image URL test',
+        imageUrl: 'https://example.com/page',
+      });
+
+      expect(result.result).toBe(1);
+      expect(result).toHaveProperty('plk');
+    });
+
+    test('triggerVybit should accept valid .gif imageUrl', async () => {
+      const result = await client.triggerVybit(imageTestVybit.key, {
+        message: 'GIF test',
+        imageUrl: 'https://example.com/animation.gif',
+      });
+
+      expect(result.result).toBe(1);
+      expect(result).toHaveProperty('plk');
+    });
+
+    test('createReminder should reject non-image imageUrl', async () => {
+      await expect(
+        client.createReminder(imageTestVybit.key, {
+          cron: '0 0 1 1 *',
+          imageUrl: 'https://example.com/page',
+        })
+      ).rejects.toThrow();
+    });
+
+    test('createReminder should accept valid .jpg imageUrl', async () => {
+      const result = await client.createReminder(imageTestVybit.key, {
+        cron: '0 0 1 1 *',
+        imageUrl: 'https://example.com/reminder.jpg',
+      });
+
+      expect(result.result).toBe(1);
+      expect(result.reminder.imageUrl).toContain('example.com/reminder.jpg');
+    });
+
+    test('updateReminder should reject non-image imageUrl', async () => {
+      const list = await client.listReminders(imageTestVybit.key);
+      const reminderId = list.reminders[0].id;
+
+      await delay(200);
+      await expect(
+        client.updateReminder(imageTestVybit.key, reminderId, {
+          imageUrl: 'https://example.com/spreadsheet.xlsx',
+        })
+      ).rejects.toThrow();
+    });
+
+    test('updateReminder should accept valid .png imageUrl', async () => {
+      const list = await client.listReminders(imageTestVybit.key);
+      const reminderId = list.reminders[0].id;
+
+      await delay(200);
+      const result = await client.updateReminder(imageTestVybit.key, reminderId, {
+        imageUrl: 'https://example.com/updated.png',
+      });
+
+      expect(result.result).toBe(1);
+      expect(result.reminder.imageUrl).toContain('example.com/updated.png');
+    });
+  });
+
   describe('Logs', () => {
     test('listLogs should return array', async () => {
       const result = await client.listLogs({ limit: 5 });

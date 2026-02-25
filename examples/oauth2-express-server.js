@@ -138,7 +138,7 @@ app.get('/dashboard', async (req, res) => {
           
           <div class="form-group">
             <label>Image URL:</label>
-            <input type="url" id="imageUrl" placeholder="Optional image URL to attach to notification">
+            <input type="url" id="imageUrl" placeholder="Direct link to a JPG, PNG, or GIF image">
           </div>
           
           <div class="form-group">

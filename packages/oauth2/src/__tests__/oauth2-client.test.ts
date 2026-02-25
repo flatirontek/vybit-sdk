@@ -311,6 +311,20 @@ describe('VybitOAuth2Client', () => {
       ).rejects.toThrow(VybitValidationError);
     });
 
+    it('should throw 400 error for non-image imageUrl format', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request'
+      });
+
+      await expect(
+        client.sendVybitNotification('test-key', {
+          imageUrl: 'https://example.com/page'
+        })
+      ).rejects.toThrow(VybitAPIError);
+    });
+
     it('should handle API errors', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
