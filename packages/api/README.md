@@ -7,6 +7,7 @@
 The **@vybit/api-sdk** provides a complete TypeScript/JavaScript SDK for the Vybit Developer API, enabling you to build custom integrations, automation workflows, and notification management tools.
 
 Use this SDK to:
+- **Trigger notifications** - send push notifications with custom messages, images, and links
 - Manage vybits (notifications) - create, update, delete
 - Manage scheduled reminders on vybits
 - Handle vybit subscriptions (follows)
@@ -23,20 +24,33 @@ npm install @vybit/api-sdk
 
 ## Quick Start
 
-### 1. Get Your API Key
+### 1. Get Your Credentials
 
+**Option A: API Key** (for server-to-server integrations)
 1. Create a [Vybit developer account](https://developer.vybit.net)
 2. Generate an API key from your developer dashboard
-3. Store your API key securely (use environment variables)
+
+**Option B: OAuth2 Access Token** (for user-facing apps)
+1. Use `@vybit/oauth2-sdk` to complete the OAuth2 authorization flow
+2. Use the resulting access token with this SDK
 
 ### 2. Initialize the Client
 
 ```typescript
 import { VybitAPIClient } from '@vybit/api-sdk';
 
+// With API key
 const client = new VybitAPIClient({
   apiKey: process.env.VYBIT_API_KEY
 });
+
+// Or with OAuth2 access token
+const client = new VybitAPIClient({
+  accessToken: 'token-from-oauth2-flow'
+});
+
+// Or use environment variables (VYBIT_API_KEY or VYBIT_ACCESS_TOKEN)
+const client = new VybitAPIClient();
 ```
 
 ### 3. Make API Calls
@@ -94,6 +108,37 @@ await client.updateVybit('vybit123abc', {
 
 // Delete vybit
 await client.deleteVybit('vybit123abc');
+```
+
+### Triggering Notifications
+
+```typescript
+// Simple trigger — sends notification with the vybit's default sound
+await client.triggerVybit('vybit123abc');
+
+// Trigger with a custom message
+await client.triggerVybit('vybit123abc', {
+  message: 'Build completed successfully!'
+});
+
+// Trigger with image and link
+await client.triggerVybit('vybit123abc', {
+  message: 'New order received!',
+  imageUrl: 'https://example.com/order-icon.png',  // Must be a direct link to a JPG, PNG, or GIF
+  linkUrl: 'https://yourapp.com/orders/12345'
+});
+
+// Trigger with a log entry (viewable in notification history)
+await client.triggerVybit('vybit123abc', {
+  message: 'Server CPU at 95%',
+  log: 'alert-cpu-spike'
+});
+
+// One-time trigger — automatically disables the vybit after firing
+await client.triggerVybit('vybit123abc', {
+  message: 'One-time setup complete',
+  runOnce: true
+});
 ```
 
 ### Sound Search
@@ -214,7 +259,7 @@ console.log(`Tier: ${meter.tier_id} (Free=0, Bronze=1, Silver=2, Gold=3)`);
 
 ## Rate Limiting
 
-The Developer API enforces the following rate limits per API key:
+The Developer API enforces the following rate limits per credential:
 - **10 requests per second**
 - **300 requests per minute**
 - **5,000 requests per hour**
@@ -247,7 +292,7 @@ try {
 
 The SDK connects to the production Vybit API at `https://api.vybit.net/v1`.
 
-For different environments (development, staging, production), create separate Vybit accounts with their own API keys. This provides better isolation and security.
+For different environments (development, staging, production), create separate Vybit accounts with their own credentials. This provides better isolation and security.
 
 ```typescript
 // Development
@@ -315,6 +360,7 @@ The OpenAPI spec provides:
 - `updateVybit(key, params)` - Update vybit (PUT)
 - `patchVybit(key, params)` - Update vybit (PATCH)
 - `deleteVybit(key)` - Delete vybit
+- `triggerVybit(key, params?)` - Trigger a vybit notification
 
 ### Subscriptions
 - `listPublicVybits(params?)` - Browse public vybits

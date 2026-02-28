@@ -11,12 +11,13 @@
 import { VybitAPIClient } from '@vybit/api-sdk';
 
 const API_KEY = process.env.VYBIT_API_KEY;
-const hasApiKey = !!API_KEY && API_KEY !== 'your-api-key-here';
+const ACCESS_TOKEN = process.env.VYBIT_ACCESS_TOKEN;
+const hasCredentials = (!!API_KEY && API_KEY !== 'your-api-key-here') || (!!ACCESS_TOKEN && ACCESS_TOKEN !== 'your-token-here');
 
-// Skip all integration tests if no API key
-const describeWithApiKey = hasApiKey ? describe : describe.skip;
+// Skip all integration tests if no credentials
+const describeWithCredentials = hasCredentials ? describe : describe.skip;
 
-describeWithApiKey('MCP Server Integration Tests (Real API)', () => {
+describeWithCredentials('MCP Server Integration Tests (Real API)', () => {
   let client: VybitAPIClient;
   const createdResources: string[] = [];
 
@@ -26,18 +27,45 @@ describeWithApiKey('MCP Server Integration Tests (Real API)', () => {
   // Helper to generate unique test names to avoid duplicate_name errors
   const testName = (label: string) => `MCP Test - ${label} ${Date.now()}`;
 
-  beforeAll(() => {
-    if (!hasApiKey) return;
+  // Helper to generate a future cron expression (monthsAhead from now)
+  const futureCron = (monthsAhead: number, minute = 0, hour = 0) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + monthsAhead);
+    const day = Math.min(d.getDate(), 28);
+    return { cron: `${minute} ${hour} ${day} ${d.getMonth() + 1} *`, year: d.getFullYear() };
+  };
+
+  beforeAll(async () => {
+    if (!hasCredentials) return;
 
     const baseUrl = process.env.VYBIT_API_URL || 'https://api.vybit.net/v1';
+    const authType = API_KEY ? 'API Key' : 'Access Token';
     client = new VybitAPIClient({
-      apiKey: API_KEY,
+      ...(API_KEY ? { apiKey: API_KEY } : { accessToken: ACCESS_TOKEN }),
       baseUrl: baseUrl
     });
-    console.log('🔑 Running integration tests with real API key');
+    console.log(`🔑 Running integration tests with ${authType}`);
     console.log(`🌐 API URL: ${baseUrl}`);
     console.log('⏱️  Adding delays between requests to avoid rate limiting...');
-  });
+
+    // Free up capacity by deleting old test vybits to avoid tier limits
+    console.log('🧹 Pre-cleaning old test vybits to free tier capacity...');
+    try {
+      const existing = await client.listVybits({ limit: 50 });
+      const testVybits = existing.filter((v: any) =>
+        v.name.startsWith('MCP Test -') || v.name.startsWith('API Test -')
+      );
+      for (const v of testVybits) {
+        try {
+          await client.deleteVybit(v.key);
+          await delay(150);
+        } catch { /* ignore */ }
+      }
+      if (testVybits.length > 0) {
+        console.log(`  ✅ Deleted ${testVybits.length} old test vybits`);
+      }
+    } catch { /* ignore */ }
+  }, 30000);
 
   beforeEach(async () => {
     // Add 200ms delay before each test to avoid rate limiting (10 req/sec = 100ms minimum)
@@ -45,7 +73,7 @@ describeWithApiKey('MCP Server Integration Tests (Real API)', () => {
   });
 
   afterAll(async () => {
-    if (!hasApiKey || !client) return;
+    if (!hasCredentials || !client) return;
 
     // Cleanup any created resources
     console.log('🧹 Cleaning up test resources...');
@@ -97,7 +125,7 @@ describeWithApiKey('MCP Server Integration Tests (Real API)', () => {
     let testVybitKey: string;
 
     beforeAll(async () => {
-      if (!hasApiKey) return;
+      if (!hasCredentials) return;
 
       const vybit = await client.createVybit({
         name: testName('Update Status'),
@@ -123,13 +151,14 @@ describeWithApiKey('MCP Server Integration Tests (Real API)', () => {
     });
 
     test('should update multiple fields including status', async () => {
+      const updatedName = testName('Updated');
       const result = await client.patchVybit(testVybitKey, {
-        name: 'Updated Name',
+        name: updatedName,
         status: 'off',
         message: 'Updated message',
       });
 
-      expect(result.name).toBe('Updated Name');
+      expect(result.name).toBe(updatedName);
       expect(result.status).toBe('off');
       expect(result.message).toBe('Updated message');
     });
@@ -217,7 +246,7 @@ describeWithApiKey('MCP Server Integration Tests (Real API)', () => {
     let testVybit: any;
 
     beforeAll(async () => {
-      if (!hasApiKey) return;
+      if (!hasCredentials) return;
 
       testVybit = await client.createVybit({
         name: testName('Trigger'),
@@ -304,7 +333,7 @@ describeWithApiKey('MCP Server Integration Tests (Real API)', () => {
     let createdFollowKey: string | null = null;
 
     beforeAll(async () => {
-      if (!hasApiKey) return;
+      if (!hasCredentials) return;
 
       // Try to find a public vybit to subscribe to
       const publicVybits = await client.listPublicVybits({ limit: 1 });
@@ -314,7 +343,7 @@ describeWithApiKey('MCP Server Integration Tests (Real API)', () => {
     });
 
     afterAll(async () => {
-      if (!hasApiKey || !client || !createdFollowKey) return;
+      if (!hasCredentials || !client || !createdFollowKey) return;
 
       try {
         await client.deleteVybitFollow(createdFollowKey);
@@ -384,7 +413,7 @@ describeWithApiKey('MCP Server Integration Tests (Real API)', () => {
     let testVybitForLogs: any;
 
     beforeAll(async () => {
-      if (!hasApiKey) return;
+      if (!hasCredentials) return;
 
       // Create a test vybit and trigger it to generate logs
       testVybitForLogs = await client.createVybit({
@@ -461,7 +490,7 @@ describeWithApiKey('MCP Server Integration Tests (Real API)', () => {
     let createdPeepKey: string | null = null;
 
     beforeAll(async () => {
-      if (!hasApiKey) return;
+      if (!hasCredentials) return;
 
       testVybitForPeeps = await client.createVybit({
         name: testName('Peeps'),
@@ -471,7 +500,7 @@ describeWithApiKey('MCP Server Integration Tests (Real API)', () => {
     });
 
     afterAll(async () => {
-      if (!hasApiKey || !client || !createdPeepKey) return;
+      if (!hasCredentials || !client || !createdPeepKey) return;
 
       try {
         await client.deletePeep(createdPeepKey);
@@ -537,7 +566,7 @@ describeWithApiKey('MCP Server Integration Tests (Real API)', () => {
     let createdReminderId: string | null = null;
 
     beforeAll(async () => {
-      if (!hasApiKey) return;
+      if (!hasCredentials) return;
 
       testVybitForReminders = await client.createVybit({
         name: testName('Reminders'),
@@ -547,9 +576,12 @@ describeWithApiKey('MCP Server Integration Tests (Real API)', () => {
     });
 
     test('should create a reminder', async () => {
+      const fc = futureCron(6, 0, 9);
+
       const result = await client.createReminder(testVybitForReminders.key, {
-        cron: '0 9 * * *',
+        cron: fc.cron,
         timeZone: 'America/Denver',
+        year: fc.year,
         message: 'Integration test reminder',
       });
 
@@ -557,10 +589,10 @@ describeWithApiKey('MCP Server Integration Tests (Real API)', () => {
       expect(result.result).toBe(1);
       expect(result).toHaveProperty('reminder');
       expect(result.reminder).toHaveProperty('id');
-      expect(result.reminder.cron).toBe('0 9 * * *');
+      expect(result.reminder.cron).toBe(fc.cron);
       expect(result.reminder.timeZone).toBe('America/Denver');
       createdReminderId = result.reminder.id;
-    });
+    }, 15000);
 
     test('should list reminders', async () => {
       const result = await client.listReminders(testVybitForReminders.key);
@@ -580,19 +612,20 @@ describeWithApiKey('MCP Server Integration Tests (Real API)', () => {
         return;
       }
 
+      const fc = futureCron(8, 30, 10);
       const result = await client.updateReminder(
         testVybitForReminders.key,
         createdReminderId,
         {
-          cron: '30 10 * * *',
+          cron: fc.cron,
           message: 'Updated reminder message',
         }
       );
 
       expect(result).toHaveProperty('result');
       expect(result.result).toBe(1);
-      expect(result.reminder.cron).toBe('30 10 * * *');
-    });
+      expect(result.reminder.cron).toBe(fc.cron);
+    }, 15000);
 
     test('should delete a reminder', async () => {
       if (!createdReminderId) {
@@ -608,7 +641,7 @@ describeWithApiKey('MCP Server Integration Tests (Real API)', () => {
       expect(result).toHaveProperty('result');
       expect(result.result).toBe(1);
       createdReminderId = null;
-    });
+    }, 15000);
   });
 
   describe('error scenarios', () => {
@@ -645,10 +678,11 @@ describeWithApiKey('MCP Server Integration Tests (Real API)', () => {
 });
 
 // Show message when tests are skipped
-if (!hasApiKey) {
+if (!hasCredentials) {
   describe('MCP Server Integration Tests', () => {
-    test.skip('Integration tests skipped - set VYBIT_API_KEY to run', () => {
-      console.log('💡 Tip: Run with VYBIT_API_KEY=your-key npm test -w @vybit/mcp-server');
+    test.skip('Integration tests skipped - set VYBIT_API_KEY or VYBIT_ACCESS_TOKEN to run', () => {
+      console.log('💡 Tip: Run with VYBIT_API_KEY=your-key npm test');
+      console.log('   Or:  VYBIT_ACCESS_TOKEN=your-token npm test');
     });
   });
 }

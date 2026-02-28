@@ -1,55 +1,576 @@
+// ==================== SDK Configuration ====================
+
 /**
- * Core configuration for Vybit SDK
+ * Configuration for Vybit Developer API client.
+ * Supports authentication via API key or OAuth2 access token.
  */
-export interface VybitConfig {
-  /** Base URL for API calls. Defaults to https://vybit.net */
+export interface VybitAPIConfig {
+  /** Developer API key from Vybit developer portal. If not provided, falls back to VYBIT_API_KEY environment variable */
+  apiKey?: string;
+  /** OAuth2 access token (Bearer token). If not provided, falls back to VYBIT_ACCESS_TOKEN environment variable */
+  accessToken?: string;
+  /** Base URL for API calls (defaults to production) */
   baseUrl?: string;
 }
 
 /**
- * OAuth2 credentials for Vybit authentication
+ * OAuth2 configuration for Vybit authentication
  */
-export interface VybitCredentials {
-  /** OAuth2 client ID from your Vybit app */
+export interface OAuth2Config {
+  /** OAuth2 client ID from your Vybit developer account */
   clientId: string;
-  /** OAuth2 client secret from your Vybit app */
+  /** OAuth2 client secret from your Vybit developer account */
   clientSecret: string;
-  /** Redirect URI configured in your Vybit app */
+  /** Redirect URI that matches your Vybit app configuration */
   redirectUri: string;
 }
 
+// ==================== OAuth2 Types ====================
+
 /**
- * Standard error response from Vybit API
+ * OAuth2 token response from successful authentication
  */
-export interface VybitError {
-  /** Error code identifier */
-  code: string;
-  /** Human-readable error message */
-  message: string;
-  /** Additional error details */
-  details?: any;
+export interface TokenResponse {
+  /** Access token for authenticated API calls */
+  access_token: string;
+  /** Token type (typically "Bearer") */
+  token_type: string;
+  /** Token expiration time in seconds (optional) */
+  expires_in?: number;
+  /** Refresh token for token renewal (optional) */
+  refresh_token?: string;
+  /** Granted scopes for this token (optional) */
+  scope?: string;
 }
 
 /**
- * Generic API response wrapper
+ * Options for generating OAuth2 authorization URLs
  */
-export interface ApiResponse<T = any> {
-  /** Whether the request was successful */
-  success: boolean;
-  /** Response data when successful */
-  data?: T;
-  /** Error information when unsuccessful */
-  error?: VybitError;
+export interface AuthorizationUrlOptions {
+  /** Custom state parameter for security (auto-generated if not provided) */
+  state?: string;
+  /** Requested OAuth2 scopes (space-separated) */
+  scope?: string;
 }
+
+// ==================== Pagination & Search ====================
+
+/**
+ * Pagination parameters for collection endpoints
+ */
+export interface PaginationParams {
+  /** Number of records to skip */
+  offset?: number;
+  /** Maximum number of records to return (max: 100) */
+  limit?: number;
+}
+
+/**
+ * Search parameters for collection endpoints
+ */
+export interface SearchParams extends PaginationParams {
+  /** Text search query */
+  search?: string;
+}
+
+// ==================== API Responses ====================
+
+/**
+ * API health status response
+ */
+export interface StatusResponse {
+  /** API operational status */
+  status: 'up' | 'down';
+}
+
+/**
+ * User profile information
+ */
+export interface Profile {
+  /** Unique user identifier */
+  key: string;
+  /** User's display name */
+  name: string;
+  /** User's email address */
+  email: string;
+  /** Subscription tier ID (0=Free, 1=Bronze, 2=Silver, 3=Gold) */
+  tier_id: number;
+}
+
+/**
+ * Usage metrics and tier limits
+ */
+export interface Meter {
+  /** Current subscription tier ID */
+  tier_id: number;
+  /** Maximum vybits allowed */
+  cap_vybits: number;
+  /** Maximum daily notifications */
+  cap_daily: number;
+  /** Maximum monthly notifications */
+  cap_monthly: number;
+  /** Current number of vybits created */
+  number_vybits: number;
+  /** Notifications triggered today */
+  count_daily: number;
+  /** Notifications triggered this month */
+  count_monthly: number;
+  /** When the monthly count will reset */
+  monthly_reset_dts: string;
+}
+
+// ==================== Vybits ====================
 
 /**
  * Vybit notification configuration
  */
 export interface Vybit {
-  /** Display name of the vybit */
+  /** Unique vybit identifier */
+  key: string;
+  /** Vybit display name */
   name: string;
-  /** Unique trigger key for this vybit */
-  triggerKey: string;
-  /** Additional vybit properties */
-  [key: string]: any;
+  /** Detailed vybit description */
+  description?: string;
+  /** Key of the sound to play */
+  soundKey: string;
+  /** Vybit status */
+  status?: 'on' | 'off';
+  /** Vybit type (legacy field) */
+  type?: string;
+  /** Unique key for triggering this vybit via webhook */
+  triggerKey?: string;
+  /** Unique key for subscribing to this vybit */
+  subscriptionKey?: string;
+  /** How this vybit is triggered */
+  triggerType: 'webhook' | 'schedule' | 'geofence' | 'integration' | 'reminders';
+  /** Configuration specific to the trigger type */
+  triggerSettings?: any;
+  /** Vybit visibility and access control */
+  access?: 'public' | 'private' | 'unlisted';
+  /** Default message displayed with notifications */
+  message?: string;
+  /** Default image URL for notifications (must be a direct link to a JPG, PNG, or GIF image) */
+  imageUrl?: string;
+  /** Default URL to open when notification is tapped */
+  linkUrl?: string;
+  /** Geofence configuration (for geofence trigger type) */
+  geofence?: any;
+  /** Count of users subscribed to this vybit */
+  numberFollowers?: number;
+  /** Who can trigger this vybit */
+  sendPermissions?: 'owner_subs' | 'subs_owner' | 'subs_group';
+  /** Key of the user who owns this vybit */
+  personKey?: string;
+  /** When the vybit was created */
+  createdAt?: string;
+  /** When the vybit was last updated */
+  updatedAt?: string;
+}
+
+/**
+ * Parameters for creating a new vybit
+ */
+export interface VybitCreateParams {
+  /** Vybit display name */
+  name: string;
+  /** Detailed vybit description */
+  description?: string;
+  /** Key of the sound to play (defaults to a system sound if not provided) */
+  soundKey?: string;
+  /** Vybit status (on = active, off = disabled, defaults to "on") */
+  status?: 'on' | 'off';
+  /** How this vybit is triggered (defaults to "webhook") */
+  triggerType?: 'webhook' | 'schedule' | 'geofence' | 'integration' | 'reminders';
+  /** Configuration specific to the trigger type */
+  triggerSettings?: any;
+  /** Vybit visibility and access control (defaults to "private") */
+  access?: 'public' | 'private' | 'unlisted';
+  /** Default message displayed with notifications */
+  message?: string;
+  /** Default image URL for notifications (must be a direct link to a JPG, PNG, or GIF image) */
+  imageUrl?: string;
+  /** Default URL to open when notification is tapped */
+  linkUrl?: string;
+  /** Geofence configuration (for geofence trigger type) */
+  geofence?: any;
+  /** Who can trigger this vybit (defaults to "owner_subs") */
+  sendPermissions?: 'owner_subs' | 'subs_owner' | 'subs_group';
+}
+
+/**
+ * Parameters for updating a vybit
+ */
+export interface VybitUpdateParams {
+  /** Vybit display name */
+  name?: string;
+  /** Detailed vybit description */
+  description?: string;
+  /** Key of the sound to play */
+  soundKey?: string;
+  /** Vybit status (on = active, off = disabled) */
+  status?: 'on' | 'off';
+  /** How this vybit is triggered */
+  triggerType?: 'webhook' | 'schedule' | 'geofence' | 'integration' | 'reminders';
+  /** Configuration specific to the trigger type */
+  triggerSettings?: any;
+  /** Vybit visibility and access control */
+  access?: 'public' | 'private' | 'unlisted';
+  /** Default message displayed with notifications */
+  message?: string;
+  /** Default image URL for notifications (must be a direct link to a JPG, PNG, or GIF image) */
+  imageUrl?: string;
+  /** Default URL to open when notification is tapped */
+  linkUrl?: string;
+  /** Geofence configuration (for geofence trigger type) */
+  geofence?: any;
+  /** Who can trigger this vybit */
+  sendPermissions?: 'owner_subs' | 'subs_owner' | 'subs_group';
+}
+
+/**
+ * Parameters for triggering a vybit notification
+ */
+export interface VybitTriggerParams {
+  /** Custom notification message */
+  message?: string;
+  /** Custom image URL (must be a direct link to a JPG, PNG, or GIF image) */
+  imageUrl?: string;
+  /** Custom link URL */
+  linkUrl?: string;
+  /** Log entry to append to the vybit log */
+  log?: string;
+  /** If true, the vybit is automatically disabled (status set to "off") after this trigger fires */
+  runOnce?: boolean;
+}
+
+/**
+ * Response from triggering a vybit
+ */
+export interface VybitTriggerResponse {
+  /** Result code (1 = success) */
+  result: number;
+  /** Primary log key for the triggered notification */
+  plk?: string;
+  /** Warning message if vybit is off */
+  warn?: string;
+}
+
+// ==================== Subscriptions (Follows) ====================
+
+/**
+ * Vybit subscription (follow) information
+ */
+export interface VybitFollow {
+  /** Unique vybit follow identifier */
+  followingKey: string;
+  /** Name of the vybit being followed */
+  vybName: string;
+  /** Description of the vybit */
+  description?: string;
+  /** Sound key for this vybit */
+  soundKey?: string;
+  /** Type of sound file */
+  soundType?: string;
+  /** Name of the vybit owner */
+  ownerName?: string;
+  /** Follow status */
+  status?: string;
+  /** Access status for this subscription */
+  accessStatus?: string;
+  /** Subscription key used to create this follow */
+  subscriptionKey?: string;
+  /** Access level of the vybit */
+  access?: 'public' | 'private' | 'unlisted';
+  /** Default message for this vybit */
+  message?: string;
+  /** Default image URL (must be a direct link to a JPG, PNG, or GIF image) */
+  imageUrl?: string;
+  /** Default link URL */
+  linkUrl?: string;
+  /** Send permissions for this vybit */
+  sendPermissions?: 'owner_subs' | 'subs_owner' | 'subs_group';
+  /** When the subscription was created */
+  createdAt?: string;
+  /** When the subscription was last updated */
+  updatedAt?: string;
+}
+
+/**
+ * Parameters for creating a vybit follow
+ */
+export interface VybitFollowCreateParams {
+  /** The subscription key of the vybit to follow */
+  subscriptionKey: string;
+}
+
+/**
+ * Parameters for updating a vybit follow
+ */
+export interface VybitFollowUpdateParams {
+  /** Subscription status */
+  status?: 'on' | 'off';
+  /** Access status (only applicable when current status is 'invited') */
+  accessStatus?: 'granted' | 'declined';
+  /** Custom notification message (only if subscribers can send notifications) */
+  message?: string;
+  /** Custom image URL (must be a direct link to a JPG, PNG, or GIF image, only if subscribers can send notifications) */
+  imageUrl?: string;
+  /** Custom link URL (only if subscribers can send notifications) */
+  linkUrl?: string;
+}
+
+/**
+ * Public vybit information for discovery
+ */
+export interface PublicVybit {
+  /** Unique subscription key for this public vybit */
+  key: string;
+  /** Vybit display name */
+  name: string;
+  /** Detailed vybit description */
+  description?: string;
+  /** Key of the sound to play */
+  soundKey: string;
+  /** Type of sound file */
+  soundType?: string;
+  /** Default image URL for notifications (must be a direct link to a JPG, PNG, or GIF image) */
+  imageUrl?: string | null;
+  /** Default URL to open when notification is tapped */
+  linkUrl?: string | null;
+  /** Name of the vybit owner */
+  ownerName: string;
+  /** Whether the authenticated user is currently following this vybit */
+  following: boolean;
+  /** When the vybit was created */
+  createdAt?: string;
+  /** When the vybit was last updated */
+  updatedAt?: string;
+}
+
+/**
+ * Parameters for subscriber send notifications
+ */
+export interface SubscriberSendParams {
+  /** Notification message to send */
+  message?: string;
+  /** Custom image URL (must be a direct link to a JPG, PNG, or GIF image) */
+  imageUrl?: string;
+  /** Custom link URL */
+  linkUrl?: string;
+}
+
+/**
+ * Response from subscriber send operations
+ */
+export interface SubscriberSendResponse {
+  /** Result code (1 = success) */
+  result: number;
+  /** Primary log key for the triggered notification */
+  plk?: string;
+}
+
+// ==================== Sounds ====================
+
+/**
+ * Sound information
+ */
+export interface Sound {
+  /** Unique sound identifier */
+  key: string;
+  /** Sound name */
+  name: string;
+  /** Sound description */
+  description?: string;
+  /** Audio file type */
+  type: string;
+  /** Sound status */
+  status: string;
+  /** URL to play/download the sound via Vybit proxy */
+  proxyUrl: string;
+  /** Key of first vybit using this sound (null if unused) */
+  vybitKey?: string | null;
+  /** Additional metadata about the sound */
+  meta?: any;
+  /** When the sound was created */
+  createdAt?: string;
+  /** When the sound was last updated */
+  updatedAt?: string;
+}
+
+// ==================== Logs ====================
+
+/**
+ * Notification log entry
+ */
+export interface Log {
+  /** Unique log entry identifier */
+  key: string;
+  /** Key of the vybit that was triggered */
+  vybKey: string;
+  /** Name of the vybit */
+  vybName: string;
+  /** Description of the vybit */
+  vybDescription?: string;
+  /** Name of the user who owns/received the notification */
+  ownerName: string;
+  /** Name of the user who sent/triggered the notification */
+  senderName: string;
+  /** Notification message */
+  notification?: string;
+  /** Custom image URL (must be a direct link to a JPG, PNG, or GIF image) */
+  imageUrl?: string | null;
+  /** Custom link URL */
+  linkUrl?: string | null;
+  /** Sound key used */
+  soundKey?: string | null;
+  /** Vybit follow key (null if owner-triggered) */
+  vybfollowKey?: string | null;
+  /** Custom log message */
+  log?: string | null;
+  /** When the log entry was created */
+  createdAt?: string;
+}
+
+// ==================== Peeps ====================
+
+/**
+ * Peep (subscriber) information
+ */
+export interface Peep {
+  /** Unique peep identifier */
+  key: string;
+  /** Key of the vybit being shared */
+  vybKey: string;
+  /** Peep name */
+  name?: string;
+  /** Subscription notification status */
+  status?: 'on' | 'off';
+  /** Custom sound key override */
+  soundKey?: string | null;
+  /** Access status */
+  accessStatus?: 'denied' | 'public' | 'invited' | 'granted';
+  /** Custom notification message */
+  message?: string | null;
+  /** Custom image URL (must be a direct link to a JPG, PNG, or GIF image) */
+  imageUrl?: string | null;
+  /** Custom link URL */
+  linkUrl?: string | null;
+  /** When the peep was created */
+  createdAt?: string;
+  /** When the peep was last updated */
+  updatedAt?: string;
+}
+
+/**
+ * Parameters for creating a peep invitation
+ */
+export interface PeepCreateParams {
+  /** Email address of the user to invite */
+  email: string;
+}
+
+// ==================== Reminders ====================
+
+/**
+ * A one-off scheduled reminder on a vybit
+ */
+export interface Reminder {
+  /** Unique reminder identifier (12-char hex) */
+  id: string;
+  /** Cron expression for when the reminder fires */
+  cron: string;
+  /** IANA timezone identifier */
+  timeZone: string;
+  /** Year for the reminder (defaults to current year). Used for one-time reminders — expired reminders are automatically garbage-collected. */
+  year?: number;
+  /** Notification message */
+  message?: string | null;
+  /** Image URL for the notification (must be a direct link to a JPG, PNG, or GIF image) */
+  imageUrl?: string | null;
+  /** Link URL for the notification */
+  linkUrl?: string | null;
+  /** Log content for the notification */
+  log?: string | null;
+}
+
+/**
+ * Parameters for creating a reminder
+ */
+export interface ReminderCreateParams {
+  /** Cron expression for when the reminder should fire (5 fields: minute hour day month dayOfWeek) */
+  cron: string;
+  /** IANA timezone identifier (defaults to UTC) */
+  timeZone?: string;
+  /** Year for the reminder (defaults to current year). Used for one-time reminders. */
+  year?: number;
+  /** Notification message (max 256 characters) */
+  message?: string;
+  /** Image URL for the notification (must be a direct link to a JPG, PNG, or GIF image, max 512 characters) */
+  imageUrl?: string;
+  /** Link URL for the notification (max 512 characters, must be a valid URL) */
+  linkUrl?: string;
+  /** Log content for the notification (max 1024 characters) */
+  log?: string;
+}
+
+/**
+ * Parameters for updating a reminder
+ */
+export interface ReminderUpdateParams {
+  /** Updated cron expression (5 fields: minute hour day month dayOfWeek) */
+  cron?: string;
+  /** Updated IANA timezone */
+  timeZone?: string;
+  /** Updated notification message (max 256 characters) */
+  message?: string | null;
+  /** Updated image URL (must be a direct link to a JPG, PNG, or GIF image, max 512 characters) */
+  imageUrl?: string | null;
+  /** Updated link URL (max 512 characters, must be a valid URL) */
+  linkUrl?: string | null;
+  /** Updated log content (max 1024 characters) */
+  log?: string | null;
+}
+
+/**
+ * Response from creating or updating a reminder
+ */
+export interface ReminderResponse {
+  /** Result code (1 = success) */
+  result: number;
+  /** The created or updated reminder */
+  reminder: Reminder;
+}
+
+/**
+ * Response from listing reminders
+ */
+export interface RemindersListResponse {
+  /** Result code (1 = success) */
+  result: number;
+  /** Array of reminders */
+  reminders: Reminder[];
+}
+
+// ==================== Common Responses ====================
+
+/**
+ * Standard error response
+ */
+export interface ErrorResponse {
+  /** Error code or type */
+  error: string;
+  /** Human-readable error description */
+  message?: string;
+  /** Result code (0 = error) */
+  result?: number;
+}
+
+/**
+ * Delete operation response
+ */
+export interface DeleteResponse {
+  /** Result code (1 = success) */
+  result: number;
+  /** Success message */
+  message?: string;
 }

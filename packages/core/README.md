@@ -1,71 +1,60 @@
 # @vybit/core
 
-Core utilities and types for Vybit SDKs.
+Core utilities, types, and error classes for Vybit SDKs.
 
 ## Overview
 
-This package provides shared utilities, types, and error classes used across all Vybit SDK packages. It includes URL validation, state generation, and common interfaces.
+This package is the shared foundation used across all Vybit SDK packages. It is automatically installed as a dependency — you don't need to install it directly.
 
-## Installation
+**Install the SDK you need instead:**
 
-```bash
-npm install @vybit/core
-```
+- **[@vybit/api-sdk](https://www.npmjs.com/package/@vybit/api-sdk)** - Developer API SDK for server-to-server integrations
+- **[@vybit/oauth2-sdk](https://www.npmjs.com/package/@vybit/oauth2-sdk)** - OAuth2 authentication for user-facing apps
+- **[@vybit/mcp-server](https://www.npmjs.com/package/@vybit/mcp-server)** - MCP server for AI assistants
 
-## Usage
+All types and error classes from this package are re-exported by `@vybit/api-sdk` and `@vybit/oauth2-sdk`, so you can import them directly from whichever SDK you're using.
 
 ```typescript
-import { 
-  isValidUrl, 
-  generateRandomState, 
-  getDefaultBaseUrl,
-  getAuthDomain,
-  VybitAuthError 
-} from '@vybit/core';
-
-// Validate URLs
-const isValid = isValidUrl('https://example.com'); // true
-
-// Generate secure random state
-const state = generateRandomState(16); // "abc123def456ghi7"
-
-// Get Vybit endpoints
-const apiUrl = getDefaultBaseUrl(); // "https://vybit.net"
-const authUrl = getAuthDomain(); // "https://app.vybit.net"
-
-// Handle errors
-try {
-  // SDK operation
-} catch (error) {
-  if (error instanceof VybitAuthError) {
-    console.log('Authentication failed:', error.message);
-  }
-}
+// Import types and errors from your SDK — no need to import from @vybit/core
+import { VybitAPIClient, Vybit, VybitAPIError } from '@vybit/api-sdk';
 ```
 
-## API Reference
+## What's Included
 
 ### Utilities
 
-- `isValidUrl(url: string): boolean` - Validates HTTP/HTTPS URLs
-- `generateRandomState(length?: number): string` - Generates secure random strings
-- `buildQueryString(params: Record<string, string>): string` - Builds URL query strings
-- `getDefaultBaseUrl(): string` - Returns Vybit API base URL
-- `getAuthDomain(): string` - Returns Vybit auth domain
+- `isValidUrl(url)` - Validates HTTP/HTTPS URLs
+- `generateRandomState(length?)` - Generates secure random strings for OAuth2
+- `buildQueryString(params)` - Builds URL query strings
+- `getApiBaseUrl()` - Returns Developer API base URL (`https://api.vybit.net/v1`)
+- `getAuthDomain()` - Returns OAuth2 auth domain (`https://app.vybit.net`)
 
 ### Error Classes
 
 - `VybitSDKError` - Base error class
-- `VybitAuthError` - Authentication errors
-- `VybitAPIError` - API request errors  
+- `VybitAuthError` - Authentication errors (includes `statusCode`)
+- `VybitAPIError` - API request errors (includes `statusCode`)
 - `VybitValidationError` - Input validation errors
 
 ### Types
 
-- `VybitConfig` - SDK configuration interface
-- `VybitCredentials` - OAuth2 credentials interface
-- `ApiResponse<T>` - Generic API response wrapper
-- `Vybit` - Vybit notification interface
+All TypeScript interfaces for the Vybit platform are defined here as the single source of truth:
+
+**Configuration:** `VybitAPIConfig`, `OAuth2Config`
+
+**OAuth2:** `TokenResponse`, `AuthorizationUrlOptions`
+
+**Pagination:** `PaginationParams`, `SearchParams`
+
+**API Responses:** `StatusResponse`, `Profile`, `Meter`
+
+**Vybits:** `Vybit`, `VybitCreateParams`, `VybitUpdateParams`, `VybitTriggerParams`, `VybitTriggerResponse`
+
+**Subscriptions:** `VybitFollow`, `VybitFollowCreateParams`, `VybitFollowUpdateParams`, `PublicVybit`, `SubscriberSendParams`, `SubscriberSendResponse`
+
+**Resources:** `Sound`, `Log`, `Peep`, `PeepCreateParams`, `Reminder`, `ReminderCreateParams`, `ReminderUpdateParams`, `ReminderResponse`, `RemindersListResponse`
+
+**Common:** `ErrorResponse`, `DeleteResponse`
 
 ## License
 

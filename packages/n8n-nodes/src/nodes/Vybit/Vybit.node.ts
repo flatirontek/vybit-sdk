@@ -8,7 +8,6 @@ import type {
 } from 'n8n-workflow';
 
 import { VybitAPIClient } from '@vybit/api-sdk';
-import { VybitOAuth2Client } from '@vybit/oauth2-sdk';
 
 export class Vybit implements INodeType {
 	description: INodeTypeDescription = {
@@ -68,39 +67,22 @@ export class Vybit implements INodeType {
 					{
 						name: 'OAuth2',
 						value: 'oAuth2',
-						description: 'Connect your Vybit account (recommended for notifications)',
+						description: 'Connect your Vybit account via OAuth2',
 					},
 					{
 						name: 'API Key',
 						value: 'apiKey',
-						description: 'Developer API key (advanced features)',
+						description: 'Developer API key',
 					},
 				],
 				default: 'oAuth2',
 			},
-			// Action Type for OAuth2 - just notification
-			{
-				displayName: 'Action Type',
-				name: 'actionType',
-				type: 'hidden',
-				displayOptions: {
-					show: {
-						authentication: ['oAuth2'],
-					},
-				},
-				default: 'notification',
-			},
-			// Action Type for API Key - all options
+			// Resource selector - same for both auth types
 			{
 				displayName: 'Resource',
 				name: 'actionType',
 				type: 'options',
 				noDataExpression: true,
-				displayOptions: {
-					show: {
-						authentication: ['apiKey'],
-					},
-				},
 				options: [
 					{
 						name: 'Profile',
@@ -146,23 +128,6 @@ export class Vybit implements INodeType {
 					},
 				],
 				default: 'vybits',
-			},
-			// Notification operation (OAuth2) - simplified, just pick vybit
-			{
-				displayName: 'Vybit',
-				name: 'triggerKey',
-				type: 'options',
-				typeOptions: {
-					loadOptionsMethod: 'getVybits',
-				},
-				required: true,
-				displayOptions: {
-					show: {
-						actionType: ['notification'],
-					},
-				},
-				default: '',
-				description: 'Select which vybit to trigger',
 			},
 			// ===== PROFILE OPERATIONS =====
 			{
@@ -862,49 +827,6 @@ export class Vybit implements INodeType {
 					},
 				],
 			},
-			// Notification parameters (OAuth2)
-			{
-				displayName: 'Additional Fields',
-				name: 'additionalFields',
-				type: 'collection',
-				placeholder: 'Add Field',
-				displayOptions: {
-					show: {
-						actionType: ['notification'],
-					},
-				},
-				default: {},
-				options: [
-					{
-						displayName: 'Message',
-						name: 'message',
-						type: 'string',
-						default: '',
-						description: 'Optional message to display with notification',
-					},
-					{
-						displayName: 'Image URL',
-						name: 'image',
-						type: 'string',
-						default: '',
-						description: 'Optional image URL to attach to notification (must be a direct link to a JPG, PNG, or GIF image)',
-					},
-					{
-						displayName: 'Link URL',
-						name: 'link',
-						type: 'string',
-						default: '',
-						description: 'Optional redirect URL when notification is tapped',
-					},
-					{
-						displayName: 'Log',
-						name: 'log',
-						type: 'string',
-						default: '',
-						description: 'Optional content to append to the vybit log',
-					},
-				],
-			},
 			// Trigger parameters for Developer API
 			{
 				displayName: 'Additional Fields',
@@ -1078,79 +1000,53 @@ export class Vybit implements INodeType {
 		loadOptions: {
 			async getVybits(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				try {
-					// Check if credentials are available
-					let credentials;
-					try {
-						credentials = await this.getCredentials('vybitOAuth2Api');
-					} catch (error) {
-						// Credentials not selected yet
-						this.logger.info('No credentials selected', { error: (error as Error).message });
-						return [{
-							name: 'Please connect your Vybit account first',
-							value: '',
-							description: 'Click above to create or select a credential',
-						}];
-					}
+					// Determine which credential type is selected
+					const authType = this.getNodeParameter('authentication', 0) as string;
+					let client: VybitAPIClient;
 
-					// OAuth2 credentials store the token in oauthTokenData
-					const oauthData = (credentials as any)?.oauthTokenData;
-					const accessToken = oauthData?.access_token as string;
+					if (authType === 'oAuth2') {
+						let credentials;
+						try {
+							credentials = await this.getCredentials('vybitOAuth2Api');
+						} catch (error) {
+							return [{
+								name: 'Please connect your Vybit account first',
+								value: '',
+								description: 'Click above to create or select a credential',
+							}];
+						}
 
-					this.logger.info('OAuth token data', {
-						hasOauthData: !!oauthData,
-						hasAccessToken: !!accessToken,
-						tokenLength: accessToken?.length,
-					});
+						const oauthData = (credentials as any)?.oauthTokenData;
+						const accessToken = oauthData?.access_token as string;
 
-					// If no access token, user hasn't completed OAuth flow
-					if (!accessToken) {
-						this.logger.warn('No access token in credentials', {
-							credentialKeys: credentials ? Object.keys(credentials) : [],
-							oauthDataKeys: oauthData ? Object.keys(oauthData) : [],
+						if (!accessToken) {
+							return [{
+								name: 'Please complete OAuth connection',
+								value: '',
+								description: 'Click "Connect my account" to authorize',
+							}];
+						}
+
+						client = new VybitAPIClient({ accessToken });
+					} else {
+						let credentials;
+						try {
+							credentials = await this.getCredentials('vybitApi');
+						} catch (error) {
+							return [{
+								name: 'Please add your API key credential first',
+								value: '',
+								description: 'Click above to create or select a credential',
+							}];
+						}
+
+						client = new VybitAPIClient({
+							apiKey: credentials.apiKey as string,
+							baseUrl: credentials.baseUrl as string,
 						});
-						return [{
-							name: 'Please complete OAuth connection',
-							value: '',
-							description: 'Click "Connect my account" to authorize',
-						}];
 					}
 
-					this.logger.info('Loading vybits...', {
-						url: 'https://vybit.net/rest/vybit_list',
-						hasToken: !!accessToken,
-						tokenLength: accessToken?.length,
-					});
-
-					// Use n8n's HTTP request helper
-					const response = await this.helpers.httpRequest({
-						method: 'GET',
-						url: 'https://vybit.net/rest/vybit_list',
-						headers: {
-							'Authorization': `Bearer ${accessToken}`,
-							'Content-Type': 'application/json',
-						},
-						json: true,
-						returnFullResponse: false,
-					});
-
-					this.logger.info('Vybit API response received', {
-						isArray: Array.isArray(response),
-						type: typeof response,
-						keys: response ? Object.keys(response).slice(0, 5) : [],
-						length: Array.isArray(response) ? response.length : 'N/A',
-					});
-
-					// Check if data is an array or wrapped in an object
-					const vybits = Array.isArray(response) ? response : (response.vybits || response.data || []);
-
-					this.logger.info('Processed vybits', {
-						count: vybits.length,
-						firstVybit: vybits[0] ? {
-							name: vybits[0].name,
-							hasTriggerKey: !!vybits[0].triggerKey,
-							keys: Object.keys(vybits[0]),
-						} : null,
-					});
+					const vybits = await client.listVybits();
 
 					if (!Array.isArray(vybits) || vybits.length === 0) {
 						return [{
@@ -1162,27 +1058,20 @@ export class Vybit implements INodeType {
 
 					return vybits
 						.filter((vybit: any) => {
-							const key = vybit.triggerKey || vybit.trigger_key || vybit.key;
+							const key = vybit.triggerKey || vybit.key;
 							return key && key.length > 0;
 						})
 						.map((vybit: any) => ({
-							name: vybit.name || vybit.title || 'Unnamed Vybit',
-							value: vybit.triggerKey || vybit.trigger_key || vybit.key,
+							name: vybit.name || 'Unnamed Vybit',
+							value: vybit.triggerKey || vybit.key,
 							description: vybit.description || undefined,
 						}));
 				} catch (error: any) {
-					this.logger.error('Error in getVybits', {
-						message: error.message,
-						stack: error.stack,
-						name: error.name,
-					});
-
-					// Provide helpful error messages
 					if (error.message?.includes('401')) {
 						return [{
 							name: 'Authorization failed - please reconnect',
 							value: '',
-							description: 'Your token may have expired',
+							description: 'Your credentials may have expired',
 						}];
 					}
 
@@ -1196,61 +1085,38 @@ export class Vybit implements INodeType {
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
 		const actionType = this.getNodeParameter('actionType', 0) as string;
+		const authType = this.getNodeParameter('authentication', 0) as string;
 
-		let client: VybitAPIClient | undefined;
+		// Initialize API client with either credential type
+		let client: VybitAPIClient;
 
-		// Initialize API client only for Developer API operations
-		if (actionType !== 'notification') {
+		if (authType === 'oAuth2') {
+			const credentials = await this.getCredentials('vybitOAuth2Api');
+			const oauthData = (credentials as any)?.oauthTokenData;
+			const accessToken = oauthData?.access_token as string;
+			client = new VybitAPIClient({ accessToken });
+		} else {
 			const credentials = await this.getCredentials('vybitApi');
 			client = new VybitAPIClient({
 				apiKey: credentials.apiKey as string,
-				baseURL: credentials.baseUrl as string,
+				baseUrl: credentials.baseUrl as string,
 			});
 		}
 
 		// Process each input item
 		for (let i = 0; i < items.length; i++) {
 			try {
-				if (actionType === 'notification') {
-					// OAuth2 notification - direct HTTP request
-					const credentials = await this.getCredentials('vybitOAuth2Api');
-					const oauthData = (credentials as any)?.oauthTokenData;
-					const accessToken = oauthData?.access_token as string;
-
-					const triggerKey = this.getNodeParameter('triggerKey', i) as string;
-					const additionalFields = this.getNodeParameter('additionalFields', i, {}) as any;
-
-					// Build request body with only provided fields
-					const body: any = {};
-					if (additionalFields.message) body.message = additionalFields.message;
-					if (additionalFields.image) body.imageUrl = additionalFields.image;
-					if (additionalFields.link) body.linkUrl = additionalFields.link;
-					if (additionalFields.log !== undefined) body.log = additionalFields.log;
-
-					// Make direct HTTP request to trigger the vybit
-					const result = await this.helpers.httpRequest({
-						method: 'POST',
-						url: `https://vybit.net/fire/${triggerKey}`,
-						headers: {
-							'Authorization': `Bearer ${accessToken}`,
-							'Content-Type': 'application/json',
-						},
-						body,
-						json: true,
-					});
-
-					returnData.push({ json: result });
-				} else if (actionType === 'profile') {
+				if (actionType === 'profile') {
 					const apiOperation = this.getNodeParameter('apiOperation', i) as string;
 
 					if (apiOperation === 'getProfile') {
-						const profile = await (client as VybitAPIClient).getProfile();
+						const profile = await client.getProfile();
 						returnData.push({ json: profile });
 					} else if (apiOperation === 'getMeter') {
-						const meter = await (client as VybitAPIClient).getMeter();
+						const meter = await client.getMeter();
 						returnData.push({ json: meter });
 					} else if (apiOperation === 'getStatus') {
-						const status = await (client as VybitAPIClient).getStatus();
+						const status = await client.getStatus();
 						returnData.push({ json: status });
 					}
 				} else if (actionType === 'vybits') {
@@ -1258,7 +1124,7 @@ export class Vybit implements INodeType {
 
 					if (apiOperation === 'list') {
 						const options = this.getNodeParameter('options', i, {}) as any;
-						const vybits = await (client as VybitAPIClient).listVybits({
+						const vybits = await client.listVybits({
 							search: options.search,
 							limit: options.limit,
 							offset: options.offset,
@@ -1266,25 +1132,25 @@ export class Vybit implements INodeType {
 						returnData.push({ json: vybits });
 					} else if (apiOperation === 'get') {
 						const vybitKey = this.getNodeParameter('vybitKey', i) as string;
-						const vybit = await (client as VybitAPIClient).getVybit(vybitKey);
+						const vybit = await client.getVybit(vybitKey);
 						returnData.push({ json: vybit });
 					} else if (apiOperation === 'create') {
 						const name = this.getNodeParameter('vybitName', i) as string;
-						const vybit = await (client as VybitAPIClient).createVybit({ name });
+						const vybit = await client.createVybit({ name });
 						returnData.push({ json: vybit });
 					} else if (apiOperation === 'update') {
 						const vybitKey = this.getNodeParameter('vybitKey', i) as string;
 						const updateFields = this.getNodeParameter('updateFields', i, {}) as any;
-						const vybit = await (client as VybitAPIClient).updateVybit(vybitKey, updateFields);
+						const vybit = await client.updateVybit(vybitKey, updateFields);
 						returnData.push({ json: vybit });
 					} else if (apiOperation === 'delete') {
 						const vybitKey = this.getNodeParameter('vybitKey', i) as string;
-						await (client as VybitAPIClient).deleteVybit(vybitKey);
+						await client.deleteVybit(vybitKey);
 						returnData.push({ json: { success: true, vybitKey } });
 					} else if (apiOperation === 'trigger') {
 						const vybitKey = this.getNodeParameter('vybitKey', i) as string;
 						const additionalFields = this.getNodeParameter('additionalFields', i, {}) as any;
-						const result = await (client as VybitAPIClient).triggerVybit(vybitKey, {
+						const result = await client.triggerVybit(vybitKey, {
 							message: additionalFields.message,
 							image: additionalFields.image,
 							link: additionalFields.link,
@@ -1297,7 +1163,7 @@ export class Vybit implements INodeType {
 
 					if (apiOperation === 'listPublic') {
 						const options = this.getNodeParameter('options', i, {}) as any;
-						const vybits = await (client as VybitAPIClient).listPublicSubscriptions({
+						const vybits = await client.listPublicSubscriptions({
 							search: options.search,
 							limit: options.limit,
 							offset: options.offset,
@@ -1305,15 +1171,15 @@ export class Vybit implements INodeType {
 						returnData.push({ json: vybits });
 					} else if (apiOperation === 'getPublic') {
 						const subscriptionKey = this.getNodeParameter('subscriptionKey', i) as string;
-						const vybit = await (client as VybitAPIClient).getPublicSubscription(subscriptionKey);
+						const vybit = await client.getPublicSubscription(subscriptionKey);
 						returnData.push({ json: vybit });
 					} else if (apiOperation === 'subscribe') {
 						const subscriptionKey = this.getNodeParameter('subscriptionKey', i) as string;
-						const result = await (client as VybitAPIClient).subscribe(subscriptionKey);
+						const result = await client.subscribe(subscriptionKey);
 						returnData.push({ json: result });
 					} else if (apiOperation === 'listSubscriptions') {
 						const options = this.getNodeParameter('options', i, {}) as any;
-						const subscriptions = await (client as VybitAPIClient).listSubscriptions({
+						const subscriptions = await client.listSubscriptions({
 							search: options.search,
 							limit: options.limit,
 							offset: options.offset,
@@ -1321,28 +1187,28 @@ export class Vybit implements INodeType {
 						returnData.push({ json: subscriptions });
 					} else if (apiOperation === 'getSubscription') {
 						const followingKey = this.getNodeParameter('followingKey', i) as string;
-						const subscription = await (client as VybitAPIClient).getSubscription(followingKey);
+						const subscription = await client.getSubscription(followingKey);
 						returnData.push({ json: subscription });
 					} else if (apiOperation === 'updateSubscription') {
 						const followingKey = this.getNodeParameter('followingKey', i) as string;
 						const updateFields = this.getNodeParameter('updateFields', i, {}) as any;
-						const subscription = await (client as VybitAPIClient).updateSubscription(followingKey, updateFields);
+						const subscription = await client.updateSubscription(followingKey, updateFields);
 						returnData.push({ json: subscription });
 					} else if (apiOperation === 'unsubscribe') {
 						const followingKey = this.getNodeParameter('followingKey', i) as string;
-						await (client as VybitAPIClient).unsubscribe(followingKey);
+						await client.unsubscribe(followingKey);
 						returnData.push({ json: { success: true, followingKey } });
 					} else if (apiOperation === 'sendToOwner') {
 						const followingKey = this.getNodeParameter('followingKey', i) as string;
 						const additionalFields = this.getNodeParameter('additionalFields', i, {}) as any;
-						const result = await (client as VybitAPIClient).sendToOwner(followingKey, {
+						const result = await client.sendToOwner(followingKey, {
 							message: additionalFields.message,
 						});
 						returnData.push({ json: result });
 					} else if (apiOperation === 'sendToGroup') {
 						const followingKey = this.getNodeParameter('followingKey', i) as string;
 						const additionalFields = this.getNodeParameter('additionalFields', i, {}) as any;
-						const result = await (client as VybitAPIClient).sendToGroup(followingKey, {
+						const result = await client.sendToGroup(followingKey, {
 							message: additionalFields.message,
 						});
 						returnData.push({ json: result });
@@ -1352,7 +1218,7 @@ export class Vybit implements INodeType {
 
 					if (apiOperation === 'search') {
 						const options = this.getNodeParameter('options', i, {}) as any;
-						const sounds = await (client as VybitAPIClient).searchSounds({
+						const sounds = await client.searchSounds({
 							search: options.search,
 							limit: options.limit,
 							offset: options.offset,
@@ -1360,7 +1226,7 @@ export class Vybit implements INodeType {
 						returnData.push({ json: sounds });
 					} else if (apiOperation === 'get') {
 						const soundKey = this.getNodeParameter('soundKey', i) as string;
-						const sound = await (client as VybitAPIClient).getSound(soundKey);
+						const sound = await client.getSound(soundKey);
 						returnData.push({ json: sound });
 					}
 				} else if (actionType === 'logs') {
@@ -1368,7 +1234,7 @@ export class Vybit implements INodeType {
 
 					if (apiOperation === 'listAll') {
 						const options = this.getNodeParameter('options', i, {}) as any;
-						const logs = await (client as VybitAPIClient).listLogs({
+						const logs = await client.listLogs({
 						search: options.search,
 							limit: options.limit,
 							offset: options.offset,
@@ -1376,12 +1242,12 @@ export class Vybit implements INodeType {
 						returnData.push({ json: logs });
 					} else if (apiOperation === 'get') {
 						const logKey = this.getNodeParameter('logKey', i) as string;
-						const log = await (client as VybitAPIClient).getLog(logKey);
+						const log = await client.getLog(logKey);
 						returnData.push({ json: log });
 					} else if (apiOperation === 'listByVybit') {
 						const vybitKey = this.getNodeParameter('vybitKey', i) as string;
 						const options = this.getNodeParameter('options', i, {}) as any;
-						const logs = await (client as VybitAPIClient).listLogsByVybit(vybitKey, {
+						const logs = await client.listLogsByVybit(vybitKey, {
 						search: options.search,
 							limit: options.limit,
 							offset: options.offset,
@@ -1390,7 +1256,7 @@ export class Vybit implements INodeType {
 					} else if (apiOperation === 'listBySubscription') {
 						const followingKey = this.getNodeParameter('followingKey', i) as string;
 						const options = this.getNodeParameter('options', i, {}) as any;
-						const logs = await (client as VybitAPIClient).listLogsBySubscription(followingKey, {
+						const logs = await client.listLogsBySubscription(followingKey, {
 						search: options.search,
 							limit: options.limit,
 							offset: options.offset,
@@ -1402,7 +1268,7 @@ export class Vybit implements INodeType {
 
 					if (apiOperation === 'listAll') {
 						const options = this.getNodeParameter('options', i, {}) as any;
-						const peeps = await (client as VybitAPIClient).listPeeps({
+						const peeps = await client.listPeeps({
 						search: options.search,
 							limit: options.limit,
 							offset: options.offset,
@@ -1411,7 +1277,7 @@ export class Vybit implements INodeType {
 					} else if (apiOperation === 'listByVybit') {
 						const vybitKey = this.getNodeParameter('vybitKey', i) as string;
 						const options = this.getNodeParameter('options', i, {}) as any;
-						const peeps = await (client as VybitAPIClient).listPeepsByVybit(vybitKey, {
+						const peeps = await client.listPeepsByVybit(vybitKey, {
 						search: options.search,
 							limit: options.limit,
 							offset: options.offset,
@@ -1419,15 +1285,15 @@ export class Vybit implements INodeType {
 						returnData.push({ json: peeps });
 					} else if (apiOperation === 'create') {
 						const peepKey = this.getNodeParameter('peepKey', i) as string;
-						const result = await (client as VybitAPIClient).createPeep(peepKey);
+						const result = await client.createPeep(peepKey);
 						returnData.push({ json: result });
 					} else if (apiOperation === 'get') {
 						const peepKey = this.getNodeParameter('peepKey', i) as string;
-						const peep = await (client as VybitAPIClient).getPeep(peepKey);
+						const peep = await client.getPeep(peepKey);
 						returnData.push({ json: peep });
 					} else if (apiOperation === 'delete') {
 						const peepKey = this.getNodeParameter('peepKey', i) as string;
-						await (client as VybitAPIClient).deletePeep(peepKey);
+						await client.deletePeep(peepKey);
 						returnData.push({ json: { success: true, peepKey } });
 					}
 				} else if (actionType === 'reminders') {
@@ -1435,7 +1301,7 @@ export class Vybit implements INodeType {
 					const vybitKey = this.getNodeParameter('vybitKey', i) as string;
 
 					if (apiOperation === 'list') {
-						const reminders = await (client as VybitAPIClient).listReminders(vybitKey);
+						const reminders = await client.listReminders(vybitKey);
 						returnData.push({ json: reminders });
 					} else if (apiOperation === 'create') {
 						const cron = this.getNodeParameter('cron', i) as string;
@@ -1446,7 +1312,7 @@ export class Vybit implements INodeType {
 						if (optionalFields.imageUrl) params.imageUrl = optionalFields.imageUrl;
 						if (optionalFields.linkUrl) params.linkUrl = optionalFields.linkUrl;
 						if (optionalFields.log) params.log = optionalFields.log;
-						const result = await (client as VybitAPIClient).createReminder(vybitKey, params);
+						const result = await client.createReminder(vybitKey, params);
 						returnData.push({ json: result });
 					} else if (apiOperation === 'update') {
 						const reminderId = this.getNodeParameter('reminderId', i) as string;
@@ -1458,11 +1324,11 @@ export class Vybit implements INodeType {
 						if (optionalFields.imageUrl) params.imageUrl = optionalFields.imageUrl;
 						if (optionalFields.linkUrl) params.linkUrl = optionalFields.linkUrl;
 						if (optionalFields.log) params.log = optionalFields.log;
-						const result = await (client as VybitAPIClient).updateReminder(vybitKey, reminderId, params);
+						const result = await client.updateReminder(vybitKey, reminderId, params);
 						returnData.push({ json: result });
 					} else if (apiOperation === 'delete') {
 						const reminderId = this.getNodeParameter('reminderId', i) as string;
-						await (client as VybitAPIClient).deleteReminder(vybitKey, reminderId);
+						await client.deleteReminder(vybitKey, reminderId);
 						returnData.push({ json: { success: true, vybitKey, reminderId } });
 					}
 				}

@@ -1,6 +1,6 @@
 {
   "name": "@vybit/oauth2-sdk",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "OAuth 2.0 SDK for Vybit authentication and authorization",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -39,7 +39,7 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "@vybit/core": "^1.1.0"
+    "@vybit/core": "^1.2.0"
   },
   "peerDependencies": {
     "node-fetch": "^3.0.0"

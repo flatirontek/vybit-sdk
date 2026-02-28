@@ -84,8 +84,8 @@ export class VybitOAuth2Api implements ICredentialType {
 
 	test: ICredentialTestRequest = {
 		request: {
-			baseURL: 'https://app.vybit.net',
-			url: '/service/test',
+			baseURL: 'https://api.vybit.net/v1',
+			url: '/status',
 			method: 'GET',
 		},
 	};

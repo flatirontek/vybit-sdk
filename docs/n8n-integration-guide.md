@@ -19,7 +19,7 @@ The Vybit n8n community node enables you to integrate personalized audio notific
 ### Key Features
 
 - 🔐 **Dual Authentication**: Choose between API Key (personal) or OAuth2 (multi-user)
-- 🔔 **29 Operations**: Full API coverage across 6 resource types
+- 🔔 **33 Operations**: Full API coverage across 7 resource types
 - 📊 **Rich Data**: Access profiles, usage metrics, logs, and more
 - 🎵 **Sound Management**: Search and integrate custom audio
 - 👥 **Subscription System**: Discover, subscribe, and share vybits
@@ -388,7 +388,7 @@ ELSE
 **Solutions:**
 - Verify API key is correct at [developer.vybit.net](https://developer.vybit.net)
 - Check Environment setting matches your API key
-- Ensure n8n can reach `vybit.net` (firewall/proxy)
+- Ensure n8n can reach `api.vybit.net` (firewall/proxy)
 - Try "Check API Status" operation to verify connectivity
 
 ### OAuth2 Issues
@@ -418,7 +418,7 @@ ELSE
 **Solutions:**
 - Check authentication type (some operations require API Key)
 - Verify you're using latest version: `npm update @vybit/n8n-nodes-vybit`
-- OAuth2 only supports: List Vybits, Trigger Vybit
+- OAuth2 supports all operations (uses the same Developer API with Bearer token auth)
 
 ### Execution Errors
 

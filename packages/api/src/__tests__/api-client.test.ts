@@ -6,7 +6,7 @@
  */
 
 import { VybitAPIClient } from '../api-client';
-import { VybitAPIError, VybitAuthError } from '@vybit/core';
+import { VybitAPIError, VybitAuthError, VybitValidationError } from '@vybit/core';
 
 // Mock fetch globally
 global.fetch = jest.fn();
@@ -26,11 +26,32 @@ describe('VybitAPIClient Unit Tests', () => {
       expect(testClient).toBeDefined();
     });
 
-    test('should fall back to environment variable', () => {
+    test('should use provided access token', () => {
+      const testClient = new VybitAPIClient({ accessToken: 'test-token' });
+      expect(testClient).toBeDefined();
+    });
+
+    test('should fall back to VYBIT_API_KEY environment variable', () => {
       process.env.VYBIT_API_KEY = 'env-key';
       const testClient = new VybitAPIClient();
       expect(testClient).toBeDefined();
       delete process.env.VYBIT_API_KEY;
+    });
+
+    test('should fall back to VYBIT_ACCESS_TOKEN environment variable', () => {
+      process.env.VYBIT_ACCESS_TOKEN = 'env-token';
+      const testClient = new VybitAPIClient();
+      expect(testClient).toBeDefined();
+      delete process.env.VYBIT_ACCESS_TOKEN;
+    });
+
+    test('should prefer apiKey over accessToken', () => {
+      const testClient = new VybitAPIClient({ apiKey: 'key', accessToken: 'token' });
+      expect(testClient).toBeDefined();
+    });
+
+    test('should throw when no credentials provided', () => {
+      expect(() => new VybitAPIClient({})).toThrow(VybitValidationError);
     });
 
     test('should use custom baseUrl when provided', () => {
@@ -43,7 +64,7 @@ describe('VybitAPIClient Unit Tests', () => {
   });
 
   describe('getStatus', () => {
-    test('should return status response', async () => {
+    test('should return status response with API key header', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
@@ -61,6 +82,30 @@ describe('VybitAPIClient Unit Tests', () => {
           }),
         })
       );
+    });
+
+    test('should send Bearer token header when using accessToken', async () => {
+      const tokenClient = new VybitAPIClient({ accessToken: 'test-oauth-token' });
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ status: 'up' }),
+      } as Response);
+
+      await tokenClient.getStatus();
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.vybit.net/v1/status',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'Authorization': 'Bearer test-oauth-token',
+          }),
+        })
+      );
+      // Should not have X-API-Key header
+      const callHeaders = (mockFetch.mock.calls[0][1] as any).headers;
+      expect(callHeaders).not.toHaveProperty('X-API-Key');
     });
   });
 

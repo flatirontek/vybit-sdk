@@ -26,8 +26,9 @@ This MCP server provides AI assistants with **full parity** with the Vybit Devel
 ## Prerequisites
 
 1. Sign up at [developer.vybit.net](https://developer.vybit.net)
-2. Navigate to the Developer API section, click "</> DEV" then "API Configuration"
-3. Copy your API key
+2. Get your credentials (either option):
+   - **API Key**: Navigate to the Developer API section, click "</> DEV" then "API Configuration"
+   - **OAuth2 Token**: Complete the OAuth2 flow to obtain an access token
 
 ## Installation
 
@@ -43,7 +44,7 @@ Install the package globally:
 npm install -g @vybit/mcp-server
 ```
 
-Add to your Claude Desktop configuration file:
+Add to your Claude Desktop configuration file (use either `VYBIT_API_KEY` or `VYBIT_ACCESS_TOKEN`):
 
 **MacOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
@@ -66,7 +67,7 @@ Restart Claude Desktop to load the server.
 
 ### Claude Code
 
-Add to the current project:
+Add to the current project (use either `VYBIT_API_KEY` or `VYBIT_ACCESS_TOKEN`):
 
 ```bash
 claude mcp add vybit -e VYBIT_API_KEY=your-api-key-here -- npx -y @vybit/mcp-server
@@ -96,7 +97,7 @@ You can also add manually to `.claude/mcp.json` in your project:
 
 ### Other MCP Clients (Cline, Zed, Continue.dev, etc.)
 
-Install globally with `npm install -g @vybit/mcp-server`, then configure your client to run `npx -y @vybit/mcp-server` with `VYBIT_API_KEY` set in the environment.
+Install globally with `npm install -g @vybit/mcp-server`, then configure your client to run `npx -y @vybit/mcp-server` with either `VYBIT_API_KEY` or `VYBIT_ACCESS_TOKEN` set in the environment.
 
 ### Troubleshooting: nvm Users
 
@@ -126,7 +127,7 @@ Then use those paths in your config:
 }
 ```
 
-Node 18+ is required.
+Node 18+ is required. Use either `VYBIT_API_KEY` or `VYBIT_ACCESS_TOKEN` in the `env` block.
 
 ## Usage
 
@@ -262,7 +263,8 @@ The MCP server exposes **29 tools** to AI assistants, providing full parity with
 
 ## Environment Variables
 
-- `VYBIT_API_KEY` (required) - Your Vybit Developer API key
+- `VYBIT_API_KEY` - Your Vybit Developer API key (one of `VYBIT_API_KEY` or `VYBIT_ACCESS_TOKEN` is required)
+- `VYBIT_ACCESS_TOKEN` - OAuth2 access token (alternative to API key)
 - `VYBIT_API_URL` (optional) - Custom API base URL (defaults to `https://api.vybit.net/v1`).
 
 ## Development

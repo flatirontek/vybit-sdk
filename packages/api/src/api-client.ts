@@ -3,8 +3,6 @@ import {
   VybitAPIError,
   VybitAuthError,
   VybitValidationError,
-} from '@vybit/core';
-import {
   VybitAPIConfig,
   PaginationParams,
   SearchParams,
@@ -29,7 +27,7 @@ import {
   ReminderUpdateParams,
   ReminderResponse,
   RemindersListResponse,
-} from './types';
+} from '@vybit/core';
 
 /**
  * Vybit Developer API client
@@ -44,7 +42,12 @@ import {
  *   apiKey: 'your-api-key-from-developer-portal'
  * });
  *
- * // Using VYBIT_API_KEY environment variable
+ * // With OAuth2 access token
+ * const client = new VybitAPIClient({
+ *   accessToken: 'your-oauth2-access-token'
+ * });
+ *
+ * // Using VYBIT_API_KEY or VYBIT_ACCESS_TOKEN environment variable
  * const client = new VybitAPIClient();
  *
  * // Get API status
@@ -62,25 +65,35 @@ import {
  * ```
  */
 export class VybitAPIClient {
-  private apiKey: string;
+  private authType: 'apiKey' | 'accessToken';
+  private authValue: string;
   private baseUrl: string;
 
   /**
    * Creates a new Vybit Developer API client
-   * @param config - API configuration. If apiKey is not provided, falls back to VYBIT_API_KEY environment variable
-   * @throws {VybitValidationError} When API key is not provided and VYBIT_API_KEY environment variable is not set
+   * @param config - API configuration. Supports API key or OAuth2 access token authentication.
+   *   Precedence: explicit apiKey > explicit accessToken > VYBIT_API_KEY env var > VYBIT_ACCESS_TOKEN env var
+   * @throws {VybitValidationError} When no credentials are provided
    */
   constructor(config: VybitAPIConfig = {}) {
-    // Explicit apiKey takes precedence, then fall back to env var
-    const apiKey = config.apiKey || process.env.VYBIT_API_KEY;
-
-    if (!apiKey) {
+    if (config.apiKey) {
+      this.authType = 'apiKey';
+      this.authValue = config.apiKey;
+    } else if (config.accessToken) {
+      this.authType = 'accessToken';
+      this.authValue = config.accessToken;
+    } else if (process.env.VYBIT_API_KEY) {
+      this.authType = 'apiKey';
+      this.authValue = process.env.VYBIT_API_KEY;
+    } else if (process.env.VYBIT_ACCESS_TOKEN) {
+      this.authType = 'accessToken';
+      this.authValue = process.env.VYBIT_ACCESS_TOKEN;
+    } else {
       throw new VybitValidationError(
-        'API key is required. Provide it in the config or set VYBIT_API_KEY environment variable'
+        'Authentication required. Provide apiKey or accessToken in config, or set VYBIT_API_KEY or VYBIT_ACCESS_TOKEN environment variable'
       );
     }
 
-    this.apiKey = apiKey;
     this.baseUrl = config.baseUrl || getApiBaseUrl();
   }
 
@@ -89,8 +102,11 @@ export class VybitAPIClient {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
+    const authHeader: Record<string, string> = this.authType === 'apiKey'
+      ? { 'X-API-Key': this.authValue }
+      : { 'Authorization': `Bearer ${this.authValue}` };
     const headers: Record<string, string> = {
-      'X-API-Key': this.apiKey,
+      ...authHeader,
       ...( options.headers as Record<string, string>),
     };
 
@@ -106,7 +122,7 @@ export class VybitAPIClient {
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new VybitAuthError('Invalid or missing API key', response.status);
+          throw new VybitAuthError('Invalid or missing credentials', response.status);
         }
         if (response.status === 429) {
           throw new VybitAPIError('Rate limit exceeded', response.status);

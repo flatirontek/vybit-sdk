@@ -163,7 +163,7 @@ Validates the Vybit n8n node configuration against a running n8n instance.
    ```
 
 **What it tests**:
-- All 29 operations across 6 resources
+- All 33 operations across 7 resources
 - Node configuration and parameters
 - Credential linking
 - Required fields validation
@@ -178,7 +178,12 @@ Validates the Vybit n8n node configuration against a running n8n instance.
 Tests require valid API credentials (skipped in CI when not available).
 
 ```bash
+# With API key
 export VYBIT_API_KEY='your-api-key-here'
+npm test -w @vybit/mcp-server
+
+# Or with OAuth2 access token
+export VYBIT_ACCESS_TOKEN='your-token-here'
 npm test -w @vybit/mcp-server
 ```
 

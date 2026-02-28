@@ -16,18 +16,19 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { VybitAPIClient } from '@vybit/api-sdk';
 
-// Get API key and optional base URL from environment
+// Get credentials and optional base URL from environment
 const API_KEY = process.env.VYBIT_API_KEY;
+const ACCESS_TOKEN = process.env.VYBIT_ACCESS_TOKEN;
 const API_URL = process.env.VYBIT_API_URL;
 
-if (!API_KEY) {
-  console.error('Error: VYBIT_API_KEY environment variable is required');
+if (!API_KEY && !ACCESS_TOKEN) {
+  console.error('Error: VYBIT_API_KEY or VYBIT_ACCESS_TOKEN environment variable is required');
   process.exit(1);
 }
 
-// Initialize Vybit API client
+// Initialize Vybit API client with API key or OAuth2 access token
 const vybitClient = new VybitAPIClient({
-  apiKey: API_KEY,
+  ...(API_KEY ? { apiKey: API_KEY } : { accessToken: ACCESS_TOKEN }),
   ...(API_URL && { baseUrl: API_URL })
 });
 

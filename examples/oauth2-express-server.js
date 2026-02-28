@@ -1,19 +1,23 @@
 /**
  * Express.js OAuth 2.0 Integration Example
- * 
- * This example shows how to integrate the Vybit OAuth2 SDK 
+ *
+ * This example shows how to integrate the Vybit OAuth2 SDK
  * into an Express.js web application, mirroring the exact
  * functionality from the developer portal test buttons.
+ *
+ * The OAuth2 SDK handles the authorization flow (obtaining a token).
+ * Once authenticated, VybitAPIClient is used for all API access.
  */
 
 const express = require('express');
 const { VybitOAuth2Client } = require('@vybit/oauth2-sdk');
+const { VybitAPIClient } = require('@vybit/api-sdk');
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Initialize OAuth2 client
+// Initialize OAuth2 client for the authorization flow
 const oauthClient = new VybitOAuth2Client({
   clientId: process.env.VYBIT_CLIENT_ID || 'your-client-id',
   clientSecret: process.env.VYBIT_CLIENT_SECRET || 'your-client-secret',
@@ -92,8 +96,9 @@ app.get('/dashboard', async (req, res) => {
   }
   
   try {
-    // Step 5: Get user's vybit list
-    const vybits = await oauthClient.getVybitList(session.accessToken);
+    // Step 5: Use VybitAPIClient with the OAuth2 token for API access
+    const api = new VybitAPIClient({ accessToken: session.accessToken });
+    const vybits = await api.listVybits();
     console.log('📋 Retrieved', vybits.length, 'vybits for user');
     
     // Simple HTML dashboard
@@ -248,13 +253,10 @@ app.post('/api/trigger', async (req, res) => {
   
   try {
     console.log('🚀 Triggering vybit:', triggerKey, 'with payload:', payload);
-    
-    // Step 6: Send vybit notification
-    const result = await oauthClient.sendVybitNotification(
-      triggerKey, 
-      payload, 
-      session.accessToken
-    );
+
+    // Step 6: Use VybitAPIClient with the OAuth2 token to trigger
+    const api = new VybitAPIClient({ accessToken: session.accessToken });
+    const result = await api.triggerVybit(triggerKey, payload);
     
     console.log('✅ Vybit triggered successfully:', result);
     res.json({ success: true, data: result });

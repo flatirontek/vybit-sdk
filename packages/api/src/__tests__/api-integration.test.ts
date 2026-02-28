@@ -11,12 +11,13 @@
 import { VybitAPIClient } from '../api-client';
 
 const API_KEY = process.env.VYBIT_API_KEY;
-const hasApiKey = !!API_KEY && API_KEY !== 'your-api-key-here';
+const ACCESS_TOKEN = process.env.VYBIT_ACCESS_TOKEN;
+const hasCredentials = (!!API_KEY && API_KEY !== 'your-api-key-here') || (!!ACCESS_TOKEN && ACCESS_TOKEN !== 'your-token-here');
 
-// Skip all integration tests if no API key
-const describeWithApiKey = hasApiKey ? describe : describe.skip;
+// Skip all integration tests if no credentials
+const describeWithCredentials = hasCredentials ? describe : describe.skip;
 
-describeWithApiKey('API Client Integration Tests (Real API)', () => {
+describeWithCredentials('API Client Integration Tests (Real API)', () => {
   let client: VybitAPIClient;
   const createdResources: {
     vybits: string[];
@@ -34,18 +35,48 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
   // Helper to generate unique test names to avoid duplicate_name errors
   const testName = (label: string) => `API Test - ${label} ${Date.now()}`;
 
-  beforeAll(() => {
-    if (!hasApiKey) return;
+  // Helper to generate a future cron expression (monthsAhead from now)
+  const futureCron = (monthsAhead: number, minute = 0, hour = 0) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + monthsAhead);
+    const day = Math.min(d.getDate(), 28);
+    return { cron: `${minute} ${hour} ${day} ${d.getMonth() + 1} *`, year: d.getFullYear() };
+  };
+
+  beforeAll(async () => {
+    if (!hasCredentials) return;
 
     const baseUrl = process.env.VYBIT_API_URL || 'https://api.vybit.net/v1';
+    const authType = API_KEY ? 'API Key' : 'Access Token';
     client = new VybitAPIClient({
-      apiKey: API_KEY,
+      ...(API_KEY ? { apiKey: API_KEY } : { accessToken: ACCESS_TOKEN }),
       baseUrl: baseUrl
     });
-    console.log('🔑 Running API integration tests with real API key');
+    console.log(`🔑 Running API integration tests with ${authType}`);
     console.log(`🌐 API URL: ${baseUrl}`);
     console.log('⏱️  Adding delays between requests to avoid rate limiting...');
-  });
+
+    // Wait for any rate limiting from prior test suites to clear
+    await delay(2000);
+
+    // Free up capacity by deleting old test vybits to avoid tier limits
+    console.log('🧹 Pre-cleaning old test vybits to free tier capacity...');
+    try {
+      const existing = await client.listVybits({ limit: 50 });
+      const testVybits = existing.filter((v: any) =>
+        v.name.startsWith('API Test -') || v.name.startsWith('MCP Test -')
+      );
+      for (const v of testVybits) {
+        try {
+          await client.deleteVybit(v.key);
+          await delay(200);
+        } catch { /* ignore */ }
+      }
+      if (testVybits.length > 0) {
+        console.log(`  ✅ Deleted ${testVybits.length} old test vybits`);
+      }
+    } catch { /* ignore */ }
+  }, 30000);
 
   beforeEach(async () => {
     // Add 200ms delay before each test to avoid rate limiting (10 req/sec = 100ms minimum)
@@ -53,7 +84,7 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
   });
 
   afterAll(async () => {
-    if (!hasApiKey || !client) return;
+    if (!hasCredentials || !client) return;
 
     // Cleanup any created resources
     console.log('🧹 Cleaning up test resources...');
@@ -263,7 +294,7 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
     let testVybit: any;
 
     beforeAll(async () => {
-      if (!hasApiKey) return;
+      if (!hasCredentials) return;
 
       testVybit = await client.createVybit({
         name: testName('Trigger'),
@@ -327,7 +358,7 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
     let reminderVybit: any;
 
     beforeAll(async () => {
-      if (!hasApiKey) return;
+      if (!hasCredentials) return;
 
       reminderVybit = await client.createVybit({
         name: testName('Reminders'),
@@ -339,53 +370,44 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
     }, 15000);
 
     test('createReminder should create a reminder', async () => {
+      const fc = futureCron(4);
       const result = await client.createReminder(reminderVybit.key, {
-        cron: '0 0 1 1 *',
+        cron: fc.cron,
         timeZone: 'America/Denver',
+        year: fc.year,
         message: 'Integration test reminder',
       });
 
       expect(result.result).toBe(1);
       expect(result.reminder).toHaveProperty('id');
-      expect(result.reminder.cron).toBe('0 0 1 1 *');
+      expect(result.reminder.cron).toBe(fc.cron);
       expect(result.reminder.timeZone).toBe('America/Denver');
       expect(result.reminder.message).toBe('Integration test reminder');
     });
 
     test('createReminder with year should include year in response', async () => {
-      // Use a date 6 months from now to stay within the 1-year limit
-      const future = new Date();
-      future.setMonth(future.getMonth() + 6);
-      const fYear = future.getFullYear();
-      const fMonth = future.getMonth() + 1;
-      const fDay = Math.min(future.getDate(), 28); // avoid month-end edge cases
-      const cron = `0 12 ${fDay} ${fMonth} *`;
+      const fc = futureCron(6, 0, 12);
 
       const result = await client.createReminder(reminderVybit.key, {
-        cron,
+        cron: fc.cron,
         timeZone: 'UTC',
-        year: fYear,
+        year: fc.year,
         message: 'Future year reminder',
       });
 
       expect(result.result).toBe(1);
       expect(result.reminder).toHaveProperty('year');
-      expect(result.reminder.year).toBe(fYear);
-      expect(result.reminder.cron).toBe(cron);
+      expect(result.reminder.year).toBe(fc.year);
+      expect(result.reminder.cron).toBe(fc.cron);
     });
 
     test('createReminder with all optional fields', async () => {
-      // Use a date 9 months from now to stay within the 1-year limit
-      const future = new Date();
-      future.setMonth(future.getMonth() + 9);
-      const fYear = future.getFullYear();
-      const fMonth = future.getMonth() + 1;
-      const cron = `30 8 15 ${fMonth} *`;
+      const fc = futureCron(9, 30, 8);
 
       const result = await client.createReminder(reminderVybit.key, {
-        cron,
+        cron: fc.cron,
         timeZone: 'America/New_York',
-        year: fYear,
+        year: fc.year,
         message: 'Full reminder test',
         imageUrl: 'https://example.com/image.jpg',
         linkUrl: 'https://example.com/event',
@@ -393,9 +415,9 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
       });
 
       expect(result.result).toBe(1);
-      expect(result.reminder.cron).toBe(cron);
+      expect(result.reminder.cron).toBe(fc.cron);
       expect(result.reminder.timeZone).toBe('America/New_York');
-      expect(result.reminder.year).toBe(fYear);
+      expect(result.reminder.year).toBe(fc.year);
       expect(result.reminder.message).toBe('Full reminder test');
       expect(result.reminder.imageUrl).toContain('example.com/image.jpg');
       expect(result.reminder.linkUrl).toContain('example.com/event');
@@ -440,24 +462,27 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
     test('updateReminder should update cron and recreate job', async () => {
       const list = await client.listReminders(reminderVybit.key);
       const reminderId = list.reminders[0].id;
+      const fc = futureCron(5, 0, 15);
 
       await delay(200);
       const result = await client.updateReminder(reminderVybit.key, reminderId, {
-        cron: '0 15 1 1 *',
+        cron: fc.cron,
         timeZone: 'America/Chicago',
       });
 
       expect(result.result).toBe(1);
       expect(result.reminder.id).toBe(reminderId);
-      expect(result.reminder.cron).toBe('0 15 1 1 *');
+      expect(result.reminder.cron).toBe(fc.cron);
       expect(result.reminder.timeZone).toBe('America/Chicago');
-    });
+    }, 15000);
 
     test('deleteReminder should remove reminder', async () => {
       // Create a second reminder to delete
+      const fc = futureCron(3);
       const created = await client.createReminder(reminderVybit.key, {
-        cron: '0 0 31 12 *',
+        cron: fc.cron,
         timeZone: 'UTC',
+        year: fc.year,
         message: 'Delete me',
       });
       const reminderId = created.reminder.id;
@@ -481,8 +506,9 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
       createdResources.vybits.push(webhookVybit.key);
 
       await delay(200);
+      const fc = futureCron(2);
       await expect(
-        client.createReminder(webhookVybit.key, { cron: '0 9 * * *' })
+        client.createReminder(webhookVybit.key, { cron: fc.cron, year: fc.year })
       ).rejects.toThrow();
     });
 
@@ -506,46 +532,54 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
     });
 
     test('changing triggerType should clean up reminders', async () => {
-      // Create a fresh reminder vybit
-      const vybit = await client.createVybit({
-        name: testName('Cleanup'),
-        triggerType: 'reminders',
-        status: 'on',
-      });
-      createdResources.vybits.push(vybit.key);
+      // Reuse the existing reminderVybit — first clean out all existing reminders
+      const existing = await client.listReminders(reminderVybit.key);
+      for (const r of existing.reminders) {
+        await client.deleteReminder(reminderVybit.key, r.id);
+        await delay(200);
+      }
+
+      // Ensure it's set to reminders triggerType
+      await delay(200);
+      await client.patchVybit(reminderVybit.key, { triggerType: 'reminders', status: 'on' });
 
       // Add a reminder (use future date within 1-year limit so it doesn't get garbage-collected)
       await delay(200);
-      const future = new Date();
-      future.setMonth(future.getMonth() + 11);
-      await client.createReminder(vybit.key, {
-        cron: `0 0 1 ${future.getMonth() + 1} *`,
+      const fc = futureCron(11);
+      await client.createReminder(reminderVybit.key, {
+        cron: fc.cron,
         timeZone: 'UTC',
-        year: future.getFullYear(),
+        year: fc.year,
         message: 'Should be cleaned up',
       });
 
       // Verify reminder exists
       await delay(200);
-      const before = await client.listReminders(vybit.key);
+      const before = await client.listReminders(reminderVybit.key);
       expect(before.reminders.length).toBe(1);
 
       // Switch triggerType to webhook — server should clean up reminders
       await delay(200);
-      await client.patchVybit(vybit.key, { triggerType: 'webhook' });
+      await client.patchVybit(reminderVybit.key, { triggerType: 'webhook' });
 
       // Cleanup runs async on server — wait for it to complete
       await delay(2000);
-      const after = await client.listReminders(vybit.key);
+      const after = await client.listReminders(reminderVybit.key);
       expect(after.reminders.length).toBe(0);
-    });
+    }, 30000);
   });
 
   describe('Schedule Vybits', () => {
     let scheduleVybit: any;
+    // Generate dynamic schedule crons offset from current hour to avoid immediate firing
+    const baseHour = (new Date().getHours() + 3) % 24;
+    const scheduleCronA = `0 ${baseHour} * * *`;
+    const scheduleCronB = `0 ${(baseHour + 2) % 24} * * *`;
+    const scheduleCronWeekday = `0 ${(baseHour + 1) % 24} * * 1-5`;
+    const scheduleCronWeekend = `0 ${(baseHour + 3) % 24} * * 6`;
 
     beforeAll(async () => {
-      if (!hasApiKey) return;
+      if (!hasCredentials) return;
 
       // Reuse an existing webhook vybit by converting it to schedule
       // This avoids hitting the vybit creation cap
@@ -556,7 +590,7 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
           name: testName('Schedule'),
           triggerType: 'schedule',
           triggerSettings: {
-            crons: [{ cron: '0 9 * * *', timeZone: 'America/Denver' }],
+            crons: [{ cron: scheduleCronA, timeZone: 'America/Denver' }],
           },
           status: 'on',
         });
@@ -566,7 +600,7 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
         scheduleVybit = await client.patchVybit(vybits[0].key, {
           triggerType: 'schedule',
           triggerSettings: {
-            crons: [{ cron: '0 9 * * *', timeZone: 'America/Denver' }],
+            crons: [{ cron: scheduleCronA, timeZone: 'America/Denver' }],
           },
         });
       }
@@ -585,8 +619,8 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
       const result = await client.patchVybit(scheduleVybit.key, {
         triggerSettings: {
           crons: [
-            { cron: '0 10 * * 1-5', timeZone: 'America/New_York' },
-            { cron: '0 12 * * 6', timeZone: 'America/New_York' },
+            { cron: scheduleCronWeekday, timeZone: 'America/New_York' },
+            { cron: scheduleCronWeekend, timeZone: 'America/New_York' },
           ],
         },
       });
@@ -601,8 +635,8 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
       const withTwo = await client.patchVybit(scheduleVybit.key, {
         triggerSettings: {
           crons: [
-            { cron: '0 9 * * *', timeZone: 'America/Denver' },
-            { cron: '0 17 * * *', timeZone: 'America/Denver' },
+            { cron: scheduleCronA, timeZone: 'America/Denver' },
+            { cron: scheduleCronB, timeZone: 'America/Denver' },
           ],
         },
       });
@@ -613,13 +647,13 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
       const result = await client.patchVybit(scheduleVybit.key, {
         triggerSettings: {
           crons: [
-            { cron: '0 9 * * *', timeZone: 'America/Denver' },
+            { cron: scheduleCronA, timeZone: 'America/Denver' },
           ],
         },
       });
 
       expect(result.triggerSettings.crons.length).toBe(1);
-      expect(result.triggerSettings.crons[0].cron).toBe('0 9 * * *');
+      expect(result.triggerSettings.crons[0].cron).toBe(scheduleCronA);
     });
 
     test('patchVybit should change triggerType from schedule to webhook and back', async () => {
@@ -636,7 +670,7 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
         triggerType: 'schedule',
         triggerSettings: {
           crons: [
-            { cron: '0 9 * * *', timeZone: 'America/Denver' },
+            { cron: scheduleCronA, timeZone: 'America/Denver' },
           ],
         },
       });
@@ -665,7 +699,7 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
     let imageTestVybit: any;
 
     beforeAll(async () => {
-      if (!hasApiKey) return;
+      if (!hasCredentials) return;
 
       // Reuse an existing vybit to avoid hitting the vybit creation cap.
       // Find one or convert one to reminders triggerType.
@@ -728,17 +762,21 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
     });
 
     test('createReminder should reject non-image imageUrl', async () => {
+      const fc = futureCron(7);
       await expect(
         client.createReminder(imageTestVybit.key, {
-          cron: '0 0 1 1 *',
+          cron: fc.cron,
+          year: fc.year,
           imageUrl: 'https://example.com/page',
         })
       ).rejects.toThrow();
     });
 
     test('createReminder should accept valid .jpg imageUrl', async () => {
+      const fc = futureCron(8);
       const result = await client.createReminder(imageTestVybit.key, {
-        cron: '0 0 1 1 *',
+        cron: fc.cron,
+        year: fc.year,
         imageUrl: 'https://example.com/reminder.jpg',
       });
 
@@ -788,10 +826,11 @@ describeWithApiKey('API Client Integration Tests (Real API)', () => {
 });
 
 // Show message when tests are skipped
-if (!hasApiKey) {
+if (!hasCredentials) {
   describe('API Client Integration Tests', () => {
-    test.skip('Integration tests skipped - set VYBIT_API_KEY to run', () => {
-      console.log('💡 Tip: Run with VYBIT_API_KEY=your-key npm test -w @vybit/api-sdk');
+    test.skip('Integration tests skipped - set VYBIT_API_KEY or VYBIT_ACCESS_TOKEN to run', () => {
+      console.log('💡 Tip: Run with VYBIT_API_KEY=your-key npm test');
+      console.log('   Or:  VYBIT_ACCESS_TOKEN=your-token npm test');
     });
   });
 }

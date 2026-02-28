@@ -6,38 +6,41 @@ import {
   VybitAuthError,
   VybitAPIError,
   VybitValidationError,
-  Vybit,
-} from '@vybit/core';
-import {
   OAuth2Config,
   TokenResponse,
   AuthorizationUrlOptions,
-  TriggerOptions,
-  TriggerResponse,
-} from './types';
+} from '@vybit/core';
 
 /**
- * OAuth2 client for Vybit authentication and API access
- * 
- * This client handles the complete OAuth2 flow for Vybit authentication,
- * including authorization URL generation, token exchange, and authenticated API calls.
- * 
+ * OAuth2 client for Vybit authentication
+ *
+ * This client handles the OAuth2 authorization flow for Vybit, including
+ * authorization URL generation, token exchange, and token verification.
+ *
+ * Once you have obtained an access token, use {@link VybitAPIClient} from
+ * `@vybit/api-sdk` with the `accessToken` option for full Developer API access.
+ *
  * @example
  * ```typescript
- * const client = new VybitOAuth2Client({
+ * import { VybitOAuth2Client } from '@vybit/oauth2-sdk';
+ * import { VybitAPIClient } from '@vybit/api-sdk';
+ *
+ * // 1. Set up OAuth2 client
+ * const oauth = new VybitOAuth2Client({
  *   clientId: 'your-client-id',
  *   clientSecret: 'your-client-secret',
  *   redirectUri: 'https://yourapp.com/oauth/callback'
  * });
- * 
- * // Generate authorization URL
- * const authUrl = client.getAuthorizationUrl();
- * 
- * // Exchange authorization code for token
- * const token = await client.exchangeCodeForToken(authCode);
- * 
- * // Make authenticated API calls
- * const vybits = await client.getVybitList();
+ *
+ * // 2. Generate authorization URL and redirect user
+ * const authUrl = oauth.getAuthorizationUrl();
+ *
+ * // 3. Exchange authorization code for token (in callback handler)
+ * const token = await oauth.exchangeCodeForToken(authCode);
+ *
+ * // 4. Use token with API client for full Developer API access
+ * const api = new VybitAPIClient({ accessToken: token.access_token });
+ * const vybits = await api.listVybits();
  * ```
  */
 export class VybitOAuth2Client {
@@ -71,14 +74,14 @@ export class VybitOAuth2Client {
 
   /**
    * Generates an OAuth2 authorization URL for user authentication
-   * 
+   *
    * Direct users to this URL to begin the OAuth2 authorization flow.
    * After authorization, users will be redirected to your configured redirect URI
    * with an authorization code.
-   * 
+   *
    * @param options - Optional parameters for the authorization URL
    * @returns Complete authorization URL for user redirection
-   * 
+   *
    * @example
    * ```typescript
    * const authUrl = client.getAuthorizationUrl({
@@ -91,7 +94,7 @@ export class VybitOAuth2Client {
   getAuthorizationUrl(options: AuthorizationUrlOptions = {}): string {
     const state = options.state || generateRandomState();
     const authDomain = getAuthDomain();
-    
+
     const params = new URLSearchParams({
       client_id: this.config.clientId,
       redirect_uri: this.config.redirectUri,
@@ -108,26 +111,21 @@ export class VybitOAuth2Client {
 
   /**
    * Exchanges an authorization code for an access token
-   * 
+   *
    * Call this method with the authorization code received from the redirect URI
    * after successful user authorization. The returned access token can be used
-   * for authenticated API calls.
-   * 
+   * with {@link VybitAPIClient} for full Developer API access.
+   *
    * @param code - Authorization code from the OAuth2 callback
    * @returns Promise resolving to token response with access token
    * @throws {VybitAPIError} When token exchange fails
    * @throws {VybitAuthError} When authorization is denied
-   * 
+   *
    * @example
    * ```typescript
-   * // Handle OAuth2 callback
-   * const urlParams = new URLSearchParams(window.location.search);
-   * const code = urlParams.get('code');
-   * 
-   * if (code) {
-   *   const token = await client.exchangeCodeForToken(code);
-   *   console.log('Access token:', token.access_token);
-   * }
+   * const token = await client.exchangeCodeForToken(authCode);
+   * // Use token with API client
+   * const api = new VybitAPIClient({ accessToken: token.access_token });
    * ```
    */
   async exchangeCodeForToken(code: string): Promise<TokenResponse> {
@@ -158,7 +156,7 @@ export class VybitOAuth2Client {
       }
 
       const data = await response.json();
-      
+
       if (data.error) {
         throw new VybitAuthError(`Token exchange error: ${data.error}`);
       }
@@ -173,6 +171,12 @@ export class VybitOAuth2Client {
     }
   }
 
+  /**
+   * Verifies that an access token is valid
+   * @param accessToken - Token to verify (uses stored token if not provided)
+   * @returns True if the token is valid
+   * @throws {VybitAuthError} When no token is available
+   */
   async verifyToken(accessToken?: string): Promise<boolean> {
     const token = accessToken || this.accessToken;
     if (!token) {
@@ -200,99 +204,18 @@ export class VybitOAuth2Client {
     }
   }
 
-  async getVybitList(accessToken?: string): Promise<Vybit[]> {
-    const token = accessToken || this.accessToken;
-    if (!token) {
-      throw new VybitAuthError('No access token available');
-    }
-
-    const baseUrl = getDefaultBaseUrl();
-    const listUrl = `${baseUrl}/rest/vybit_list`;
-
-    try {
-      const response = await fetch(listUrl, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new VybitAPIError(
-          `Failed to fetch vybit list: ${response.statusText}`,
-          response.status
-        );
-      }
-
-      const data = await response.json();
-      
-      // Convert object with numeric keys to array
-      return Object.values(data);
-    } catch (error) {
-      if (error instanceof VybitAPIError) {
-        throw error;
-      }
-      throw new VybitAPIError(`Network error fetching vybit list: ${error}`);
-    }
-  }
-
-  async sendVybitNotification(
-    triggerKey: string,
-    options: TriggerOptions = {},
-    accessToken?: string
-  ): Promise<TriggerResponse> {
-    const token = accessToken || this.accessToken;
-    if (!token) {
-      throw new VybitAuthError('No access token available');
-    }
-
-    // Validate URL parameters
-    if (options.imageUrl && !isValidUrl(options.imageUrl)) {
-      throw new VybitValidationError('Image URL must be a valid URL');
-    }
-    if (options.linkUrl && !isValidUrl(options.linkUrl)) {
-      throw new VybitValidationError('Link URL must be a valid URL');
-    }
-
-    const baseUrl = getDefaultBaseUrl();
-    const triggerUrl = `${baseUrl}/fire/${triggerKey}`;
-
-    // Build payload
-    const payload: any = {};
-    if (options.message) payload.message = options.message;
-    if (options.imageUrl) payload.imageUrl = options.imageUrl;
-    if (options.linkUrl) payload.linkUrl = options.linkUrl;
-    if (options.log) payload.log = options.log;
-
-    try {
-      const response = await fetch(triggerUrl, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new VybitAPIError(
-          `Failed to send vybit notification: ${response.statusText}`,
-          response.status
-        );
-      }
-
-      return await response.json();
-    } catch (error) {
-      if (error instanceof VybitAPIError) {
-        throw error;
-      }
-      throw new VybitAPIError(`Network error sending notification: ${error}`);
-    }
-  }
-
+  /**
+   * Manually sets the access token
+   * @param token - The access token to store
+   */
   setAccessToken(token: string): void {
     this.accessToken = token;
   }
 
+  /**
+   * Gets the currently stored access token
+   * @returns The stored access token, or undefined if not set
+   */
   getAccessToken(): string | undefined {
     return this.accessToken;
   }

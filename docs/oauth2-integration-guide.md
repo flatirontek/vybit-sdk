@@ -1,6 +1,6 @@
 # Vybit OAuth 2.0 Integration Guide
 
-This guide provides comprehensive documentation for integrating with Vybit's OAuth 2.0 API using the `@vybit/oauth2-sdk`. The implementation mirrors the exact functionality demonstrated in the Vybit developer portal.
+This guide provides comprehensive documentation for integrating with Vybit's OAuth 2.0 authentication using the `@vybit/oauth2-sdk` and `@vybit/api-sdk`.
 
 ## Table of Contents
 
@@ -15,13 +15,15 @@ This guide provides comprehensive documentation for integrating with Vybit's OAu
 
 ## Overview
 
-Vybit's OAuth 2.0 implementation allows your users to connect their Vybit accounts to your service. Once connected, your application can:
+Vybit's OAuth 2.0 implementation allows your users to connect their Vybit accounts to your service. The OAuth2 SDK (`@vybit/oauth2-sdk`) handles the authorization flow, and the API SDK (`@vybit/api-sdk`) handles all API operations using the resulting access token.
 
-- Access their vybit list
-- Send personalized notifications on their behalf
-- Trigger specific vybits with custom content
+Once connected, your application can use the full Developer API on behalf of the user:
 
-The authentication flow follows the standard OAuth 2.0 authorization code grant pattern with 6 distinct steps, exactly as demonstrated in the developer portal.
+- List and manage their vybits
+- Trigger notifications with custom content
+- Manage subscriptions, sounds, logs, and more
+
+The authentication flow follows the standard OAuth 2.0 authorization code grant pattern.
 
 ## Prerequisites
 
@@ -67,13 +69,14 @@ Once configured, the developer portal will generate:
 ### Installation
 
 ```bash
-npm install @vybit/oauth2-sdk
+npm install @vybit/oauth2-sdk @vybit/api-sdk
 ```
 
 ### Basic Setup
 
 ```typescript
 import { VybitOAuth2Client } from '@vybit/oauth2-sdk';
+import { VybitAPIClient } from '@vybit/api-sdk';
 
 const client = new VybitOAuth2Client({
   clientId: process.env.VYBIT_CLIENT_ID,
@@ -168,18 +171,19 @@ app.get('/oauth/callback', async (req, res) => {
 
 ### Step 3: Access User's Vybits
 
-Create an endpoint to display the user's available vybits:
+Create an endpoint to display the user's available vybits using the API SDK with the stored access token:
 
 ```typescript
 app.get('/api/vybits', async (req, res) => {
   const accessToken = req.session.accessToken;
-  
+
   if (!accessToken) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
-  
+
   try {
-    const vybits = await client.getVybitList(accessToken);
+    const apiClient = new VybitAPIClient({ accessToken });
+    const vybits = await apiClient.listVybits();
     res.json({ vybits });
   } catch (error) {
     console.error('Failed to fetch vybits:', error);
@@ -195,30 +199,31 @@ Create an endpoint to send notifications:
 ```typescript
 app.post('/api/trigger', async (req, res) => {
   const accessToken = req.session.accessToken;
-  const { triggerKey, message, imageUrl, linkUrl, log } = req.body;
-  
+  const { vybitKey, message, imageUrl, linkUrl, log } = req.body;
+
   if (!accessToken) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
-  
-  if (!triggerKey) {
-    return res.status(400).json({ error: 'Trigger key is required' });
+
+  if (!vybitKey) {
+    return res.status(400).json({ error: 'Vybit key is required' });
   }
-  
+
   try {
-    const result = await client.sendVybitNotification(triggerKey, {
+    const apiClient = new VybitAPIClient({ accessToken });
+    const result = await apiClient.triggerVybit(vybitKey, {
       message,
       imageUrl,
       linkUrl,
       log
-    }, accessToken);
-    
+    });
+
     res.json({ success: true, result });
   } catch (error) {
     console.error('Failed to trigger vybit:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to send notification',
-      details: error.message 
+      details: error.message
     });
   }
 });
@@ -228,15 +233,13 @@ app.post('/api/trigger', async (req, res) => {
 
 ### Using the Developer Portal Test Buttons
 
-The developer portal provides interactive test buttons that mirror your SDK implementation:
+The developer portal provides interactive test buttons to validate your OAuth2 configuration:
 
 1. **Test Authorization**: Opens a popup to test the authorization flow
 2. **Test Token Request**: Exchanges a test code for an access token
 3. **Test Authorization Verification**: Verifies the token works
-4. **Test Vybit List Request**: Retrieves the user's vybits
-5. **Test Vybit Trigger**: Sends a test notification
 
-Use these to validate your API credentials and understand the expected responses.
+Use these to validate your OAuth2 credentials before integrating.
 
 ### Local Development Testing
 
@@ -248,16 +251,20 @@ Use these to validate your API credentials and understand the expected responses
 Example curl commands:
 
 ```bash
-# Get user's vybits
+# Get user's vybits (via your app's session)
 curl -H "Cookie: session=your_session_cookie" \
      http://localhost:3000/api/vybits
 
+# Or directly with the Developer API using Bearer token
+curl -H "Authorization: Bearer your-access-token" \
+     https://api.vybit.net/v1/vybits
+
 # Trigger a vybit
 curl -X POST \
-     -H "Cookie: session=your_session_cookie" \
+     -H "Authorization: Bearer your-access-token" \
      -H "Content-Type: application/json" \
-     -d '{"triggerKey":"abc123","message":"Test notification"}' \
-     http://localhost:3000/api/trigger
+     -d '{"message":"Test notification"}' \
+     https://api.vybit.net/v1/vybit/vybit-key/trigger
 ```
 
 ### Unit Testing
@@ -359,7 +366,7 @@ logger.warn('OAuth failure', {
 - Don't reuse authorization codes (they're single-use)
 
 #### 4. "Token verification failed"
-- Check that you're using the correct base URL (app.vybit.net for auth, vybit.net for API)
+- Check that you're using the correct base URL (app.vybit.net for auth, api.vybit.net/v1 for API)
 - Ensure the access token hasn't expired
 - Verify network connectivity to Vybit's API
 
@@ -370,22 +377,19 @@ logger.warn('OAuth failure', {
 
 ### Debug Mode
 
-Enable debug logging to troubleshoot issues:
+For debugging, add logging around your OAuth2 and API calls:
 
 ```typescript
-// Enable detailed logging
-const client = new VybitOAuth2Client({
-  // ... config
-});
+try {
+  const token = await oauthClient.exchangeCodeForToken(code);
+  console.log('Token exchange successful');
 
-// Log all API calls
-client.on('request', (url, options) => {
-  console.log('API Request:', url, options);
-});
-
-client.on('response', (data) => {
-  console.log('API Response:', data);
-});
+  const apiClient = new VybitAPIClient({ accessToken: token.access_token });
+  const vybits = await apiClient.listVybits();
+  console.log('API call successful, found', vybits.length, 'vybits');
+} catch (error) {
+  console.error('Error:', error.message, error.statusCode);
+}
 ```
 
 ### Getting Help
@@ -421,4 +425,4 @@ class DatabaseTokenStore {
 }
 ```
 
-This completes the comprehensive OAuth 2.0 integration guide. The implementation exactly mirrors the functionality demonstrated in the Vybit developer portal, ensuring consistency and reliability for your integration.
+This completes the OAuth 2.0 integration guide. The `@vybit/oauth2-sdk` handles the authorization flow, and `@vybit/api-sdk` provides full Developer API access using the resulting access token.

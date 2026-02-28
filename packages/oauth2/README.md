@@ -4,7 +4,9 @@ OAuth 2.0 authentication SDK for Vybit.
 
 ## Overview
 
-Complete OAuth2 implementation for Vybit authentication, including authorization URL generation, token exchange, and authenticated API calls.
+The OAuth2 SDK handles the authorization flow for user-facing applications. It provides authorization URL generation, token exchange, and token verification.
+
+Once you have an access token, use `VybitAPIClient` from `@vybit/api-sdk` with `{ accessToken }` to make API calls on behalf of the user.
 
 ## Setup
 
@@ -15,23 +17,24 @@ Complete OAuth2 implementation for Vybit authentication, including authorization
 ## Installation
 
 ```bash
-npm install @vybit/oauth2-sdk
+npm install @vybit/oauth2-sdk @vybit/api-sdk
 ```
 
 ## Quick Start
 
 ```typescript
 import { VybitOAuth2Client } from '@vybit/oauth2-sdk';
+import { VybitAPIClient } from '@vybit/api-sdk';
 
 // Create client with your OAuth2 credentials
-const client = new VybitOAuth2Client({
+const oauthClient = new VybitOAuth2Client({
   clientId: 'your-client-id',
   clientSecret: 'your-client-secret',
   redirectUri: 'https://yourapp.com/oauth/callback'
 });
 
 // Step 1: Generate authorization URL
-const authUrl = client.getAuthorizationUrl({
+const authUrl = oauthClient.getAuthorizationUrl({
   state: 'unique-state-value',
   scope: 'read write'
 });
@@ -39,20 +42,24 @@ const authUrl = client.getAuthorizationUrl({
 // Redirect user to authUrl...
 
 // Step 2: Exchange authorization code for token
-const token = await client.exchangeCodeForToken('auth-code-from-callback');
+const token = await oauthClient.exchangeCodeForToken('auth-code-from-callback');
 
-// Step 3: Make authenticated API calls
-const vybits = await client.getVybitList();
-await client.sendVybitNotification('trigger-key', {
+// Step 3: Use the token with the API SDK
+const apiClient = new VybitAPIClient({
+  accessToken: token.access_token
+});
+
+const vybits = await apiClient.listVybits();
+await apiClient.triggerVybit('vybit-key', {
   message: 'Hello from your app!'
 });
 ```
 
 ## Environment Management
 
-The SDK always uses production Vybit endpoints:
+The SDK uses production Vybit endpoints:
 - **Authentication**: `https://app.vybit.net`
-- **API**: `https://vybit.net`
+- **API** (via `@vybit/api-sdk`): `https://api.vybit.net/v1`
 
 For different environments (dev/staging/prod), create separate Vybit accounts with their own OAuth credentials.
 
@@ -73,19 +80,11 @@ new VybitOAuth2Client(config: OAuth2Config)
 
 **`exchangeCodeForToken(code: string): Promise<TokenResponse>`**
 - Exchanges authorization code for access token
-- Automatically stores token for subsequent API calls
+- Automatically stores token for subsequent `verifyToken()` calls
 
 **`verifyToken(accessToken?: string): Promise<boolean>`**
 - Verifies if an access token is valid
 - Uses stored token if none provided
-
-**`getVybitList(accessToken?: string): Promise<Vybit[]>`**
-- Fetches user's vybit notifications
-- Requires valid access token
-
-**`sendVybitNotification(triggerKey: string, options?: TriggerOptions, accessToken?: string): Promise<TriggerResponse>`**
-- Triggers a vybit notification
-- Supports custom message, images, and links
 
 **`setAccessToken(token: string): void`**
 - Manually set access token
@@ -99,7 +98,7 @@ new VybitOAuth2Client(config: OAuth2Config)
 import { VybitAuthError, VybitAPIError, VybitValidationError } from '@vybit/oauth2-sdk';
 
 try {
-  const token = await client.exchangeCodeForToken(code);
+  const token = await oauthClient.exchangeCodeForToken(code);
 } catch (error) {
   if (error instanceof VybitAuthError) {
     // Handle authentication errors
@@ -128,13 +127,6 @@ interface TokenResponse {
   expires_in?: number;
   refresh_token?: string;
   scope?: string;
-}
-
-interface TriggerOptions {
-  message?: string;
-  imageUrl?: string;  // Must be a direct link to a JPG, PNG, or GIF image
-  linkUrl?: string;
-  log?: string;
 }
 ```
 

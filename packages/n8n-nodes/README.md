@@ -7,15 +7,14 @@ Official n8n community nodes for [Vybit](https://vybit.net) - the personalized a
 
 ## Features
 
-- 🔐 **Dual Authentication**: OAuth2 for multi-user services or API Key for personal automation
-- 🔔 **Push Notifications**: Send personalized audio notifications from your workflows
-- 📋 **Manage Vybits**: Create, update, and delete vybits programmatically
-- 📊 **View Logs**: Access notification history and analytics
-- 🎵 **Sound Management**: Search and manage custom audio files
-- 👥 **Subscription Management**: Subscribe to and share vybits
-- 🔐 **Peeps Management**: Invite users to follow your vybits and and control access
-- ⏰ **Reminders**: Create and manage scheduled reminders on vybits
-- ✅ **Zero Dependencies**: Built with zero runtime dependencies
+- **Dual Authentication**: API Key for personal automation or OAuth2 for multi-user services
+- **Push Notifications**: Send personalized audio notifications from your workflows
+- **Full API Access**: 33 operations across 7 resources, available with either auth method
+- **Manage Vybits**: Create, update, trigger, and delete vybits programmatically
+- **Subscriptions & Peeps**: Subscribe to vybits and manage access invitations
+- **Reminders**: Create and manage scheduled reminders on vybits
+- **Sounds & Logs**: Search sounds and view notification history
+- **Zero Dependencies**: Built with zero runtime dependencies
 
 ---
 
@@ -39,19 +38,19 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for configuring credential sharing in multi
 
 ## Which Authentication Method Should I Use?
 
-### Use **Developer API** (API Key) if:
-- ✅ You're automating your own Vybit account
-- ✅ Building personal workflows (e.g., "alert me when server is down")
-- ✅ Integrating Vybit into your backend service
-- ✅ You need full API access (create vybits, manage sounds, view logs)
+Both methods provide full access to all operations. Choose based on your use case:
+
+### Use **API Key** if:
+- You're automating your own Vybit account
+- Building personal workflows (e.g., "alert me when server is down")
+- Integrating Vybit into your backend service
 
 **Example**: DevOps engineer using n8n to trigger their personal Vybit when monitoring detects issues
 
 ### Use **OAuth2** if:
-- ✅ You're building a service where users connect their accounts
-- ✅ Each user needs to authorize their own Vybit account
-- ✅ Multi-tenant scenarios (agency managing client notifications)
-- ✅ Similar to how Zapier/IFTTT integrates with Vybit
+- You're building a service where users connect their own accounts
+- Each user needs to authorize their own Vybit account
+- Multi-tenant scenarios (agency managing client notifications)
 
 **Example**: Agency building n8n workflows that send notifications to client Vybit accounts
 
@@ -59,98 +58,98 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for configuring credential sharing in multi
 
 ## Quick Start
 
-### Developer API Setup (Personal Automation)
+### API Key Setup
 
 1. Go to [developer.vybit.net](https://developer.vybit.net)
 2. Generate an API key
 3. In n8n:
    - Add Vybit node
-   - Authentication: "Developer API (For Personal Automation)"
+   - Authentication: "API Key"
    - Create new credential and paste your API key
-4. You now have full access to YOUR Vybit account
 
-### OAuth2 Setup (Multi-User Service)
+### OAuth2 Setup
 
 1. Go to [developer.vybit.net](https://developer.vybit.net)
 2. Configure OAuth2 settings (client ID, redirect URI)
 3. In n8n:
    - Add Vybit node
-   - Authentication: "OAuth2 (For Multi-User Services)"
+   - Authentication: "OAuth2"
    - Create OAuth2 credential with your client ID/secret
 4. Users authorize their Vybit accounts to connect
-5. After connecting, click the **refresh icon** (circular arrow) next to the "Vybit" dropdown to load your vybits
 
 ---
 
 ## Available Operations
 
-### Profile Resource (API Key Only)
+All 33 operations are available with both API Key and OAuth2 authentication.
+
+### Profile
 
 | Operation | Description |
 |-----------|-------------|
-| **Get Profile** | View account information |
-| **Get Usage Metrics** | View current usage and tier limits |
-| **Check API Status** | Check API service health |
+| Get Profile | View account information |
+| Get Usage Metrics | View current usage and tier limits |
+| Check API Status | Check API service health |
 
-### Vybits Resource
-
-| Operation | OAuth2 | API Key | Description |
-|-----------|--------|---------|-------------|
-| **List** | ✅ | ✅ | Get all vybits |
-| **Get** | ❌ | ✅ | Get vybit details |
-| **Create** | ❌ | ✅ | Create a new vybit |
-| **Update** | ❌ | ✅ | Update vybit settings |
-| **Delete** | ❌ | ✅ | Delete a vybit |
-| **Trigger** | ✅ | ✅ | Send a notification |
-
-### Logs Resource (API Key Only)
+### Vybits
 
 | Operation | Description |
 |-----------|-------------|
-| **List All** | View all notification logs |
-| **Get** | Get specific log entry details |
-| **List by Vybit** | View logs for a specific vybit |
-| **List by Subscription** | View logs for a subscription |
+| List | Get all vybits |
+| Get | Get vybit details |
+| Create | Create a new vybit |
+| Update | Update vybit settings |
+| Delete | Delete a vybit |
+| Trigger | Send a push notification |
 
-### Sounds Resource (API Key Only)
-
-| Operation | Description |
-|-----------|-------------|
-| **Search** | Search available sounds |
-| **Get** | Get sound details |
-
-### Peeps Resource (API Key Only)
+### Subscriptions
 
 | Operation | Description |
 |-----------|-------------|
-| **List All** | View all peep invitations |
-| **List by Vybit** | View peeps for a specific vybit |
-| **Invite** | Invite a user to a vybit |
-| **Get** | Get peep details |
-| **Delete** | Remove a peep invitation |
+| List Public Vybits | Browse publicly available vybits |
+| Get Public Vybit | Get details of a public vybit |
+| Subscribe | Subscribe to a vybit |
+| List My Subscriptions | Get your subscriptions |
+| Get Subscription | Get subscription details |
+| Update Subscription | Update subscription settings |
+| Unsubscribe | Unsubscribe from a vybit |
+| Send to Owner | Send notification to vybit owner |
+| Send to Group | Send notification to all subscribers |
 
-### Subscriptions Resource (API Key Only)
-
-| Operation | Description |
-|-----------|-------------|
-| **List Public Vybits** | Browse publicly available vybits |
-| **Get Public Vybit** | Get details of a public vybit |
-| **Subscribe** | Subscribe to a vybit |
-| **List My Subscriptions** | Get your subscriptions |
-| **Get Subscription** | Get subscription details |
-| **Update Subscription** | Update subscription settings |
-| **Unsubscribe** | Unsubscribe from a vybit |
-| **Send to Owner** | Send notification to vybit owner |
-| **Send to Group** | Send notification to all subscribers |
-
-### Reminders Resource (API Key Only)
+### Sounds
 
 | Operation | Description |
 |-----------|-------------|
-| **List** | List all reminders on a vybit |
-| **Create** | Create a new scheduled reminder |
-| **Update** | Update an existing reminder |
-| **Delete** | Delete a reminder |
+| Search | Search available sounds |
+| Get | Get sound details |
+
+### Logs
+
+| Operation | Description |
+|-----------|-------------|
+| List All | View all notification logs |
+| Get | Get specific log entry details |
+| List by Vybit | View logs for a specific vybit |
+| List by Subscription | View logs for a subscription |
+
+### Peeps
+
+| Operation | Description |
+|-----------|-------------|
+| List All | View all peep invitations |
+| List by Vybit | View peeps for a specific vybit |
+| Invite | Invite a user to a vybit |
+| Get | Get peep details |
+| Delete | Remove a peep invitation |
+
+### Reminders
+
+| Operation | Description |
+|-----------|-------------|
+| List | List all reminders on a vybit |
+| Create | Create a new scheduled reminder |
+| Update | Update an existing reminder |
+| Delete | Delete a reminder |
 
 ---
 
@@ -204,10 +203,10 @@ n8n start
 
 ## Resources
 
-- 📖 [Developer API Documentation](https://developer.vybit.net/api-reference)
-- 🔐 [OAuth2 Documentation](https://developer.vybit.net/oauth-reference)
-- 💬 [Support](mailto:developer@vybit.net)
-- 🐛 [Report Issues](https://gitlab.com/flatirontek/vybit-sdk/-/issues)
+- [Developer API Documentation](https://developer.vybit.net/api-reference)
+- [OAuth2 Documentation](https://developer.vybit.net/oauth-reference)
+- [Support](mailto:developer@vybit.net)
+- [Report Issues](https://gitlab.com/flatirontek/vybit-sdk/-/issues)
 
 ---
 

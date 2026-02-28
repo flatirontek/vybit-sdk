@@ -10,26 +10,32 @@ info:
       <img src="https://vybit.net/images/vybit_logo100px.png" alt="Vybit Logo" style="max-width: 120px;" />
     </div>
 
-    OAuth2 authentication and API endpoints for the Vybit notification platform.
-    
-    This API provides secure authentication for third-party applications to access
-    Vybit user accounts and perform actions on their behalf, including retrieving
-    user's vybits and triggering notifications.
-    
+    OAuth2 authentication endpoints for the Vybit notification platform.
+
+    This API provides secure OAuth2 authentication for third-party applications to obtain
+    access tokens for Vybit user accounts.
+
     ## Authentication Flow
-    
+
     Vybit uses the standard OAuth2 Authorization Code flow:
-    
+
     1. **Authorization Request**: Direct users to `https://app.vybit.net` with OAuth parameters
     2. **Authorization Grant**: User authorizes your app and is redirected back
     3. **Token Exchange**: Exchange authorization code for access token at `/service/token`
-    4. **API Access**: Use access token to make authenticated requests
-    
+    4. **API Access**: Use the access token with the [Developer API](https://developer.vybit.net/api-reference) (`Authorization: Bearer <token>`)
+
     ## Getting Started
-    
+
     1. Create a developer account at [developer.vybit.net](https://developer.vybit.net)
     2. Register your application to get client credentials
-    3. Use the [@vybit/oauth2-sdk](https://www.npmjs.com/package/@vybit/oauth2-sdk) for easy integration
+    3. Use the [@vybit/oauth2-sdk](https://www.npmjs.com/package/@vybit/oauth2-sdk) for the auth flow
+    4. Use the [@vybit/api-sdk](https://www.npmjs.com/package/@vybit/api-sdk) with `{ accessToken }` for API calls
+
+    ## Legacy Endpoints
+
+    The `/rest/vybit_list` and `/fire/{triggerKey}` endpoints below are legacy OAuth2 API
+    endpoints. For new integrations, use the [Developer API](https://developer.vybit.net/api-reference)
+    with Bearer token authentication, which provides full API access.
     
   contact:
     name: Vybit Developer Support
@@ -224,16 +230,16 @@ paths:
 
   /rest/vybit_list:
     get:
-      summary: Get User's Vybits
+      summary: Get User's Vybits (Legacy)
+      deprecated: true
       description: |
+        **Deprecated**: Use the [Developer API](https://developer.vybit.net/api-reference) `GET /vybits` endpoint with Bearer token authentication instead.
+
         Retrieve a list of the authenticated user's vybits (notifications).
-        
-        Returns an array of vybit objects that the user has created and can
-        be triggered by your application.
-        
+
       operationId: getVybitList
       tags:
-        - Vybit Management
+        - Vybit Management (Legacy)
       security:
         - BearerAuth: []
       responses:
@@ -261,16 +267,16 @@ paths:
 
   /fire/{triggerKey}:
     post:
-      summary: Trigger Vybit Notification
+      summary: Trigger Vybit Notification (Legacy)
+      deprecated: true
       description: |
+        **Deprecated**: Use the [Developer API](https://developer.vybit.net/api-reference) `POST /vybit/{key}/trigger` endpoint with Bearer token authentication instead.
+
         Trigger a vybit notification for the authenticated user.
-        
-        Send a notification using the specified trigger key. Optionally include
-        custom content like messages, images, links, and log entries.
-        
+
       operationId: triggerVybit
       tags:
-        - Vybit Triggering
+        - Vybit Triggering (Legacy)
       parameters:
         - name: triggerKey
           in: path
@@ -463,14 +469,14 @@ tags:
     description: |
       Endpoints for validating and checking access tokens.
       Use these to verify tokens before making API requests.
-  - name: Vybit Management
+  - name: Vybit Management (Legacy)
     description: |
-      Endpoints for retrieving user's vybit configurations.
-      Use these to list available notifications that can be triggered.
-  - name: Vybit Triggering
+      Legacy endpoints for retrieving user's vybit configurations.
+      For new integrations, use the [Developer API](https://developer.vybit.net/api-reference) with Bearer token authentication.
+  - name: Vybit Triggering (Legacy)
     description: |
-      Endpoints for triggering vybit notifications.
-      Use these to send notifications to users with optional custom content.
+      Legacy endpoints for triggering vybit notifications.
+      For new integrations, use the [Developer API](https://developer.vybit.net/api-reference) with Bearer token authentication.
 
 externalDocs:
   description: Vybit OAuth2 SDK and Documentation

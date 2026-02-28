@@ -1,1 +1,110 @@
-/**\n * Complete OAuth2 Flow Example\n * \n * This example demonstrates the complete OAuth2 flow for Vybit authentication,\n * including authorization URL generation, handling the callback, and making\n * authenticated API calls.\n */\n\nimport { VybitOAuth2Client } from '@vybit/oauth2-sdk';\nimport express from 'express';\n\n// Initialize OAuth2 client with your credentials\nconst client = new VybitOAuth2Client({\n  clientId: process.env.VYBIT_CLIENT_ID,\n  clientSecret: process.env.VYBIT_CLIENT_SECRET,\n  redirectUri: 'http://localhost:3000/oauth/callback'\n});\n\nconst app = express();\n\n// Step 1: Redirect user to Vybit for authorization\napp.get('/auth', (req, res) => {\n  const authUrl = client.getAuthorizationUrl({\n    state: 'unique-state-' + Math.random().toString(36).substring(7),\n    scope: 'read write'\n  });\n  \n  console.log('Redirecting to:', authUrl);\n  res.redirect(authUrl);\n});\n\n// Step 2: Handle OAuth callback\napp.get('/oauth/callback', async (req, res) => {\n  const { code, state, error } = req.query;\n  \n  if (error) {\n    return res.status(400).send(`Authorization failed: ${error}`);\n  }\n  \n  if (!code) {\n    return res.status(400).send('Missing authorization code');\n  }\n  \n  try {\n    // Exchange authorization code for access token\n    const tokenResponse = await client.exchangeCodeForToken(code);\n    \n    console.log('Token received:', {\n      access_token: tokenResponse.access_token,\n      token_type: tokenResponse.token_type\n    });\n    \n    // Store token securely in your application\n    // For demo purposes, we'll make some API calls\n    await demonstrateAPIUsage(client);\n    \n    res.send(`\n      <h1>Authentication Successful!</h1>\n      <p>Access token obtained and API calls completed.</p>\n      <p>Check the console for details.</p>\n    `);\n    \n  } catch (error) {\n    console.error('Token exchange failed:', error);\n    res.status(500).send('Token exchange failed: ' + error.message);\n  }\n});\n\n// Step 3: Demonstrate authenticated API calls\nasync function demonstrateAPIUsage(client) {\n  try {\n    // Verify the token is valid\n    const isValid = await client.verifyToken();\n    console.log('Token is valid:', isValid);\n    \n    // Get user's vybits\n    const vybits = await client.getVybitList();\n    console.log('User vybits:', vybits.length, 'found');\n    \n    // If user has vybits, trigger the first one as a demo\n    if (vybits.length > 0) {\n      const firstVybit = vybits[0];\n      console.log('Triggering vybit:', firstVybit.name);\n      \n      const result = await client.sendVybitNotification(firstVybit.triggerKey, {\n        message: 'Hello from the Vybit SDK demo!',\n        log: 'SDK OAuth flow test'\n      });\n      \n      console.log('Notification sent:', result);\n    }\n    \n  } catch (error) {\n    console.error('API call failed:', error.message);\n  }\n}\n\n// Start the demo server\nconst PORT = process.env.PORT || 3000;\napp.listen(PORT, () => {\n  console.log(`Demo server running on http://localhost:${PORT}`);\n  console.log('Visit http://localhost:3000/auth to start OAuth flow');\n  console.log('');\n  console.log('Make sure to set these environment variables:');\n  console.log('- VYBIT_CLIENT_ID=your-client-id');\n  console.log('- VYBIT_CLIENT_SECRET=your-client-secret');\n});\n"
+/**
+ * Complete OAuth2 Flow Example
+ *
+ * This example demonstrates the complete OAuth2 flow for Vybit authentication,
+ * including authorization URL generation, handling the callback, and making
+ * authenticated API calls using VybitAPIClient.
+ */
+
+import { VybitOAuth2Client } from '@vybit/oauth2-sdk';
+import { VybitAPIClient } from '@vybit/api-sdk';
+import express from 'express';
+
+// Initialize OAuth2 client with your credentials
+const oauthClient = new VybitOAuth2Client({
+  clientId: process.env.VYBIT_CLIENT_ID,
+  clientSecret: process.env.VYBIT_CLIENT_SECRET,
+  redirectUri: 'http://localhost:3000/oauth/callback'
+});
+
+const app = express();
+
+// Step 1: Redirect user to Vybit for authorization
+app.get('/auth', (req, res) => {
+  const authUrl = oauthClient.getAuthorizationUrl({
+    state: 'unique-state-' + Math.random().toString(36).substring(7),
+    scope: 'read write'
+  });
+
+  console.log('Redirecting to:', authUrl);
+  res.redirect(authUrl);
+});
+
+// Step 2: Handle OAuth callback
+app.get('/oauth/callback', async (req, res) => {
+  const { code, state, error } = req.query;
+
+  if (error) {
+    return res.status(400).send(`Authorization failed: ${error}`);
+  }
+
+  if (!code) {
+    return res.status(400).send('Missing authorization code');
+  }
+
+  try {
+    // Exchange authorization code for access token
+    const tokenResponse = await oauthClient.exchangeCodeForToken(code);
+
+    console.log('Token received:', {
+      access_token: tokenResponse.access_token,
+      token_type: tokenResponse.token_type
+    });
+
+    // Use the token with the API SDK
+    await demonstrateAPIUsage(tokenResponse.access_token);
+
+    res.send(`
+      <h1>Authentication Successful!</h1>
+      <p>Access token obtained and API calls completed.</p>
+      <p>Check the console for details.</p>
+    `);
+
+  } catch (error) {
+    console.error('Token exchange failed:', error);
+    res.status(500).send('Token exchange failed: ' + error.message);
+  }
+});
+
+// Step 3: Use the API SDK with the access token
+async function demonstrateAPIUsage(accessToken) {
+  try {
+    // Verify the token is valid
+    const isValid = await oauthClient.verifyToken(accessToken);
+    console.log('Token is valid:', isValid);
+
+    // Create an API client with the access token
+    const apiClient = new VybitAPIClient({ accessToken });
+
+    // Get user's vybits
+    const vybits = await apiClient.listVybits();
+    console.log('User vybits:', vybits.length, 'found');
+
+    // If user has vybits, trigger the first one as a demo
+    if (vybits.length > 0) {
+      const firstVybit = vybits[0];
+      console.log('Triggering vybit:', firstVybit.name);
+
+      const result = await apiClient.triggerVybit(firstVybit.key, {
+        message: 'Hello from the Vybit SDK demo!',
+        log: 'SDK OAuth flow test'
+      });
+
+      console.log('Notification sent:', result);
+    }
+
+  } catch (error) {
+    console.error('API call failed:', error.message);
+  }
+}
+
+// Start the demo server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Demo server running on http://localhost:${PORT}`);
+  console.log('Visit http://localhost:3000/auth to start OAuth flow');
+  console.log('');
+  console.log('Make sure to set these environment variables:');
+  console.log('- VYBIT_CLIENT_ID=your-client-id');
+  console.log('- VYBIT_CLIENT_SECRET=your-client-secret');
+});
