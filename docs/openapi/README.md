@@ -1,101 +1,81 @@
-# Vybit OAuth2 API Specification
+# Vybit OpenAPI Specifications
 
-This directory contains the OpenAPI specification for Vybit's OAuth2 authentication endpoints.
+This directory contains OpenAPI specifications and interactive API reference pages for the Vybit platform.
 
 ## Files
 
-- **`oauth2.yaml`** - Complete OpenAPI 3.0.3 specification for OAuth2 endpoints
-- **`README.md`** - This documentation file
+### Specifications
+- **`developer-api.yaml`** - OpenAPI 3.0.3 spec for the Developer API (full REST API)
+- **`oauth2.yaml`** - OpenAPI 3.0.3 spec for OAuth2 authentication endpoints
 
+### Interactive Reference Pages
+- **`api-reference.html`** - Interactive docs for the Developer API (powered by [Scalar](https://scalar.com))
+- **`oauth-reference.html`** - Interactive docs for the OAuth2 API (powered by [Scalar](https://scalar.com))
 
-## API Overview
+## Developer API (`developer-api.yaml`)
 
-The specification covers three main endpoints:
+The Developer API at `https://api.vybit.net/v1` provides full programmatic access to the Vybit platform.
 
-### 1. Authorization Endpoint
-- **URL**: `GET https://app.vybit.net`
-- **Purpose**: Initiate OAuth2 authorization flow
-- **Parameters**: `client_id`, `redirect_uri`, `response_type`, `state`, `scope`
+**Authentication**: API Key (`X-API-Key` header) or OAuth2 Bearer Token (`Authorization: Bearer <token>`)
 
-### 2. Token Exchange Endpoint  
-- **URL**: `POST https://app.vybit.net/service/token`
-- **Purpose**: Exchange authorization code for access token
-- **Body**: Form data with `grant_type`, `code`, `client_id`, `client_secret`
+**Resources**:
+- Profile & Status
+- Vybits (create, update, delete, trigger)
+- Subscriptions (follows, public vybits)
+- Sounds (search, details, playback)
+- Logs (notification history)
+- Peeps (access invitations)
+- Reminders (scheduled notifications)
 
-### 3. Token Validation Endpoint
-- **URL**: `GET https://app.vybit.net/service/test`  
-- **Purpose**: Validate access token
-- **Authorization**: Bearer token required
+## OAuth2 API (`oauth2.yaml`)
+
+The OAuth2 API at `https://app.vybit.net` handles user authorization for third-party applications.
+
+**Endpoints**:
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/` | GET | Initiate OAuth2 authorization flow |
+| `/service/token` | POST | Exchange authorization code for access token |
+| `/service/test` | GET | Validate an access token |
+
+The spec also documents legacy endpoints (`/rest/vybit_list`, `/fire/{triggerKey}`) which are deprecated in favor of the Developer API with Bearer token authentication.
+
+## Viewing the Interactive Docs
+
+Open the HTML files in a browser. When served locally they load the YAML specs from this directory; in production they load from the GitLab repository.
 
 ## Code Generation
 
-Generate client code in various languages using the OpenAPI spec:
+Generate client code from either spec:
 
-**JavaScript/TypeScript**
 ```bash
+# Developer API client
+npx @openapitools/openapi-generator-cli generate \
+  -i developer-api.yaml \
+  -g typescript-fetch \
+  -o ./generated/typescript
+
+# OAuth2 client
 npx @openapitools/openapi-generator-cli generate \
   -i oauth2.yaml \
   -g typescript-fetch \
-  -o ./generated/typescript
+  -o ./generated/typescript-oauth2
 ```
 
-**Python**
-```bash
-npx @openapitools/openapi-generator-cli generate \
-  -i oauth2.yaml \
-  -g python \
-  -o ./generated/python
-```
+## Integration with Vybit SDKs
 
-**cURL Examples**
-```bash
-npx @openapitools/openapi-generator-cli generate \
-  -i oauth2.yaml \
-  -g curl \
-  -o ./generated/curl
-```
+These specs correspond to the published SDK packages:
 
-## Testing with the Spec
+- **Developer API** -> [@vybit/api-sdk](https://www.npmjs.com/package/@vybit/api-sdk) (supports both API Key and OAuth2 token auth)
+- **OAuth2 API** -> [@vybit/oauth2-sdk](https://www.npmjs.com/package/@vybit/oauth2-sdk) (auth flow only; use `@vybit/api-sdk` with the token for API calls)
 
-**Postman Collection**
-1. Import `oauth2.yaml` into Postman
-2. Set up environment variables for `client_id`, `client_secret`, etc.
-3. Test the OAuth2 flow interactively
+## Resources
 
-**Insomnia**
-1. Create new request collection
-2. Import OpenAPI spec from `oauth2.yaml`
-3. Configure authentication and test endpoints
-
-## Integration with Vybit SDK
-
-This OpenAPI spec matches exactly with the [@vybit/oauth2-sdk](https://www.npmjs.com/package/@vybit/oauth2-sdk) implementation:
-
-```typescript
-import { VybitOAuth2Client } from '@vybit/oauth2-sdk';
-
-// The SDK implements these exact endpoints
-const client = new VybitOAuth2Client({
-  clientId: 'your-client-id',
-  clientSecret: 'your-client-secret', 
-  redirectUri: 'https://yourapp.com/callback'
-});
-```
-
-## Validation
-
-The spec has been validated against:
-- ✅ OpenAPI 3.0.3 schema
-- ✅ OAuth2 RFC 6749 compliance  
-- ✅ Vybit SDK implementation
-- ✅ Real endpoint behavior
-
-
-
-- **SDK Documentation**: [npm @vybit/oauth2-sdk](https://www.npmjs.com/package/@vybit/oauth2-sdk)
 - **Developer Portal**: [developer.vybit.net](https://developer.vybit.net)
+- **API Reference**: [developer.vybit.net/api-reference](https://developer.vybit.net/api-reference)
+- **OAuth2 Reference**: [developer.vybit.net/oauth-reference](https://developer.vybit.net/oauth-reference)
 
 ---
 
-**License**: MIT  
-**Last Updated**: September 2024
+**License**: MIT
