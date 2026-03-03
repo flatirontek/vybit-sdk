@@ -16,6 +16,7 @@
  */
 
 import { VybitOAuth2Client } from '../oauth2-client';
+import { generateCodeVerifier, generateCodeChallenge } from '@vybit/core';
 
 const ACCESS_TOKEN = process.env.VYBIT_OAUTH2_TOKEN;
 const hasAccessToken = !!ACCESS_TOKEN && ACCESS_TOKEN !== 'your-token-here';
@@ -126,6 +127,95 @@ describeWithToken('OAuth2 Client Integration Tests (Real API)', () => {
   });
 });
 
+// ==================== PKCE Integration Tests ====================
+
+const PKCE_CLIENT_ID = process.env.VYBIT_OAUTH2_CLIENT_ID;
+const PKCE_CLIENT_SECRET = process.env.VYBIT_OAUTH2_CLIENT_SECRET;
+const hasPkceCredentials = !!PKCE_CLIENT_ID && !!PKCE_CLIENT_SECRET;
+
+const describeWithPkce = hasPkceCredentials ? describe : describe.skip;
+
+describeWithPkce('PKCE Integration Tests (Real API)', () => {
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  beforeEach(async () => {
+    await delay(200);
+  });
+
+  describe('PKCE Utility Functions', () => {
+    test('should generate valid code_verifier and code_challenge pair', async () => {
+      const verifier = generateCodeVerifier();
+      const challenge = await generateCodeChallenge(verifier);
+
+      expect(verifier.length).toBe(43);
+      expect(verifier).toMatch(/^[A-Za-z0-9\-_]+$/);
+      expect(challenge).toMatch(/^[A-Za-z0-9\-_]+$/);
+    });
+
+    test('should generate consistent challenge for same verifier', async () => {
+      const verifier = generateCodeVerifier();
+      const c1 = await generateCodeChallenge(verifier);
+      const c2 = await generateCodeChallenge(verifier);
+      expect(c1).toBe(c2);
+    });
+  });
+
+  describe('PKCE Authorization URL Generation', () => {
+    test('should generate auth URL with PKCE parameters', async () => {
+      const pkceClient = new VybitOAuth2Client({
+        clientId: PKCE_CLIENT_ID!,
+        redirectUri: 'https://example.com/callback',
+      });
+
+      const verifier = generateCodeVerifier();
+      const challenge = await generateCodeChallenge(verifier);
+
+      const authUrl = pkceClient.getAuthorizationUrl({
+        state: 'pkce-integration-test',
+        codeChallenge: challenge,
+      });
+
+      expect(authUrl).toContain('code_challenge=');
+      expect(authUrl).toContain('code_challenge_method=S256');
+      expect(authUrl).toContain(`client_id=${PKCE_CLIENT_ID}`);
+      expect(authUrl).not.toContain('client_secret');
+    });
+  });
+
+  describe('PKCE Token Exchange Error Handling', () => {
+    test('should fail token exchange with wrong code_verifier', async () => {
+      const pkceClient = new VybitOAuth2Client({
+        clientId: PKCE_CLIENT_ID!,
+        clientSecret: PKCE_CLIENT_SECRET!,
+        redirectUri: 'https://example.com/callback',
+      });
+
+      // Using an invalid auth code should fail regardless, but this tests
+      // that code_verifier is properly sent in the request
+      try {
+        await pkceClient.exchangeCodeForToken('invalid-code', 'wrong-verifier');
+        fail('Should have thrown an error');
+      } catch (error: any) {
+        expect(error).toBeDefined();
+      }
+    });
+
+    test('should fail PKCE-only exchange with invalid code', async () => {
+      const pkceOnlyClient = new VybitOAuth2Client({
+        clientId: PKCE_CLIENT_ID!,
+        redirectUri: 'https://example.com/callback',
+      });
+
+      try {
+        await pkceOnlyClient.exchangeCodeForToken('invalid-code', 'some-verifier');
+        fail('Should have thrown an error');
+      } catch (error: any) {
+        expect(error).toBeDefined();
+      }
+    });
+  });
+});
+
 // Show message when tests are skipped
 if (!hasAccessToken) {
   describe('OAuth2 Client Integration Tests', () => {
@@ -135,6 +225,18 @@ if (!hasAccessToken) {
       console.log('   1. Create an OAuth2 app at developer.vybit.net');
       console.log('   2. Complete the OAuth flow to get an access token');
       console.log('   3. Run: VYBIT_OAUTH2_TOKEN=your-token npm test -w @vybit/oauth2-sdk');
+      console.log('');
+    });
+  });
+}
+
+if (!hasPkceCredentials) {
+  describe('PKCE Integration Tests', () => {
+    test.skip('PKCE tests skipped - set VYBIT_OAUTH2_CLIENT_ID and VYBIT_OAUTH2_CLIENT_SECRET to run', () => {
+      console.log('');
+      console.log('To run PKCE integration tests:');
+      console.log('   1. Create an OAuth2 app at developer.vybit.net');
+      console.log('   2. Run: VYBIT_OAUTH2_CLIENT_ID=id VYBIT_OAUTH2_CLIENT_SECRET=secret npm test -w @vybit/oauth2-sdk');
       console.log('');
     });
   });

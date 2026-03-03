@@ -399,6 +399,64 @@ try {
 3. **Documentation**: Check this guide and the API reference
 4. **Support**: Contact Vybit support with specific error messages and request details
 
+## PKCE for Public Clients
+
+[PKCE (Proof Key for Code Exchange, RFC 7636)](https://datatracker.ietf.org/doc/html/rfc7636) allows public clients — applications that cannot securely store a client secret — to use the OAuth2 authorization code flow safely.
+
+### When to Use PKCE vs Client Secret
+
+| Scenario | Method |
+|----------|--------|
+| Server-side web apps | `client_secret` (simplest) |
+| Native/mobile apps | PKCE (no secret to store) |
+| Single-page apps (SPAs) | PKCE (no secret to expose) |
+| MCP clients | PKCE (standardized approach) |
+| CLI/desktop apps | PKCE (no secret to bundle) |
+| Maximum security | Both `client_secret` + PKCE |
+
+### PKCE Implementation
+
+```typescript
+import { VybitOAuth2Client } from '@vybit/oauth2-sdk';
+import { generateCodeVerifier, generateCodeChallenge } from '@vybit/core';
+
+// No clientSecret needed for PKCE-only flow
+const client = new VybitOAuth2Client({
+  clientId: process.env.VYBIT_CLIENT_ID,
+  redirectUri: process.env.VYBIT_REDIRECT_URI
+});
+
+// Step 1: Generate PKCE pair
+const codeVerifier = generateCodeVerifier();
+const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+// Store codeVerifier in session — you'll need it for token exchange
+req.session.codeVerifier = codeVerifier;
+
+// Step 2: Generate authorization URL with code_challenge
+const authUrl = client.getAuthorizationUrl({
+  state: generateSecureRandomString(),
+  codeChallenge
+});
+
+// Redirect user to authUrl...
+
+// Step 3: Exchange code with code_verifier (in callback handler)
+const token = await client.exchangeCodeForToken(
+  authorizationCode,
+  req.session.codeVerifier
+);
+```
+
+### How PKCE Works
+
+1. **Before authorization**: Generate a random `code_verifier` (43-128 chars) and compute its SHA-256 hash as the `code_challenge`
+2. **Authorization request**: Send `code_challenge` and `code_challenge_method=S256` with the auth URL
+3. **Token exchange**: Send the original `code_verifier` instead of `client_secret`
+4. **Server verification**: The server hashes the `code_verifier` and verifies it matches the stored `code_challenge`
+
+This prevents authorization code interception attacks because an attacker cannot derive the `code_verifier` from the `code_challenge`.
+
 ## Advanced Topics
 
 ### Custom Token Storage

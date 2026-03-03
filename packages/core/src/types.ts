@@ -19,8 +19,8 @@ export interface VybitAPIConfig {
 export interface OAuth2Config {
   /** OAuth2 client ID from your Vybit developer account */
   clientId: string;
-  /** OAuth2 client secret from your Vybit developer account */
-  clientSecret: string;
+  /** OAuth2 client secret from your Vybit developer account. Optional for public clients using PKCE. */
+  clientSecret?: string;
   /** Redirect URI that matches your Vybit app configuration */
   redirectUri: string;
 }
@@ -51,6 +51,10 @@ export interface AuthorizationUrlOptions {
   state?: string;
   /** Requested OAuth2 scopes (space-separated) */
   scope?: string;
+  /** Pre-computed S256 code challenge for PKCE flow */
+  codeChallenge?: string;
+  /** Code challenge method (default: 'S256') */
+  codeChallengeMethod?: string;
 }
 
 // ==================== Pagination & Search ====================

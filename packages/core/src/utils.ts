@@ -57,3 +57,59 @@ export function getAuthDomain(): string {
 export function getApiBaseUrl(): string {
   return 'https://api.vybit.net/v1';
 }
+
+/**
+ * Generates a cryptographically random code verifier for PKCE (RFC 7636).
+ * Uses Web Crypto API for cross-platform compatibility (Node 16+ and browsers).
+ * @param length - Length of the generated verifier (43-128 chars, default: 43)
+ * @returns Base64url-encoded random string
+ */
+export function generateCodeVerifier(length: number = 43): string {
+  const bytes = new Uint8Array(Math.ceil(length * 3 / 4));
+  crypto.getRandomValues(bytes);
+  // Base64url encode: standard base64 with +→-, /→_, no padding
+  let base64 = '';
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  for (let i = 0; i < bytes.length; i += 3) {
+    const b0 = bytes[i];
+    const b1 = bytes[i + 1] || 0;
+    const b2 = bytes[i + 2] || 0;
+    base64 += chars[b0 >> 2];
+    base64 += chars[((b0 & 3) << 4) | (b1 >> 4)];
+    base64 += chars[((b1 & 15) << 2) | (b2 >> 6)];
+    base64 += chars[b2 & 63];
+  }
+  return base64
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '')
+    .substring(0, length);
+}
+
+/**
+ * Generates a S256 code challenge from a code verifier for PKCE (RFC 7636).
+ * Uses Web Crypto API for cross-platform compatibility (Node 16+ and browsers).
+ * @param verifier - The code verifier string
+ * @returns Base64url-encoded SHA-256 hash of the verifier
+ */
+export async function generateCodeChallenge(verifier: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  const bytes = new Uint8Array(digest);
+  // Base64url encode the hash
+  let base64 = '';
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  for (let i = 0; i < bytes.length; i += 3) {
+    const b0 = bytes[i];
+    const b1 = i + 1 < bytes.length ? bytes[i + 1] : 0;
+    const b2 = i + 2 < bytes.length ? bytes[i + 2] : 0;
+    base64 += chars[b0 >> 2];
+    base64 += chars[((b0 & 3) << 4) | (b1 >> 4)];
+    if (i + 1 < bytes.length) base64 += chars[((b1 & 15) << 2) | (b2 >> 6)];
+    if (i + 2 < bytes.length) base64 += chars[b2 & 63];
+  }
+  return base64
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+}

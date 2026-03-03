@@ -38,6 +38,18 @@ import {
  * // 3. Exchange authorization code for token (in callback handler)
  * const token = await oauth.exchangeCodeForToken(authCode);
  *
+ * // --- PKCE flow (public clients, no client_secret needed) ---
+ * import { generateCodeVerifier, generateCodeChallenge } from '@vybit/core';
+ *
+ * const pkceClient = new VybitOAuth2Client({
+ *   clientId: 'your-client-id',
+ *   redirectUri: 'https://yourapp.com/oauth/callback'
+ * });
+ * const verifier = generateCodeVerifier();
+ * const challenge = await generateCodeChallenge(verifier);
+ * const pkceAuthUrl = pkceClient.getAuthorizationUrl({ codeChallenge: challenge });
+ * const pkceToken = await pkceClient.exchangeCodeForToken(authCode, verifier);
+ *
  * // 4. Use token with API client for full Developer API access
  * const api = new VybitAPIClient({ accessToken: token.access_token });
  * const vybits = await api.listVybits();
@@ -60,9 +72,6 @@ export class VybitOAuth2Client {
   private validateConfig(config: OAuth2Config): void {
     if (!config.clientId) {
       throw new VybitValidationError('Client ID is required');
-    }
-    if (!config.clientSecret) {
-      throw new VybitValidationError('Client Secret is required');
     }
     if (!config.redirectUri) {
       throw new VybitValidationError('Redirect URI is required');
@@ -106,6 +115,11 @@ export class VybitOAuth2Client {
       params.append('scope', options.scope);
     }
 
+    if (options.codeChallenge) {
+      params.append('code_challenge', options.codeChallenge);
+      params.append('code_challenge_method', options.codeChallengeMethod || 'S256');
+    }
+
     return `${authDomain}?${params.toString()}`;
   }
 
@@ -128,7 +142,7 @@ export class VybitOAuth2Client {
    * const api = new VybitAPIClient({ accessToken: token.access_token });
    * ```
    */
-  async exchangeCodeForToken(code: string): Promise<TokenResponse> {
+  async exchangeCodeForToken(code: string, codeVerifier?: string): Promise<TokenResponse> {
     const authDomain = getAuthDomain();
     const tokenUrl = `${authDomain}/service/token`;
 
@@ -136,8 +150,15 @@ export class VybitOAuth2Client {
       grant_type: 'authorization_code',
       code,
       client_id: this.config.clientId,
-      client_secret: this.config.clientSecret,
     });
+
+    if (this.config.clientSecret) {
+      formData.append('client_secret', this.config.clientSecret);
+    }
+
+    if (codeVerifier) {
+      formData.append('code_verifier', codeVerifier);
+    }
 
     try {
       const response = await fetch(tokenUrl, {

@@ -55,6 +55,44 @@ await apiClient.triggerVybit('vybit-key', {
 });
 ```
 
+## PKCE Flow (Public Clients)
+
+For native apps, SPAs, MCP clients, and other public clients that cannot store a client secret:
+
+```typescript
+import { VybitOAuth2Client } from '@vybit/oauth2-sdk';
+import { generateCodeVerifier, generateCodeChallenge } from '@vybit/core';
+
+// No clientSecret needed
+const oauthClient = new VybitOAuth2Client({
+  clientId: 'your-client-id',
+  redirectUri: 'https://yourapp.com/oauth/callback'
+});
+
+// Step 1: Generate PKCE verifier and challenge
+const codeVerifier = generateCodeVerifier();
+const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+// Step 2: Generate authorization URL with code_challenge
+const authUrl = oauthClient.getAuthorizationUrl({
+  state: 'unique-state-value',
+  codeChallenge
+});
+
+// Redirect user to authUrl, store codeVerifier in session...
+
+// Step 3: Exchange code with code_verifier (no client_secret needed)
+const token = await oauthClient.exchangeCodeForToken(
+  'auth-code-from-callback',
+  codeVerifier
+);
+
+// Step 4: Use the token with the API SDK
+const apiClient = new VybitAPIClient({
+  accessToken: token.access_token
+});
+```
+
 ## Environment Management
 
 The SDK uses production Vybit endpoints:
@@ -78,8 +116,9 @@ new VybitOAuth2Client(config: OAuth2Config)
 - Generates OAuth2 authorization URL for user redirection
 - Returns complete URL including all required parameters
 
-**`exchangeCodeForToken(code: string): Promise<TokenResponse>`**
+**`exchangeCodeForToken(code: string, codeVerifier?: string): Promise<TokenResponse>`**
 - Exchanges authorization code for access token
+- Pass `codeVerifier` for PKCE flow (omits `client_secret` if not configured)
 - Automatically stores token for subsequent `verifyToken()` calls
 
 **`verifyToken(accessToken?: string): Promise<boolean>`**
@@ -117,7 +156,7 @@ Full TypeScript support with comprehensive type definitions:
 ```typescript
 interface OAuth2Config {
   clientId: string;
-  clientSecret: string;
+  clientSecret?: string;  // Optional for PKCE-only public clients
   redirectUri: string;
 }
 

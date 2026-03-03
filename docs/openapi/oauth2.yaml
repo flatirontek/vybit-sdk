@@ -24,6 +24,21 @@ info:
     3. **Token Exchange**: Exchange authorization code for access token at `/service/token`
     4. **API Access**: Use the access token with the [Developer API](https://developer.vybit.net/api-reference) (`Authorization: Bearer <token>`)
 
+    ## PKCE Support
+
+    Vybit supports [Proof Key for Code Exchange (PKCE, RFC 7636)](https://datatracker.ietf.org/doc/html/rfc7636)
+    for public clients that cannot securely store a client secret, such as:
+
+    - **Native/mobile applications**
+    - **Single-page applications (SPAs)**
+    - **MCP (Model Context Protocol) clients**
+    - **CLI tools and desktop apps**
+
+    With PKCE, the client generates a `code_verifier` and its SHA-256 hash (`code_challenge`)
+    to prove authorization request ownership during token exchange — no `client_secret` required.
+
+    PKCE can also be used alongside `client_secret` for additional security.
+
     ## Getting Started
 
     1. Create a developer account at [developer.vybit.net](https://developer.vybit.net)
@@ -100,6 +115,25 @@ paths:
             minLength: 8
             maxLength: 255
             example: "random-state-string-123"
+        - name: code_challenge
+          in: query
+          required: false
+          description: |
+            PKCE code challenge (RFC 7636). Base64url-encoded SHA-256 hash of the `code_verifier`.
+            Required when using PKCE for public clients that cannot store a `client_secret`.
+          schema:
+            type: string
+            example: "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
+        - name: code_challenge_method
+          in: query
+          required: false
+          description: |
+            PKCE code challenge method. Must be `S256` (SHA-256). Required when `code_challenge` is provided.
+          schema:
+            type: string
+            enum: ["S256"]
+            default: "S256"
+            example: "S256"
       responses:
         '302':
           description: |
@@ -148,7 +182,6 @@ paths:
                 - grant_type
                 - code
                 - client_id
-                - client_secret
               properties:
                 grant_type:
                   type: string
@@ -165,8 +198,18 @@ paths:
                   example: "your-client-id-123"
                 client_secret:
                   type: string
-                  description: Your application's client secret
+                  description: |
+                    Your application's client secret. Required for confidential clients.
+                    Can be omitted when using PKCE with `code_verifier` for public clients.
                   example: "your-client-secret-456"
+                code_verifier:
+                  type: string
+                  description: |
+                    PKCE code verifier (RFC 7636). The original random string used to generate
+                    the `code_challenge` sent in the authorization request. Required when
+                    `code_challenge` was used in the authorization step. Can be used instead of
+                    or in addition to `client_secret`.
+                  example: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
       responses:
         '200':
           description: Successful token exchange
