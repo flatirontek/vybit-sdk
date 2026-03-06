@@ -52,21 +52,21 @@ const PAGINATION_SCHEMA = {
 
 const TRIGGER_SETTINGS_SCHEMA = {
   type: 'object',
-  description: 'Configuration specific to the trigger type. For schedule triggers, contains crons array. Example: {"crons": [{"cron": "5 14 * * 0", "timeZone": "America/Denver"}]}. Cron format: minute hour day month dayOfWeek (0=Sunday).',
+  description: 'Configuration specific to the trigger type. For schedule and reminder triggers, contains crons array. Example: {"crons": [{"cron": "5 14 * * 0", "timeZone": "America/Denver"}]}. Cron format: minute hour day month dayOfWeek (0=Sunday).',
   properties: {
     crons: {
       type: 'array',
-      description: 'Array of cron schedule definitions (for triggerType="schedule")',
+      description: 'Array of cron schedule definitions (for triggerType="schedule and triggerType="reminders)',
       items: {
         type: 'object',
         properties: {
           cron: {
             type: 'string',
-            description: 'Cron expression: minute hour day month dayOfWeek. Example: "0 9 * * *" = every day at 9:00 AM',
+            description: 'Cron expression (5 fields): minute hour day month dayOfWeek. Uses 24-hour time. Examples: "0 7 * * *" = 7:00 AM, "0 19 * * *" = 7:00 PM, "30 14 25 12 *" = 2:30 PM on Dec 25',
           },
           timeZone: {
             type: 'string',
-            description: 'IANA timezone identifier. Example: "America/Denver"',
+            description: 'IANA timezone identifier. Defaults to UTC if omitted — always set this to the user\'s local timezone. Examples: "America/New_York", "America/Denver", "America/Los_Angeles", "Europe/London"',
           },
         },
       },
@@ -107,7 +107,7 @@ const GEOFENCE_SCHEMA = {
     subscribable: {
       type: 'string',
       enum: ['yes', 'no'],
-      description: 'Whether others can subscribe to this geofenced vybit',
+      description: 'yes indicates that the geofence will be set on the subscriber\'s device. no indicates that subscribers will receive notifications when the vybit owner triggers the geofence',
     },
   },
 } as const;
@@ -151,22 +151,22 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'vybit_get',
-    description: 'Get detailed information about a specific vybit by ID',
+    description: 'Get detailed information about a specific vybit by ID (key)',
     inputSchema: {
       type: 'object',
       properties: {
-        vybitId: {
+        key: {
           type: 'string',
-          description: 'The unique identifier of the vybit',
+          description: 'The unique identifier (key) of the vybit',
         },
       },
-      required: ['vybitId'],
+      required: ['key'],
     },
     annotations: READ_ONLY_ANNOTATIONS,
   },
   {
     name: 'vybit_create',
-    description: 'Create a new vybit notification',
+    description: 'Create a new vybit',
     inputSchema: {
       type: 'object',
       properties: {
@@ -190,20 +190,20 @@ export const TOOLS: Tool[] = [
         },
         description: {
           type: 'string',
-          description: 'Detailed description of the vybit',
+          description: 'Detailed description of the vybit. Appears internally and on subscription cards',
         },
         access: {
           type: 'string',
-          description: 'Vybit visibility (defaults to "private")',
+          description: 'Vybit subscription access (defaults to "private")',
           enum: ['public', 'private', 'unlisted'],
         },
         message: {
           type: 'string',
-          description: 'Default message displayed with notifications',
+          description: 'Default message included when a notification is triggered',
         },
         imageUrl: {
           type: 'string',
-          description: 'Default image URL for notifications (must be a direct link to a JPG, PNG, or GIF image)',
+          description: 'Default image URL included when a notification is triggered. Must be a direct link to a JPG, PNG, or GIF image and the filename in the url must end with .jpg, .jpeg, .png, or .gif',
         },
         linkUrl: {
           type: 'string',
@@ -222,9 +222,9 @@ export const TOOLS: Tool[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        vybitId: {
+        key: {
           type: 'string',
-          description: 'The unique identifier of the vybit to update',
+          description: 'The unique identifier (key) of the vybit to update',
         },
         name: {
           type: 'string',
@@ -250,17 +250,25 @@ export const TOOLS: Tool[] = [
         },
         access: {
           type: 'string',
-          description: 'Vybit visibility and access control',
+          description: 'Vybit subscription visibility and access control',
           enum: ['public', 'private', 'unlisted'],
         },
         message: {
           type: 'string',
-          description: 'Default message displayed with notifications',
+          description: 'Default message included when a notification is triggered',
+        },
+        imageUrl: {
+          type: 'string',
+          description: 'Default image URL included when a notification is triggered. Must be a direct link to a JPG, PNG, or GIF image and the filename in the url must end with .jpg, .jpeg, .png, or .gif',
+        },
+        linkUrl: {
+          type: 'string',
+          description: 'Default URL to open when notification is tapped',
         },
         triggerSettings: TRIGGER_SETTINGS_SCHEMA,
         geofence: GEOFENCE_SCHEMA,
       },
-      required: ['vybitId'],
+      required: ['key'],
     },
     annotations: MUTATING_ANNOTATIONS,
   },
@@ -270,12 +278,12 @@ export const TOOLS: Tool[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        vybitId: {
+        key: {
           type: 'string',
-          description: 'The unique identifier of the vybit to delete',
+          description: 'The unique identifier (key) of the vybit to delete',
         },
       },
-      required: ['vybitId'],
+      required: ['key'],
     },
     annotations: MUTATING_ANNOTATIONS,
   },
@@ -285,9 +293,9 @@ export const TOOLS: Tool[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        triggerKey: {
+        key: {
           type: 'string',
-          description: 'The vybit key (not the trigger key)',
+          description: 'The unique identifier (key) of the vybit to trigger',
         },
         message: {
           type: 'string',
@@ -295,11 +303,11 @@ export const TOOLS: Tool[] = [
         },
         imageUrl: {
           type: 'string',
-          description: 'Optional image URL to attach to the notification (must be a direct link to a JPG, PNG, or GIF image)',
+          description: 'Optional image URL included when a notification is triggered. Must be a direct link to a JPG, PNG, or GIF image and the filename in the url must end with .jpg, .jpeg, .png, or .gif',
         },
         runOnce: {
           type: 'boolean',
-          description: 'If true, the vybit is automatically disabled after this trigger fires',
+          description: 'If true, the vybit is automatically disabled after this trigger fires. Default is false.',
         },
         linkUrl: {
           type: 'string',
@@ -310,28 +318,28 @@ export const TOOLS: Tool[] = [
           description: 'Optional log entry to append to the vybit log',
         },
       },
-      required: ['triggerKey'],
+      required: ['key'],
     },
     annotations: MUTATING_ANNOTATIONS,
   },
   // Reminders
   {
     name: 'reminder_create',
-    description: 'Create a reminder on a vybit (the vybit must have triggerType=reminders). Each reminder gets its own cron schedule.',
+    description: 'Create a reminder on a vybit (the vybit must have triggerType=reminders). Each reminder gets its own cron schedule. Reminders must be in the future and will not trigger if the scheduled time has already passed. ',
     inputSchema: {
       type: 'object',
       properties: {
-        vybitKey: {
+        key: {
           type: 'string',
           description: 'The key of the vybit to add a reminder to',
         },
         cron: {
           type: 'string',
-          description: 'Cron expression (5 fields): minute hour day month dayOfWeek. Example: "0 9 * * *" = every day at 9:00 AM',
+          description: 'Cron expression (5 fields): minute hour day month dayOfWeek. Uses 24-hour time. Examples: "0 7 * * *" = 7:00 AM, "0 19 * * *" = 7:00 PM, "30 14 25 12 *" = 2:30 PM on Dec 25',
         },
         timeZone: {
           type: 'string',
-          description: 'IANA timezone identifier (defaults to UTC). Example: "America/Denver"',
+          description: 'IANA timezone identifier. Defaults to UTC if omitted — always set this to the user\'s local timezone. Examples: "America/New_York", "America/Denver", "America/Los_Angeles", "Europe/London"',
         },
         year: {
           type: 'number',
@@ -343,7 +351,7 @@ export const TOOLS: Tool[] = [
         },
         imageUrl: {
           type: 'string',
-          description: 'Image URL for the notification (must be a direct link to a JPG, PNG, or GIF image, max 512 characters)',
+          description: 'Image URL for the notification (must be a direct link to a JPG, PNG, or GIF image, max 512 characters, and the filename in the url must end with .jpg, .jpeg, .png, or .gif)',
         },
         linkUrl: {
           type: 'string',
@@ -351,10 +359,10 @@ export const TOOLS: Tool[] = [
         },
         log: {
           type: 'string',
-          description: 'Log content for the notification (max 1024 characters)',
+          description: 'Log content sent with the notification that will be appended to the notification log (max 1024 characters)',
         },
       },
-      required: ['vybitKey', 'cron'],
+      required: ['key', 'cron'],
     },
     annotations: MUTATING_ANNOTATIONS,
   },
@@ -364,12 +372,12 @@ export const TOOLS: Tool[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        vybitKey: {
+        key: {
           type: 'string',
           description: 'The key of the vybit',
         },
       },
-      required: ['vybitKey'],
+      required: ['key'],
     },
     annotations: READ_ONLY_ANNOTATIONS,
   },
@@ -379,7 +387,7 @@ export const TOOLS: Tool[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        vybitKey: {
+        key: {
           type: 'string',
           description: 'The key of the vybit',
         },
@@ -389,11 +397,11 @@ export const TOOLS: Tool[] = [
         },
         cron: {
           type: 'string',
-          description: 'Cron expression (5 fields): minute hour day month dayOfWeek. Example: "0 9 * * *" = every day at 9:00 AM',
+          description: 'Cron expression (5 fields): minute hour day month dayOfWeek. Uses 24-hour time. Examples: "0 7 * * *" = 7:00 AM, "0 19 * * *" = 7:00 PM, "30 14 25 12 *" = 2:30 PM on Dec 25',
         },
         timeZone: {
           type: 'string',
-          description: 'IANA timezone identifier. Example: "America/Denver"',
+          description: 'IANA timezone identifier. Defaults to UTC if omitted — always set this to the user\'s local timezone. Examples: "America/New_York", "America/Denver", "America/Los_Angeles", "Europe/London"',
         },
         message: {
           type: 'string',
@@ -401,7 +409,7 @@ export const TOOLS: Tool[] = [
         },
         imageUrl: {
           type: 'string',
-          description: 'Image URL for the notification (must be a direct link to a JPG, PNG, or GIF image, max 512 characters)',
+          description: 'Image URL for the notification (must be a direct link to a JPG, PNG, or GIF image, max 512 characters, and the filename in the url must end with .jpg, .jpeg, .png, or .gif)',
         },
         linkUrl: {
           type: 'string',
@@ -412,7 +420,7 @@ export const TOOLS: Tool[] = [
           description: 'Log content for the notification (max 1024 characters)',
         },
       },
-      required: ['vybitKey', 'reminderId'],
+      required: ['key', 'reminderId'],
     },
     annotations: MUTATING_ANNOTATIONS,
   },
@@ -422,7 +430,7 @@ export const TOOLS: Tool[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        vybitKey: {
+        key: {
           type: 'string',
           description: 'The key of the vybit',
         },
@@ -431,7 +439,7 @@ export const TOOLS: Tool[] = [
           description: 'The unique identifier of the reminder to delete',
         },
       },
-      required: ['vybitKey', 'reminderId'],
+      required: ['key', 'reminderId'],
     },
     annotations: MUTATING_ANNOTATIONS,
   },
@@ -562,7 +570,7 @@ export const TOOLS: Tool[] = [
         },
         imageUrl: {
           type: 'string',
-          description: 'Custom image URL (must be a direct link to a JPG, PNG, or GIF image, only if subscribers can send)',
+          description: 'Custom image URL (must be a direct link to a JPG, PNG, or GIF image and the filename in the url must end with .jpg, .jpeg, .png, or .gif, only if subscribers can send)',
         },
         linkUrl: {
           type: 'string',
@@ -620,13 +628,13 @@ export const TOOLS: Tool[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        vybitKey: {
+        key: {
           type: 'string',
           description: 'The key of the vybit',
         },
         ...PAGINATION_SCHEMA,
       },
-      required: ['vybitKey'],
+      required: ['key'],
     },
     annotations: READ_ONLY_ANNOTATIONS,
   },
@@ -650,7 +658,7 @@ export const TOOLS: Tool[] = [
   // Peeps (Access Control)
   {
     name: 'peeps_list',
-    description: 'List all peeps (people you have shared vybits with)',
+    description: 'List all peeps (people invited or subscribed to your vybits)',
     inputSchema: {
       type: 'object',
       properties: { ...PAGINATION_SCHEMA },
@@ -674,11 +682,11 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'peep_create',
-    description: 'Invite someone to a private vybit by email',
+    description: 'Invite someone to subscribe to your vybit',
     inputSchema: {
       type: 'object',
       properties: {
-        vybitKey: {
+        key: {
           type: 'string',
           description: 'The key of the vybit to share',
         },
@@ -687,13 +695,13 @@ export const TOOLS: Tool[] = [
           description: 'Email address of the person to invite',
         },
       },
-      required: ['vybitKey', 'email'],
+      required: ['key', 'email'],
     },
     annotations: MUTATING_ANNOTATIONS,
   },
   {
     name: 'peep_delete',
-    description: 'Remove a peep (revoke access)',
+    description: 'Remove a peep (revoke subscription access)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -712,13 +720,13 @@ export const TOOLS: Tool[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        vybitKey: {
+        key: {
           type: 'string',
           description: 'The key of the vybit',
         },
         ...PAGINATION_SCHEMA,
       },
-      required: ['vybitKey'],
+      required: ['key'],
     },
     annotations: READ_ONLY_ANNOTATIONS,
   },
@@ -736,7 +744,7 @@ const VYBIT_ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAA
 const server = new Server(
   {
     name: 'vybit-mcp-server',
-    version: '1.2.5',
+    version: '1.5.0',
     icons: [
       {
         src: VYBIT_ICON,
@@ -744,7 +752,7 @@ const server = new Server(
         sizes: ['64x64'],
       },
     ],
-    websiteUrl: 'https://developer.vybit.net',
+    websiteUrl: 'https://www.vybit.net',
   },
   {
     capabilities: {
@@ -786,7 +794,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }));
 
       case 'vybit_get':
-        return jsonResponse(await vybitClient.getVybit(args.vybitId as string));
+        return jsonResponse(await vybitClient.getVybit(args.key as string));
 
       case 'vybit_create': {
         const createData: any = {
@@ -815,17 +823,19 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (args.triggerType) updateData.triggerType = args.triggerType;
         if (args.access) updateData.access = args.access;
         if (args.message !== undefined) updateData.message = args.message;
+        if (args.imageUrl) updateData.imageUrl = args.imageUrl;
+        if (args.linkUrl) updateData.linkUrl = args.linkUrl;
         if (args.triggerSettings) updateData.triggerSettings = args.triggerSettings;
         if (args.geofence) updateData.geofence = normalizeGeofence(args.geofence);
 
         return jsonResponse(await vybitClient.patchVybit(
-          args.vybitId as string,
+          args.key as string,
           updateData
         ));
       }
 
       case 'vybit_delete':
-        await vybitClient.deleteVybit(args.vybitId as string);
+        await vybitClient.deleteVybit(args.key as string);
         return jsonResponse({ success: true, message: 'Vybit deleted successfully' });
 
       case 'vybit_trigger': {
@@ -837,7 +847,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (args.runOnce !== undefined) options.runOnce = args.runOnce;
 
         return jsonResponse(await vybitClient.triggerVybit(
-          args.triggerKey as string,
+          args.key as string,
           Object.keys(options).length > 0 ? options : undefined
         ));
       }
@@ -855,13 +865,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (args.log) params.log = args.log;
 
         return jsonResponse(await vybitClient.createReminder(
-          args.vybitKey as string,
+          args.key as string,
           params
         ));
       }
 
       case 'reminder_list':
-        return jsonResponse(await vybitClient.listReminders(args.vybitKey as string));
+        return jsonResponse(await vybitClient.listReminders(args.key as string));
 
       case 'reminder_update': {
         const params: any = {};
@@ -873,7 +883,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (args.log !== undefined) params.log = args.log;
 
         return jsonResponse(await vybitClient.updateReminder(
-          args.vybitKey as string,
+          args.key as string,
           args.reminderId as string,
           params
         ));
@@ -881,7 +891,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'reminder_delete':
         await vybitClient.deleteReminder(
-          args.vybitKey as string,
+          args.key as string,
           args.reminderId as string
         );
         return jsonResponse({ success: true, message: 'Reminder deleted successfully' });
@@ -956,7 +966,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return jsonResponse(await vybitClient.getLog(args.logKey as string));
 
       case 'vybit_logs':
-        return jsonResponse(await vybitClient.listVybitLogs(args.vybitKey as string, {
+        return jsonResponse(await vybitClient.listVybitLogs(args.key as string, {
           search: args.search as string | undefined,
           limit: args.limit as number | undefined,
           offset: args.offset as number | undefined,
@@ -982,7 +992,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'peep_create':
         return jsonResponse(await vybitClient.createPeep(
-          args.vybitKey as string,
+          args.key as string,
           args.email as string
         ));
 
@@ -991,7 +1001,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return jsonResponse({ success: true, message: 'Peep removed successfully' });
 
       case 'vybit_peeps_list':
-        return jsonResponse(await vybitClient.listVybitPeeps(args.vybitKey as string, {
+        return jsonResponse(await vybitClient.listVybitPeeps(args.key as string, {
           search: args.search as string | undefined,
           limit: args.limit as number | undefined,
           offset: args.offset as number | undefined,

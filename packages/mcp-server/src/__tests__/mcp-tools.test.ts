@@ -67,22 +67,24 @@ describe('MCP Server Tool Schemas', () => {
   });
 
   describe('vybit_update schema', () => {
-    test('should only require vybitId field', () => {
+    test('should only require key field', () => {
       const vybitUpdateSchema = {
         type: 'object',
         properties: {
-          vybitId: { type: 'string' },
+          key: { type: 'string' },
           name: { type: 'string' },
           description: { type: 'string' },
           soundKey: { type: 'string' },
           status: { type: 'string', enum: ['on', 'off'] },
           access: { type: 'string', enum: ['public', 'private', 'unlisted'] },
           message: { type: 'string' },
+          imageUrl: { type: 'string' },
+          linkUrl: { type: 'string' },
         },
-        required: ['vybitId'],
+        required: ['key'],
       };
 
-      expect(vybitUpdateSchema.required).toEqual(['vybitId']);
+      expect(vybitUpdateSchema.required).toEqual(['key']);
       expect(vybitUpdateSchema.properties.status).toBeDefined();
     });
   });
@@ -105,21 +107,21 @@ describe('MCP Server Tool Schemas', () => {
   });
 
   describe('vybit_trigger schema', () => {
-    test('should only require triggerKey', () => {
+    test('should only require key', () => {
       const vybitTriggerSchema = {
         type: 'object',
         properties: {
-          triggerKey: { type: 'string' },
+          key: { type: 'string' },
           message: { type: 'string' },
           imageUrl: { type: 'string' },
           linkUrl: { type: 'string' },
           log: { type: 'string' },
           runOnce: { type: 'boolean' },
         },
-        required: ['triggerKey'],
+        required: ['key'],
       };
 
-      expect(vybitTriggerSchema.required).toEqual(['triggerKey']);
+      expect(vybitTriggerSchema.required).toEqual(['key']);
       expect(vybitTriggerSchema.properties.message).toBeDefined();
       expect(vybitTriggerSchema.properties.imageUrl).toBeDefined();
       expect(vybitTriggerSchema.properties.linkUrl).toBeDefined();
@@ -128,11 +130,11 @@ describe('MCP Server Tool Schemas', () => {
   });
 
   describe('reminder_create schema', () => {
-    test('should require vybitKey and cron', () => {
+    test('should require key and cron', () => {
       const reminderCreateSchema = {
         type: 'object',
         properties: {
-          vybitKey: { type: 'string' },
+          key: { type: 'string' },
           cron: { type: 'string' },
           timeZone: { type: 'string' },
           year: { type: 'number' },
@@ -141,10 +143,10 @@ describe('MCP Server Tool Schemas', () => {
           linkUrl: { type: 'string' },
           log: { type: 'string' },
         },
-        required: ['vybitKey', 'cron'],
+        required: ['key', 'cron'],
       };
 
-      expect(reminderCreateSchema.required).toEqual(['vybitKey', 'cron']);
+      expect(reminderCreateSchema.required).toEqual(['key', 'cron']);
       expect(reminderCreateSchema.properties.year).toBeDefined();
       expect(reminderCreateSchema.properties.timeZone).toBeDefined();
       expect(reminderCreateSchema.properties.message).toBeDefined();
@@ -279,14 +281,14 @@ describe('MCP Server Handler Logic', () => {
 
       // Simulate handler logic
       const args = {
-        vybitId: 'test123',
+        key: 'test123',
         name: 'Updated Name',
       };
 
       const updateData: any = {};
       if (args.name) updateData.name = args.name;
 
-      await mockClient.patchVybit(args.vybitId, updateData);
+      await mockClient.patchVybit(args.key, updateData);
 
       expect(mockClient.patchVybit).toHaveBeenCalledWith('test123', { name: 'Updated Name' });
     });
@@ -301,14 +303,14 @@ describe('MCP Server Handler Logic', () => {
 
       // Simulate handler logic
       const args = {
-        vybitId: 'test123',
+        key: 'test123',
         status: 'off',
       };
 
       const updateData: any = {};
       if (args.status) updateData.status = args.status;
 
-      await mockClient.patchVybit(args.vybitId, updateData);
+      await mockClient.patchVybit(args.key, updateData);
 
       expect(mockClient.patchVybit).toHaveBeenCalledWith('test123', { status: 'off' });
     });
@@ -339,7 +341,7 @@ describe('MCP Server Handler Logic', () => {
       mockClient.triggerVybit.mockResolvedValue({ result: 1, plk: 'log123' });
 
       const args = {
-        triggerKey: 'trigger123',
+        key: 'trigger123',
         message: 'Test message',
         imageUrl: 'https://example.com/image.jpg',
       };
@@ -348,7 +350,7 @@ describe('MCP Server Handler Logic', () => {
       if (args.message) options.message = args.message;
       if (args.imageUrl) options.imageUrl = args.imageUrl;
 
-      await mockClient.triggerVybit(args.triggerKey, options);
+      await mockClient.triggerVybit(args.key, options);
 
       expect(mockClient.triggerVybit).toHaveBeenCalledWith('trigger123', {
         message: 'Test message',
@@ -360,13 +362,13 @@ describe('MCP Server Handler Logic', () => {
       mockClient.triggerVybit.mockResolvedValue({ result: 1, plk: 'log123' });
 
       const args = {
-        triggerKey: 'trigger123',
+        key: 'trigger123',
       };
 
       const options: any = {};
 
       await mockClient.triggerVybit(
-        args.triggerKey,
+        args.key,
         Object.keys(options).length > 0 ? options : undefined
       );
 
@@ -377,7 +379,7 @@ describe('MCP Server Handler Logic', () => {
       mockClient.triggerVybit.mockResolvedValue({ result: 1, plk: 'log123' });
 
       const args = {
-        triggerKey: 'trigger123',
+        key: 'trigger123',
         message: 'One-time alert',
         runOnce: true,
       };
@@ -386,7 +388,7 @@ describe('MCP Server Handler Logic', () => {
       if (args.message) options.message = args.message;
       if (args.runOnce !== undefined) options.runOnce = args.runOnce;
 
-      await mockClient.triggerVybit(args.triggerKey, options);
+      await mockClient.triggerVybit(args.key, options);
 
       expect(mockClient.triggerVybit).toHaveBeenCalledWith('trigger123', {
         message: 'One-time alert',
@@ -398,14 +400,14 @@ describe('MCP Server Handler Logic', () => {
       mockClient.triggerVybit.mockResolvedValue({ result: 1, plk: 'log123' });
 
       const args = {
-        triggerKey: 'trigger123',
+        key: 'trigger123',
         log: 'Build completed successfully',
       };
 
       const options: any = {};
       if (args.log) options.log = args.log;
 
-      await mockClient.triggerVybit(args.triggerKey, options);
+      await mockClient.triggerVybit(args.key, options);
 
       expect(mockClient.triggerVybit).toHaveBeenCalledWith('trigger123', {
         log: 'Build completed successfully',
@@ -416,7 +418,7 @@ describe('MCP Server Handler Logic', () => {
       mockClient.triggerVybit.mockResolvedValue({ result: 1, plk: 'log123' });
 
       const args = {
-        triggerKey: 'trigger123',
+        key: 'trigger123',
         message: 'Deploy complete',
         imageUrl: 'https://example.com/img.png',
         linkUrl: 'https://example.com',
@@ -431,7 +433,7 @@ describe('MCP Server Handler Logic', () => {
       if (args.log) options.log = args.log;
       if (args.runOnce !== undefined) options.runOnce = args.runOnce;
 
-      await mockClient.triggerVybit(args.triggerKey, options);
+      await mockClient.triggerVybit(args.key, options);
 
       expect(mockClient.triggerVybit).toHaveBeenCalledWith('trigger123', {
         message: 'Deploy complete',

@@ -20,7 +20,8 @@
     "sdk",
     "oauth2",
     "api",
-    "notifications"
+    "notifications",
+    "mcp"
   ],
   "author": "Vybit Team",
   "license": "MIT",
