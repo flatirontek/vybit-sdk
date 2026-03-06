@@ -477,6 +477,15 @@ export const TOOLS: Tool[] = [
     },
     annotations: READ_ONLY_ANNOTATIONS,
   },
+  {
+    name: 'get_current_time',
+    description: 'Get the current time. Use this before creating reminders with relative time expressions like "in 5 minutes" or "an hour from now".',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+    annotations: READ_ONLY_ANNOTATIONS,
+  },
 
   // Public Vybit Discovery
   {
@@ -744,7 +753,7 @@ const VYBIT_ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAA
 const server = new Server(
   {
     name: 'vybit-mcp-server',
-    version: '1.5.0',
+    version: '1.5.1',
     icons: [
       {
         src: VYBIT_ICON,
@@ -908,6 +917,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'meter_get':
         return jsonResponse(await vybitClient.getMeter());
+
+      case 'get_current_time': {
+        const now = new Date();
+        return jsonResponse({
+          utc: now.toISOString(),
+          local: now.toLocaleString(),
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        });
+      }
 
       // Public Vybit Discovery
       case 'vybits_browse_public':

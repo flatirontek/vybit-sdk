@@ -332,7 +332,7 @@ Claude: [Lists notification logs]
 
 ### Features
 
-The MCP server provides **29 tools** across all Vybit API features:
+The MCP server provides **30 tools** across all Vybit API features:
 - Vybit management (6 tools)
 - Reminder management (4 tools)
 - Public vybit discovery (2 tools)

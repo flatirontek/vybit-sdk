@@ -205,7 +205,7 @@ Claude: [Unsubscribes successfully]
 
 ## Available Tools
 
-The MCP server exposes **29 tools** to AI assistants, providing full parity with the Vybit Developer API:
+The MCP server exposes **30 tools** to AI assistants, providing full parity with the Vybit Developer API:
 
 ### Vybit Management (6 tools)
 
@@ -243,9 +243,10 @@ The MCP server exposes **29 tools** to AI assistants, providing full parity with
 - `peep_delete` - Remove a peep (revoke access to a vybit)
 - `vybit_peeps_list` - List all peeps for a specific vybit
 
-### Monitoring (1 tool)
+### Monitoring & Utilities (2 tools)
 
 - `meter_get` - Get API usage and limits (daily/monthly counts and caps)
+- `get_current_time` - Get the current time (useful for relative time expressions when creating reminders)
 
 ### Public Vybit Discovery (2 tools)
 
