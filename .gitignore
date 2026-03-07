@@ -42,6 +42,9 @@ internal/
 
 # Note: .gitlab-ci.yml is intentionally public (in root) for CI/CD to work
 
+# Keys and credentials
+.keys/
+
 # Security and internal analysis
 SECURITY*.md
 *AUDIT*.md

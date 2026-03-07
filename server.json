@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "net.vybit/mcp-server",
+  "description": "Push notifications with personalized sounds - manage and trigger your vybits via MCP",
+  "version": "1.5.2",
+  "website_url": "https://www.vybit.net",
+  "repository": {
+    "url": "https://github.com/flatirontek/vybit-sdk",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://api.vybit.net/v1/mcp"
+    }
+  ]
+}

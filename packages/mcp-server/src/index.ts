@@ -274,7 +274,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'vybit_delete',
-    description: 'Delete a vybit',
+    description: 'Delete a vybit. Confirm deletion with the user before performing this action.',
     inputSchema: {
       type: 'object',
       properties: {
