@@ -179,6 +179,43 @@ publish-api:
     name: npm-registry
     url: https://www.npmjs.com/package/@vybit/api-sdk
 
+# Publish CLI
+publish-cli:
+  stage: publish
+  image: node:$NODE_VERSION
+  needs: ["build", "test"]
+  only:
+    - main
+    - master
+  id_tokens:
+    NPM_ID_TOKEN:
+      aud: npm:registry.npmjs.org
+    SIGSTORE_ID_TOKEN:
+      aud: sigstore
+  before_script:
+    - npm install -g npm@latest
+    - npm --version
+  script:
+    - |
+      cd packages/cli
+      CURRENT_VERSION=$(node -p "require('./package.json').version")
+      PUBLISHED_VERSION=$(npm view @vybit/cli version 2>/dev/null || echo "0.0.0")
+      echo "Current version: $CURRENT_VERSION"
+      echo "Published version: $PUBLISHED_VERSION"
+
+      if [ "$CURRENT_VERSION" = "$PUBLISHED_VERSION" ]; then
+        echo "⚠️  Version unchanged ($CURRENT_VERSION) - skipping publish"
+        echo "Bump version in package.json before publishing"
+        exit 0
+      fi
+
+      echo "Publishing $CURRENT_VERSION (currently $PUBLISHED_VERSION on npm)"
+      npm publish --provenance --access public
+  when: manual
+  environment:
+    name: npm-registry
+    url: https://www.npmjs.com/package/@vybit/cli
+
 # Publish MCP Server
 publish-mcp:
   stage: publish
