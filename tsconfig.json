@@ -18,7 +18,8 @@
     "paths": {
       "@vybit/core": ["./packages/core/src"],
       "@vybit/oauth2-sdk": ["./packages/oauth2/src"],
-      "@vybit/api-sdk": ["./packages/api/src"]
+      "@vybit/api-sdk": ["./packages/api/src"],
+      "@vybit/cli": ["./packages/cli/src"]
     },
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
@@ -39,6 +40,7 @@
   "references": [
     { "path": "./packages/core" },
     { "path": "./packages/oauth2" },
-    { "path": "./packages/api" }
+    { "path": "./packages/api" },
+    { "path": "./packages/cli" }
   ]
 }

@@ -10,7 +10,7 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "bundle": "esbuild dist/index.js --bundle --platform=node --format=esm --outfile=dist/bundle.js",
+    "bundle": "esbuild dist/index.js --bundle --platform=node --format=cjs --outfile=dist/bundle.cjs",
     "clean": "rm -rf dist *.tsbuildinfo",
     "dev": "tsc --watch",
     "test": "jest --config ../../jest.config.js --rootDir ../..",
@@ -50,7 +50,8 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "@vybit/api-sdk": "^1.2.0"
+    "@vybit/api-sdk": "^1.2.0",
+    "@vybit/core": "^1.3.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

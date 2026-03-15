@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "vybit-mcp-server",
   "display_name": "Vybit Notifications",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "Send push notifications with personalized sounds via the Vybit platform",
   "long_description": "Integrates Claude with the Vybit notification platform. Create and manage notification endpoints (vybits), trigger push notifications with custom sounds, browse and subscribe to public vybits, manage access permissions, view notification logs, and monitor API usage.",
   "author": {
@@ -23,10 +23,10 @@
   "keywords": ["notifications", "push-notifications", "sounds", "alerts", "vybit", "webhook", "monitoring"],
   "server": {
     "type": "node",
-    "entry_point": "dist/bundle.js",
+    "entry_point": "dist/bundle.cjs",
     "mcp_config": {
       "command": "node",
-      "args": ["${__dirname}/dist/bundle.js"],
+      "args": ["${__dirname}/dist/bundle.cjs"],
       "env": {
         "VYBIT_API_KEY": "${user_config.vybit_api_key}"
       }

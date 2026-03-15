@@ -27,7 +27,8 @@ module.exports = {
   moduleNameMapper: {
     '^@vybit/core$': '<rootDir>/packages/core/src',
     '^@vybit/oauth2-sdk$': '<rootDir>/packages/oauth2/src',
-    '^@vybit/api-sdk$': '<rootDir>/packages/api/src'
+    '^@vybit/api-sdk$': '<rootDir>/packages/api/src',
+    '^@vybit/cli$': '<rootDir>/packages/cli/src'
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js']
 };

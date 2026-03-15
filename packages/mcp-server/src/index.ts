@@ -15,111 +15,25 @@ import {
   Tool,
 } from '@modelcontextprotocol/sdk/types.js';
 import { VybitAPIClient } from '@vybit/api-sdk';
+import {
+  PAGINATION_SCHEMA,
+  TRIGGER_SETTINGS_SCHEMA,
+  GEOFENCE_SCHEMA,
+  normalizeGeofence,
+} from '@vybit/core';
 
 // Get credentials and optional base URL from environment
 const API_KEY = process.env.VYBIT_API_KEY;
 const ACCESS_TOKEN = process.env.VYBIT_ACCESS_TOKEN;
 const API_URL = process.env.VYBIT_API_URL;
 
-// Only initialize API client when credentials are available (not required for export-only usage)
+// Initialize API client when credentials are available
 let vybitClient: VybitAPIClient | null = null;
 if (API_KEY || ACCESS_TOKEN) {
   vybitClient = new VybitAPIClient({
     ...(API_KEY ? { apiKey: API_KEY } : { accessToken: ACCESS_TOKEN! }),
     ...(API_URL && { baseUrl: API_URL })
   });
-} else {
-  console.warn('Warning: VYBIT_API_KEY or VYBIT_ACCESS_TOKEN not set. MCP server tools will not be available.');
-}
-
-// Shared schema fragments
-const PAGINATION_SCHEMA = {
-  search: {
-    type: 'string',
-    description: 'Search term to filter results',
-  },
-  limit: {
-    type: 'number',
-    description: 'Maximum number of results to return (default: 50)',
-    default: 50,
-  },
-  offset: {
-    type: 'number',
-    description: 'Number of results to skip for pagination (default: 0)',
-    default: 0,
-  },
-} as const;
-
-const TRIGGER_SETTINGS_SCHEMA = {
-  type: 'object',
-  description: 'Configuration specific to the trigger type. For schedule and reminder triggers, contains crons array. Example: {"crons": [{"cron": "5 14 * * 0", "timeZone": "America/Denver"}]}. Cron format: minute hour day month dayOfWeek (0=Sunday).',
-  properties: {
-    crons: {
-      type: 'array',
-      description: 'Array of cron schedule definitions (for triggerType="schedule and triggerType="reminders)',
-      items: {
-        type: 'object',
-        properties: {
-          cron: {
-            type: 'string',
-            description: 'Cron expression (5 fields): minute hour day month dayOfWeek. Uses 24-hour time. Examples: "0 7 * * *" = 7:00 AM, "0 19 * * *" = 7:00 PM, "30 14 25 12 *" = 2:30 PM on Dec 25',
-          },
-          timeZone: {
-            type: 'string',
-            description: 'IANA timezone identifier. Defaults to UTC if omitted — always set this to the user\'s local timezone. Examples: "America/New_York", "America/Denver", "America/Los_Angeles", "Europe/London"',
-          },
-        },
-      },
-    },
-  },
-} as const;
-
-const GEOFENCE_SCHEMA = {
-  type: 'object',
-  description: 'Geofence configuration. Required when triggerType is "geofence", null otherwise.',
-  properties: {
-    lat: {
-      type: 'number',
-      description: 'Latitude of geofence center in decimal format',
-    },
-    lon: {
-      type: 'number',
-      description: 'Longitude of geofence center in decimal format',
-    },
-    radius: {
-      type: 'number',
-      description: 'Geofence radius value',
-    },
-    radiusUnits: {
-      type: 'string',
-      enum: ['meters', 'kilometers', 'miles'],
-      description: 'Units for the radius measurement',
-    },
-    type: {
-      type: 'string',
-      enum: ['enter', 'exit'],
-      description: 'Trigger on entry or exit from geofence',
-    },
-    timeThrottle: {
-      type: 'string',
-      description: 'Minimum seconds between triggers (default "0" = no throttle)',
-    },
-    subscribable: {
-      type: 'string',
-      enum: ['yes', 'no'],
-      description: 'yes indicates that the geofence will be set on the subscriber\'s device. no indicates that subscribers will receive notifications when the vybit owner triggers the geofence',
-    },
-  },
-} as const;
-
-// Apply defaults for geofence configuration
-export function normalizeGeofence(geofence: any): any {
-  if (geofence.radius !== undefined && !geofence.displayRadius) {
-    geofence.displayRadius = String(geofence.radius);
-  }
-  if (!geofence.subscribable) geofence.subscribable = 'yes';
-  if (!geofence.timeThrottle) geofence.timeThrottle = '0';
-  return geofence;
 }
 
 // Wrap a result as an MCP JSON text response
@@ -741,10 +655,9 @@ export const TOOLS: Tool[] = [
   },
 ];
 
-// --- Stdio server (only runs when credentials are available) ---
-// When this module is imported for exports only (TOOLS, normalizeGeofence, jsonResponse),
-// the code below is skipped because vybitClient will be null.
-if (vybitClient) {
+// --- Stdio server ---
+// Set VYBIT_MCP_NO_STDIO=true to import TOOLS/jsonResponse without starting the stdio server.
+if (process.env.VYBIT_MCP_NO_STDIO !== 'true') {
 
 // Vybit logo (64x64 PNG, base64-encoded)
 const VYBIT_ICON = 'data:image/png;base64,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';
@@ -753,7 +666,7 @@ const VYBIT_ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAA
 const server = new Server(
   {
     name: 'vybit-mcp-server',
-    version: '1.5.1',
+    version: '1.5.2',
     icons: [
       {
         src: VYBIT_ICON,
@@ -787,6 +700,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         {
           type: 'text',
           text: 'Error: Missing arguments',
+        },
+      ],
+      isError: true,
+    };
+  }
+
+  if (!vybitClient) {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: 'Error: No credentials configured. Set VYBIT_API_KEY or VYBIT_ACCESS_TOKEN environment variable.',
         },
       ],
       isError: true,
@@ -1055,4 +980,4 @@ main().catch((error) => {
   process.exit(1);
 });
 
-} // end if (vybitClient)
+} // end if (VYBIT_MCP_NO_STDIO !== 'true')

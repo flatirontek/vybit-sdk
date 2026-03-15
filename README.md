@@ -6,6 +6,7 @@ Official TypeScript/JavaScript SDKs for integrating with the Vybit notification 
 
 [![npm version](https://badge.fury.io/js/%40vybit%2Fapi-sdk.svg)](https://www.npmjs.com/package/@vybit/api-sdk)
 [![npm version](https://badge.fury.io/js/%40vybit%2Foauth2-sdk.svg)](https://www.npmjs.com/package/@vybit/oauth2-sdk)
+[![npm version](https://badge.fury.io/js/%40vybit%2Fcli.svg)](https://www.npmjs.com/package/@vybit/cli)
 [![npm version](https://badge.fury.io/js/%40vybit%2Fmcp-server.svg)](https://www.npmjs.com/package/@vybit/mcp-server)
 [![npm version](https://badge.fury.io/js/%40vybit%2Fn8n-nodes-vybit.svg)](https://www.npmjs.com/package/@vybit/n8n-nodes-vybit)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -18,6 +19,7 @@ Vybit provides multiple integration options for different use cases:
 |---------|----------|----------------|----------|
 | **[@vybit/api-sdk](./packages/api)** | Backend/automation | API Key or OAuth2 Token | Server-to-server integrations, automation, monitoring systems |
 | **[@vybit/oauth2-sdk](./packages/oauth2)** | User-facing applications | OAuth 2.0 (user authorization) | Web apps where users connect their Vybit accounts (auth flow only) |
+| **[@vybit/cli](./packages/cli)** | Command line | API Key or OAuth2 Token | Shell scripting, CI/CD, agent tooling, quick operations |
 | **[@vybit/mcp-server](./packages/mcp-server)** | AI assistants | API Key or OAuth2 Token | Claude Desktop, Claude Code, and other MCP-compatible AI tools |
 | **[@vybit/n8n-nodes-vybit](./packages/n8n-nodes)** | Workflow automation | API Key or OAuth2 | n8n workflows, no-code/low-code automation, integration platforms |
 
@@ -246,6 +248,82 @@ const currentToken = oauthClient.getAccessToken();
 
 - **📖 Interactive Documentation**: [developer.vybit.net/oauth-reference](https://developer.vybit.net/oauth-reference)
 - **📋 OpenAPI Spec**: [docs/openapi/oauth2.yaml](./docs/openapi/oauth2.yaml)
+
+---
+
+## CLI
+
+**For command-line access, shell scripting, CI/CD pipelines, and AI agent tooling**
+
+The Vybit CLI provides full parity with the MCP server — every operation available to AI assistants is also available from the command line. All output is structured JSON to stdout, making it equally useful for humans, shell scripts, and AI agents.
+
+### Installation
+
+```bash
+npm install -g @vybit/cli
+```
+
+### Authentication
+
+```bash
+# Option 1: Environment variable (recommended for CI/CD and agents)
+export VYBIT_API_KEY='your-api-key'
+
+# Option 2: Config file
+vybit auth setup --api-key 'your-api-key'
+
+# Option 3: Per-command flag
+vybit --api-key 'your-api-key' vybits list
+```
+
+Credentials are resolved in order: CLI flags > environment variables > config file (`~/.config/vybit/config.json`).
+
+### Common Operations
+
+```bash
+# List your vybits
+vybit vybits list
+
+# Create a vybit
+vybit vybits create --name "Deploy Alert" --trigger-type webhook
+
+# Trigger a notification
+vybit trigger <vybit-key> --message "Build passed"
+
+# Trigger in CI/CD (quiet mode returns just the key/ID)
+vybit trigger <vybit-key> --message "$(git log -1 --oneline)" -q
+
+# Search sounds
+vybit sounds list --search "bell"
+
+# Check usage
+vybit meter
+```
+
+### Available Commands
+
+| Command | Operations |
+|---------|-----------|
+| `vybit vybits` | `list`, `get`, `create`, `update`, `delete` |
+| `vybit trigger` | Trigger a vybit notification |
+| `vybit reminders` | `list`, `create`, `update`, `delete` |
+| `vybit sounds` | `list`, `get` |
+| `vybit subscriptions` | `list`, `get`, `create`, `update`, `delete` |
+| `vybit browse` | `list`, `get` (public vybits) |
+| `vybit logs` | `list`, `get`, `vybit`, `subscription` |
+| `vybit peeps` | `list`, `get`, `create`, `delete`, `vybit` |
+| `vybit meter` | API usage metrics |
+| `vybit status` | API health check |
+| `vybit profile` | User profile info |
+| `vybit auth` | `setup`, `status`, `logout` |
+
+### Agent-Friendly Design
+
+- **JSON to stdout** — all data output is parseable JSON
+- **Errors to stderr** — structured `{"error":"...","statusCode":404}` format
+- **Exit codes** — 0 success, 1 error, 2 auth error
+- **`--quiet` / `-q`** — output only keys/IDs for chaining commands
+- **Never prompts** — all input via flags, safe for non-interactive use
 
 ---
 
