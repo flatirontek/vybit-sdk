@@ -19,7 +19,7 @@ Vybit provides multiple integration options for different use cases:
 |---------|----------|----------------|----------|
 | **[@vybit/api-sdk](./packages/api)** | Backend/automation | API Key or OAuth2 Token | Server-to-server integrations, automation, monitoring systems |
 | **[@vybit/oauth2-sdk](./packages/oauth2)** | User-facing applications | OAuth 2.0 (user authorization) | Web apps where users connect their Vybit accounts (auth flow only) |
-| **[@vybit/cli](./packages/cli)** | Command line | API Key or OAuth2 Token | Shell scripting, CI/CD, agent tooling, quick operations |
+| **[@vybit/cli](./packages/cli)** | Command line | API Key | Shell scripting, CI/CD, agent tooling, quick operations |
 | **[@vybit/mcp-server](./packages/mcp-server)** | AI assistants | API Key or OAuth2 Token | Claude Desktop, Claude Code, and other MCP-compatible AI tools |
 | **[@vybit/n8n-nodes-vybit](./packages/n8n-nodes)** | Workflow automation | API Key or OAuth2 | n8n workflows, no-code/low-code automation, integration platforms |
 
