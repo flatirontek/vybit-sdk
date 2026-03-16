@@ -1,6 +1,6 @@
 {
   "name": "@vybit/core",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Core utilities and types for Vybit SDKs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
