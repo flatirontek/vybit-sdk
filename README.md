@@ -339,9 +339,25 @@ The [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server enabl
 npm install -g @vybit/mcp-server
 ```
 
-### Configuration
+### Hosted Remote MCP Server (Easiest)
 
-Add to your MCP client configuration (use either `VYBIT_API_KEY` or `VYBIT_ACCESS_TOKEN`):
+Vybit provides a hosted remote MCP server at `https://api.vybit.net/v1/mcp` — no installation required. Connect directly from Claude or ChatGPT (may require paid plans):
+
+**Claude Desktop / Claude Web (claude.ai)**:
+1. Open **Settings → Connectors**
+2. Click **Add Custom Connector** 
+3. Enter the MCP URL: `https://api.vybit.net/v1/mcp`
+4. You'll be redirected to authorize with your Vybit account via OAuth
+
+**ChatGPT Desktop / ChatGPT Web (chatgpt.com)**:
+1. Open **Settings → Apps → Advanced Settings**
+2. Toggle **ON** Developer Mode, Click "Create app"
+3. Fill out and submit the New App form setting the MCP Server URL as `https://api.vybit.net/v1/mcp`
+4. You'll be redirected to authorize with your Vybit account via OAuth
+
+### Local MCP Server
+
+If you prefer to run the MCP server locally (e.g., for Claude Code, Cline, or other MCP clients), install the npm package and configure with your API key:
 
 **Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 ```json

@@ -30,7 +30,27 @@ This MCP server provides AI assistants with **full parity** with the Vybit Devel
    - **API Key**: Navigate to the Developer API section, click "</> DEV" then "API Configuration"
    - **OAuth2 Token**: Complete the OAuth2 flow to obtain an access token
 
-## Installation
+## Hosted Remote MCP Server (Easiest)
+
+Vybit provides a hosted remote MCP server at `https://api.vybit.net/v1/mcp` — no installation or API key management required. Connect directly from Claude or ChatGPT (may require paid plans):
+
+**Claude Desktop / Claude Web (claude.ai)**:
+1. Open **Settings → Connectors**
+2. Click **Add Custom Connector**
+3. Enter the MCP URL: `https://api.vybit.net/v1/mcp`
+4. You'll be redirected to authorize with your Vybit account via OAuth
+
+**ChatGPT Desktop / ChatGPT Web (chatgpt.com)**:
+1. Open **Settings → Apps → Advanced Settings**
+2. Toggle **ON** Developer Mode, Click "Create app"
+3. Fill out and submit the New App form setting the MCP Server URL as `https://api.vybit.net/v1/mcp`
+4. You'll be redirected to authorize with your Vybit account via OAuth
+
+Once connected, all 30 MCP tools are available immediately through natural conversation.
+
+## Local Installation
+
+If you prefer to run the server locally (e.g., for Claude Code, Cline, or other MCP clients that support stdio transport), you can install the npm package and configure with your API key.
 
 ### Claude Desktop (MCPB — Recommended)
 
