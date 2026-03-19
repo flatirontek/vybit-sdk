@@ -56,6 +56,7 @@ const MUTATING_ANNOTATIONS = { readOnlyHint: false, destructiveHint: true } as c
 export const TOOLS: Tool[] = [
   {
     name: 'vybit_list',
+    title: 'List Vybits',
     description: 'List vybits with optional search and pagination. Returns a list of vybits owned by the authenticated user.',
     inputSchema: {
       type: 'object',
@@ -65,6 +66,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'vybit_get',
+    title: 'Get Vybit Details',
     description: 'Get detailed information about a specific vybit by ID (key)',
     inputSchema: {
       type: 'object',
@@ -80,6 +82,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'vybit_create',
+    title: 'Create Vybit',
     description: 'Create a new vybit',
     inputSchema: {
       type: 'object',
@@ -132,6 +135,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'vybit_update',
+    title: 'Update Vybit',
     description: 'Update an existing vybit',
     inputSchema: {
       type: 'object',
@@ -188,6 +192,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'vybit_delete',
+    title: 'Delete Vybit',
     description: 'Delete a vybit. Confirm deletion with the user before performing this action.',
     inputSchema: {
       type: 'object',
@@ -203,6 +208,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'vybit_trigger',
+    title: 'Trigger Vybit Notification',
     description: 'Trigger a vybit notification using its vybit key',
     inputSchema: {
       type: 'object',
@@ -239,6 +245,7 @@ export const TOOLS: Tool[] = [
   // Reminders
   {
     name: 'reminder_create',
+    title: 'Create Reminder',
     description: 'Create a reminder on a vybit (the vybit must have triggerType=reminders). Each reminder gets its own cron schedule. Reminders must be in the future and will not trigger if the scheduled time has already passed. ',
     inputSchema: {
       type: 'object',
@@ -282,6 +289,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'reminder_list',
+    title: 'List Reminders',
     description: 'List all reminders on a vybit',
     inputSchema: {
       type: 'object',
@@ -297,6 +305,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'reminder_update',
+    title: 'Update Reminder',
     description: 'Update an existing reminder on a vybit',
     inputSchema: {
       type: 'object',
@@ -340,6 +349,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'reminder_delete',
+    title: 'Delete Reminder',
     description: 'Delete a reminder from a vybit',
     inputSchema: {
       type: 'object',
@@ -360,6 +370,7 @@ export const TOOLS: Tool[] = [
 
   {
     name: 'sounds_list',
+    title: 'List Sounds',
     description: 'List available sounds with optional search and pagination',
     inputSchema: {
       type: 'object',
@@ -369,6 +380,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'sound_get',
+    title: 'Get Sound Details',
     description: 'Get detailed information about a specific sound',
     inputSchema: {
       type: 'object',
@@ -384,6 +396,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'meter_get',
+    title: 'Get Usage Metrics',
     description: 'Get current API usage and limits. Shows daily and monthly usage counts, caps, and tier information.',
     inputSchema: {
       type: 'object',
@@ -393,6 +406,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'get_current_time',
+    title: 'Get Current Time',
     description: 'Get the current time. Use this before creating reminders with relative time expressions like "in 5 minutes" or "an hour from now".',
     inputSchema: {
       type: 'object',
@@ -404,6 +418,7 @@ export const TOOLS: Tool[] = [
   // Public Vybit Discovery
   {
     name: 'vybits_browse_public',
+    title: 'Browse Public Vybits',
     description: 'Browse public vybits available for subscription. Returns simplified PublicVybit objects.',
     inputSchema: {
       type: 'object',
@@ -413,6 +428,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'vybit_get_public',
+    title: 'Get Public Vybit Details',
     description: 'Get details about a public vybit by subscription key before subscribing',
     inputSchema: {
       type: 'object',
@@ -430,6 +446,7 @@ export const TOOLS: Tool[] = [
   // Subscription Management
   {
     name: 'subscription_create',
+    title: 'Subscribe to Vybit',
     description: 'Subscribe to a public vybit using its subscription key',
     inputSchema: {
       type: 'object',
@@ -445,6 +462,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'subscriptions_list',
+    title: 'List Subscriptions',
     description: 'List all vybits you are subscribed to (following)',
     inputSchema: {
       type: 'object',
@@ -454,6 +472,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'subscription_get',
+    title: 'Get Subscription Details',
     description: 'Get details about a specific subscription',
     inputSchema: {
       type: 'object',
@@ -469,6 +488,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'subscription_update',
+    title: 'Update Subscription',
     description: 'Update a subscription (enable/disable, update permissions)',
     inputSchema: {
       type: 'object',
@@ -506,6 +526,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'subscription_delete',
+    title: 'Unsubscribe from Vybit',
     description: 'Unsubscribe from a vybit',
     inputSchema: {
       type: 'object',
@@ -523,6 +544,7 @@ export const TOOLS: Tool[] = [
   // Logs
   {
     name: 'logs_list',
+    title: 'List Notification Logs',
     description: 'List all notification logs with optional search and pagination',
     inputSchema: {
       type: 'object',
@@ -532,6 +554,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'log_get',
+    title: 'Get Log Details',
     description: 'Get details about a specific log entry',
     inputSchema: {
       type: 'object',
@@ -547,6 +570,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'vybit_logs',
+    title: 'List Vybit Logs',
     description: 'List logs for a specific vybit you own',
     inputSchema: {
       type: 'object',
@@ -563,6 +587,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'subscription_logs',
+    title: 'List Subscription Logs',
     description: 'List logs for a specific subscription',
     inputSchema: {
       type: 'object',
@@ -581,6 +606,7 @@ export const TOOLS: Tool[] = [
   // Peeps (Access Control)
   {
     name: 'peeps_list',
+    title: 'List Peeps',
     description: 'List all peeps (people invited or subscribed to your vybits)',
     inputSchema: {
       type: 'object',
@@ -590,6 +616,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'peep_get',
+    title: 'Get Peep Details',
     description: 'Get details about a specific peep',
     inputSchema: {
       type: 'object',
@@ -605,6 +632,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'peep_create',
+    title: 'Invite Peep',
     description: 'Invite someone to subscribe to your vybit',
     inputSchema: {
       type: 'object',
@@ -624,6 +652,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'peep_delete',
+    title: 'Remove Peep',
     description: 'Remove a peep (revoke subscription access)',
     inputSchema: {
       type: 'object',
@@ -639,6 +668,7 @@ export const TOOLS: Tool[] = [
   },
   {
     name: 'vybit_peeps_list',
+    title: 'List Vybit Peeps',
     description: 'List all peeps for a specific vybit',
     inputSchema: {
       type: 'object',
