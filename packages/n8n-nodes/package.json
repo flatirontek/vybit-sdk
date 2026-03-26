@@ -1,6 +1,6 @@
 {
   "name": "@vybit/n8n-nodes-vybit",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Push notifications with personalized sounds - n8n community nodes for Vybit",
   "license": "MIT",
   "type": "module",
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://gitlab.com/flatirontek/vybit-sdk.git",
+    "url": "https://github.com/flatirontek/vybit-sdk.git",
     "directory": "packages/n8n-nodes"
   },
   "keywords": [
