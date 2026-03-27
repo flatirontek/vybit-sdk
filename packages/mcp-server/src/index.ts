@@ -50,7 +50,8 @@ export function jsonResponse(result: any) {
 
 // Tool annotation constants
 const READ_ONLY_ANNOTATIONS = { readOnlyHint: true } as const;
-const MUTATING_ANNOTATIONS = { readOnlyHint: false, destructiveHint: true } as const;
+const WRITE_ANNOTATIONS = { readOnlyHint: false, destructiveHint: false, openWorldHint: false } as const;
+const DESTRUCTIVE_ANNOTATIONS = { readOnlyHint: false, destructiveHint: true, openWorldHint: false } as const;
 
 // Define available tools
 export const TOOLS: Tool[] = [
@@ -131,7 +132,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['name'],
     },
-    annotations: MUTATING_ANNOTATIONS,
+    annotations: WRITE_ANNOTATIONS,
   },
   {
     name: 'vybit_update',
@@ -188,7 +189,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['key'],
     },
-    annotations: MUTATING_ANNOTATIONS,
+    annotations: WRITE_ANNOTATIONS,
   },
   {
     name: 'vybit_delete',
@@ -204,7 +205,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['key'],
     },
-    annotations: MUTATING_ANNOTATIONS,
+    annotations: DESTRUCTIVE_ANNOTATIONS,
   },
   {
     name: 'vybit_trigger',
@@ -240,7 +241,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['key'],
     },
-    annotations: MUTATING_ANNOTATIONS,
+    annotations: WRITE_ANNOTATIONS,
   },
   // Reminders
   {
@@ -285,7 +286,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['key', 'cron'],
     },
-    annotations: MUTATING_ANNOTATIONS,
+    annotations: WRITE_ANNOTATIONS,
   },
   {
     name: 'reminder_list',
@@ -345,7 +346,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['key', 'reminderId'],
     },
-    annotations: MUTATING_ANNOTATIONS,
+    annotations: WRITE_ANNOTATIONS,
   },
   {
     name: 'reminder_delete',
@@ -365,7 +366,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['key', 'reminderId'],
     },
-    annotations: MUTATING_ANNOTATIONS,
+    annotations: DESTRUCTIVE_ANNOTATIONS,
   },
 
   {
@@ -458,7 +459,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['subscriptionKey'],
     },
-    annotations: MUTATING_ANNOTATIONS,
+    annotations: WRITE_ANNOTATIONS,
   },
   {
     name: 'subscriptions_list',
@@ -522,7 +523,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['followingKey'],
     },
-    annotations: MUTATING_ANNOTATIONS,
+    annotations: WRITE_ANNOTATIONS,
   },
   {
     name: 'subscription_delete',
@@ -538,7 +539,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['followingKey'],
     },
-    annotations: MUTATING_ANNOTATIONS,
+    annotations: DESTRUCTIVE_ANNOTATIONS,
   },
 
   // Logs
@@ -648,7 +649,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['key', 'email'],
     },
-    annotations: MUTATING_ANNOTATIONS,
+    annotations: WRITE_ANNOTATIONS,
   },
   {
     name: 'peep_delete',
@@ -664,7 +665,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['peepKey'],
     },
-    annotations: MUTATING_ANNOTATIONS,
+    annotations: DESTRUCTIVE_ANNOTATIONS,
   },
   {
     name: 'vybit_peeps_list',
