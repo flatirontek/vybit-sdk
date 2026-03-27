@@ -7,7 +7,8 @@ import type {
 
 export class VybitApi implements ICredentialType {
 	name = 'vybitApi';
-	displayName = 'API Key';
+	displayName = 'Vybit API';
+	icon = 'file:vybit.png' as const;
 	documentationUrl = 'https://developer.vybit.net/api-reference';
 
 	// Key description for users

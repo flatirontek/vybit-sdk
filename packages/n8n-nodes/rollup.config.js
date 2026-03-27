@@ -2,17 +2,48 @@ import esbuild from 'rollup-plugin-esbuild';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
-import replace from '@rollup/plugin-replace';
+
+// Inline n8n-workflow values at build time so the dist has no runtime
+// dependency on n8n-workflow (its npm ESM build is incomplete).
+// The TypeScript source still imports from 'n8n-workflow' for type-checking.
+function inlineN8nWorkflow() {
+  const MODULE_ID = '\0n8n-workflow-inline';
+  return {
+    name: 'inline-n8n-workflow',
+    resolveId(source) {
+      if (source === 'n8n-workflow') return MODULE_ID;
+      return null;
+    },
+    load(id) {
+      if (id === MODULE_ID) {
+        return `
+export const NodeConnectionTypes = { Main: 'main' };
+
+export class NodeApiError extends Error {
+  constructor(node, errorResponse, options) {
+    const message = options?.message
+      || errorResponse?.message
+      || errorResponse?.description
+      || 'UNKNOWN ERROR';
+    super(message);
+    this.name = 'NodeApiError';
+    this.node = node;
+    this.description = options?.description || errorResponse?.description || '';
+    this.httpCode = options?.httpCode || errorResponse?.httpCode || errorResponse?.statusCode;
+    if (errorResponse?.stack) this.stack = errorResponse.stack;
+  }
+}
+`;
+      }
+      return null;
+    },
+  };
+}
 
 const baseConfig = {
-  external: ['n8n-workflow', 'n8n-core'],
+  external: ['n8n-core'],
   plugins: [
-    replace({
-      'process.env.VYBIT_API_KEY': 'undefined',
-      'process.env.VYBIT_API_URL': 'undefined',
-      'process.env.VYBIT_OAUTH2_TOKEN': 'undefined',
-      preventAssignment: true,
-    }),
+    inlineN8nWorkflow(),
     esbuild({
       target: 'es2020',
       minify: false,

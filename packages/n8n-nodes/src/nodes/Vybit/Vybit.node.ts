@@ -1,13 +1,62 @@
 import type {
 	IExecuteFunctions,
+	IHttpRequestOptions,
 	ILoadOptionsFunctions,
 	INodeExecutionData,
 	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
+	JsonObject,
 } from 'n8n-workflow';
 
-import { VybitAPIClient } from '@vybit/api-sdk';
+import { NodeApiError, NodeConnectionTypes } from 'n8n-workflow';
+
+const VYBIT_BASE_URL = 'https://api.vybit.net/v1';
+
+function buildSearchQs(options: any): Record<string, string | number> {
+	const qs: Record<string, string | number> = {};
+	if (options.search) qs.search = options.search;
+	if (options.limit !== undefined) qs.limit = options.limit;
+	if (options.offset !== undefined) qs.offset = options.offset;
+	return qs;
+}
+
+function pickDefined(obj: any, keys: string[]): Record<string, any> {
+	const result: Record<string, any> = {};
+	for (const key of keys) {
+		if (obj[key] !== undefined && obj[key] !== '') result[key] = obj[key];
+	}
+	return result;
+}
+
+async function vybitApiRequest(
+	context: IExecuteFunctions | ILoadOptionsFunctions,
+	credentialType: string,
+	method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+	endpoint: string,
+	body?: object,
+	qs?: Record<string, string | number>,
+): Promise<any> {
+	let baseUrl = VYBIT_BASE_URL;
+	if (credentialType === 'vybitApi') {
+		const creds = await context.getCredentials('vybitApi');
+		if (creds.baseUrl) baseUrl = creds.baseUrl as string;
+	}
+	const options: IHttpRequestOptions = {
+		method,
+		url: `${baseUrl}${endpoint}`,
+		json: true,
+	};
+	if (body && Object.keys(body).length > 0) {
+		options.body = body;
+	}
+	if (qs && Object.keys(qs).length > 0) {
+		options.qs = qs as any;
+	}
+	return context.helpers.httpRequestWithAuthentication.call(
+		context, credentialType, options,
+	);
+}
 
 export class Vybit implements INodeType {
 	description: INodeTypeDescription = {
@@ -21,13 +70,10 @@ export class Vybit implements INodeType {
 		defaults: {
 			name: 'Vybit Push Notifications',
 		},
-		inputs: ['main'],
-		outputs: ['main'],
+		inputs: [NodeConnectionTypes.Main],
+		outputs: [NodeConnectionTypes.Main],
 		codex: {
 			categories: ['Communication'],
-			subcategories: {
-				Communication: ['Notifications'],
-			},
 			resources: {
 				primaryDocumentation: [
 					{
@@ -77,7 +123,7 @@ export class Vybit implements INodeType {
 				],
 				default: 'oAuth2',
 			},
-			// Resource selector - same for both auth types
+			// Resource selector - sorted alphabetically
 			{
 				displayName: 'Resource',
 				name: 'actionType',
@@ -85,28 +131,10 @@ export class Vybit implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
-						name: 'Profile',
-						value: 'profile',
-						description: 'View profile and usage metrics',
-						action: 'View profile',
-					},
-					{
-						name: 'Vybits',
-						value: 'vybits',
-						description: 'Manage vybits (custom notifications)',
-						action: 'Manage vybits',
-					},
-					{
 						name: 'Logs',
 						value: 'logs',
 						description: 'View notification logs',
 						action: 'View logs',
-					},
-					{
-						name: 'Sounds',
-						value: 'sounds',
-						description: 'Search and manage sounds',
-						action: 'Manage sounds',
 					},
 					{
 						name: 'Peeps',
@@ -115,16 +143,34 @@ export class Vybit implements INodeType {
 						action: 'Manage peeps',
 					},
 					{
-						name: 'Subscriptions',
-						value: 'subscriptions',
-						description: 'Manage vybit subscriptions',
-						action: 'Manage subscriptions',
+						name: 'Profile',
+						value: 'profile',
+						description: 'View profile and usage metrics',
+						action: 'View profile',
 					},
 					{
 						name: 'Reminders',
 						value: 'reminders',
 						description: 'Manage scheduled reminders on vybits',
 						action: 'Manage reminders',
+					},
+					{
+						name: 'Sounds',
+						value: 'sounds',
+						description: 'Search and manage sounds',
+						action: 'Manage sounds',
+					},
+					{
+						name: 'Subscriptions',
+						value: 'subscriptions',
+						description: 'Manage vybit subscriptions',
+						action: 'Manage subscriptions',
+					},
+					{
+						name: 'Vybits',
+						value: 'vybits',
+						description: 'Manage vybits (custom notifications)',
+						action: 'Manage vybits',
 					},
 				],
 				default: 'vybits',
@@ -431,7 +477,7 @@ export class Vybit implements INodeType {
 				default: '',
 				description: 'The unique key of the vybit',
 			},
-			// Vybit Key for peeps
+			// Vybit Key for peeps (listByVybit and create/invite)
 			{
 				displayName: 'Vybit Key',
 				name: 'vybitKey',
@@ -440,7 +486,7 @@ export class Vybit implements INodeType {
 				displayOptions: {
 					show: {
 						actionType: ['peeps'],
-						apiOperation: ['listByVybit'],
+						apiOperation: ['listByVybit', 'create'],
 					},
 				},
 				default: '',
@@ -521,7 +567,7 @@ export class Vybit implements INodeType {
 				default: '',
 				description: 'The unique key of the log entry',
 			},
-			// Peep Key
+			// Peep Key (for get and delete)
 			{
 				displayName: 'Peep Key',
 				name: 'peepKey',
@@ -535,6 +581,21 @@ export class Vybit implements INodeType {
 				},
 				default: '',
 				description: 'The unique key of the peep',
+			},
+			// Email for peep invite
+			{
+				displayName: 'Email',
+				name: 'peepEmail',
+				type: 'string',
+				required: true,
+				displayOptions: {
+					show: {
+						actionType: ['peeps'],
+						apiOperation: ['create'],
+					},
+				},
+				default: '',
+				description: 'Email address of the user to invite',
 			},
 
 			// Vybit Key for reminders (all operations need it)
@@ -767,13 +828,13 @@ export class Vybit implements INodeType {
 				},
 				default: {},
 				options: [
-				{
-					displayName: 'Search',
-					name: 'search',
-					type: 'string',
-					default: '',
-					description: 'Search logs by vybit name or diagnostic fields',
-				},
+					{
+						displayName: 'Search',
+						name: 'search',
+						type: 'string',
+						default: '',
+						description: 'Search logs by vybit name or diagnostic fields',
+					},
 					{
 						displayName: 'Limit',
 						name: 'limit',
@@ -804,13 +865,13 @@ export class Vybit implements INodeType {
 				},
 				default: {},
 				options: [
-				{
-					displayName: 'Search',
-					name: 'search',
-					type: 'string',
-					default: '',
-					description: 'Search peeps by name',
-				},
+					{
+						displayName: 'Search',
+						name: 'search',
+						type: 'string',
+						default: '',
+						description: 'Search peeps by name',
+					},
 					{
 						displayName: 'Limit',
 						name: 'limit',
@@ -827,7 +888,7 @@ export class Vybit implements INodeType {
 					},
 				],
 			},
-			// Trigger parameters for Developer API
+			// Trigger parameters
 			{
 				displayName: 'Additional Fields',
 				name: 'additionalFields',
@@ -868,6 +929,43 @@ export class Vybit implements INodeType {
 						type: 'string',
 						default: '',
 						description: 'Optional content to append to the vybit log',
+					},
+				],
+			},
+			// Additional fields for sendToOwner/sendToGroup
+			{
+				displayName: 'Additional Fields',
+				name: 'additionalFields',
+				type: 'collection',
+				placeholder: 'Add Field',
+				displayOptions: {
+					show: {
+						actionType: ['subscriptions'],
+						apiOperation: ['sendToOwner', 'sendToGroup'],
+					},
+				},
+				default: {},
+				options: [
+					{
+						displayName: 'Message',
+						name: 'message',
+						type: 'string',
+						default: '',
+						description: 'Optional message to display with notification',
+					},
+					{
+						displayName: 'Image URL',
+						name: 'imageUrl',
+						type: 'string',
+						default: '',
+						description: 'Optional image URL to attach to notification (must be a direct link to a JPG, PNG, or GIF image)',
+					},
+					{
+						displayName: 'Link URL',
+						name: 'linkUrl',
+						type: 'string',
+						default: '',
+						description: 'Optional redirect URL when notification is tapped',
 					},
 				],
 			},
@@ -1000,53 +1098,19 @@ export class Vybit implements INodeType {
 		loadOptions: {
 			async getVybits(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				try {
-					// Determine which credential type is selected
 					const authType = this.getNodeParameter('authentication', 0) as string;
-					let client: VybitAPIClient;
+					const credentialType = authType === 'oAuth2' ? 'vybitOAuth2Api' : 'vybitApi';
 
-					if (authType === 'oAuth2') {
-						let credentials;
-						try {
-							credentials = await this.getCredentials('vybitOAuth2Api');
-						} catch (error) {
-							return [{
-								name: 'Please connect your Vybit account first',
-								value: '',
-								description: 'Click above to create or select a credential',
-							}];
-						}
-
-						const oauthData = (credentials as any)?.oauthTokenData;
-						const accessToken = oauthData?.access_token as string;
-
-						if (!accessToken) {
-							return [{
-								name: 'Please complete OAuth connection',
-								value: '',
-								description: 'Click "Connect my account" to authorize',
-							}];
-						}
-
-						client = new VybitAPIClient({ accessToken });
-					} else {
-						let credentials;
-						try {
-							credentials = await this.getCredentials('vybitApi');
-						} catch (error) {
-							return [{
-								name: 'Please add your API key credential first',
-								value: '',
-								description: 'Click above to create or select a credential',
-							}];
-						}
-
-						client = new VybitAPIClient({
-							apiKey: credentials.apiKey as string,
-							baseUrl: credentials.baseUrl as string,
-						});
+					let vybits;
+					try {
+						vybits = await vybitApiRequest(this, credentialType, 'GET', '/vybits');
+					} catch (error) {
+						return [{
+							name: 'Please connect your Vybit account first',
+							value: '',
+							description: 'Click above to create or select a credential',
+						}];
 					}
-
-					const vybits = await client.listVybits();
 
 					if (!Array.isArray(vybits) || vybits.length === 0) {
 						return [{
@@ -1075,7 +1139,7 @@ export class Vybit implements INodeType {
 						}];
 					}
 
-					throw new Error(`Failed to load vybits: ${error.message}`);
+					throw new NodeApiError(this.getNode(), error as JsonObject);
 				}
 			},
 		},
@@ -1086,258 +1150,181 @@ export class Vybit implements INodeType {
 		const returnData: INodeExecutionData[] = [];
 		const actionType = this.getNodeParameter('actionType', 0) as string;
 		const authType = this.getNodeParameter('authentication', 0) as string;
+		const credentialType = authType === 'oAuth2' ? 'vybitOAuth2Api' : 'vybitApi';
 
-		// Initialize API client with either credential type
-		let client: VybitAPIClient;
-
-		if (authType === 'oAuth2') {
-			const credentials = await this.getCredentials('vybitOAuth2Api');
-			const oauthData = (credentials as any)?.oauthTokenData;
-			const accessToken = oauthData?.access_token as string;
-			client = new VybitAPIClient({ accessToken });
-		} else {
-			const credentials = await this.getCredentials('vybitApi');
-			client = new VybitAPIClient({
-				apiKey: credentials.apiKey as string,
-				baseUrl: credentials.baseUrl as string,
-			});
-		}
-
-		// Process each input item
 		for (let i = 0; i < items.length; i++) {
 			try {
 				if (actionType === 'profile') {
 					const apiOperation = this.getNodeParameter('apiOperation', i) as string;
 
 					if (apiOperation === 'getProfile') {
-						const profile = await client.getProfile();
-						returnData.push({ json: profile });
+						const result = await vybitApiRequest(this, credentialType, 'GET', '/profile');
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'getMeter') {
-						const meter = await client.getMeter();
-						returnData.push({ json: meter });
+						const result = await vybitApiRequest(this, credentialType, 'GET', '/meter');
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'getStatus') {
-						const status = await client.getStatus();
-						returnData.push({ json: status });
+						const result = await vybitApiRequest(this, credentialType, 'GET', '/status');
+						returnData.push({ json: result, pairedItem: { item: i } });
 					}
 				} else if (actionType === 'vybits') {
 					const apiOperation = this.getNodeParameter('apiOperation', i) as string;
 
 					if (apiOperation === 'list') {
-						const options = this.getNodeParameter('options', i, {}) as any;
-						const vybits = await client.listVybits({
-							search: options.search,
-							limit: options.limit,
-							offset: options.offset,
-						});
-						returnData.push({ json: vybits });
+						const qs = buildSearchQs(this.getNodeParameter('options', i, {}));
+						const result = await vybitApiRequest(this, credentialType, 'GET', '/vybits', undefined, qs);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'get') {
 						const vybitKey = this.getNodeParameter('vybitKey', i) as string;
-						const vybit = await client.getVybit(vybitKey);
-						returnData.push({ json: vybit });
+						const result = await vybitApiRequest(this, credentialType, 'GET', `/vybit/${vybitKey}`);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'create') {
 						const name = this.getNodeParameter('vybitName', i) as string;
-						const vybit = await client.createVybit({ name });
-						returnData.push({ json: vybit });
+						const result = await vybitApiRequest(this, credentialType, 'POST', '/vybit', { name });
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'update') {
 						const vybitKey = this.getNodeParameter('vybitKey', i) as string;
 						const updateFields = this.getNodeParameter('updateFields', i, {}) as any;
-						const vybit = await client.updateVybit(vybitKey, updateFields);
-						returnData.push({ json: vybit });
+						const result = await vybitApiRequest(this, credentialType, 'PUT', `/vybit/${vybitKey}`, updateFields);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'delete') {
 						const vybitKey = this.getNodeParameter('vybitKey', i) as string;
-						await client.deleteVybit(vybitKey);
-						returnData.push({ json: { success: true, vybitKey } });
+						await vybitApiRequest(this, credentialType, 'DELETE', `/vybit/${vybitKey}`);
+						returnData.push({ json: { success: true, vybitKey }, pairedItem: { item: i } });
 					} else if (apiOperation === 'trigger') {
 						const vybitKey = this.getNodeParameter('vybitKey', i) as string;
-						const additionalFields = this.getNodeParameter('additionalFields', i, {}) as any;
-						const result = await client.triggerVybit(vybitKey, {
-							message: additionalFields.message,
-							image: additionalFields.image,
-							link: additionalFields.link,
-							log: additionalFields.log,
-						});
-						returnData.push({ json: result });
+						const body = pickDefined(this.getNodeParameter('additionalFields', i, {}), ['message', 'image', 'link', 'log']);
+						const result = await vybitApiRequest(this, credentialType, 'POST', `/vybit/${vybitKey}/trigger`, body);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					}
 				} else if (actionType === 'subscriptions') {
 					const apiOperation = this.getNodeParameter('apiOperation', i) as string;
 
 					if (apiOperation === 'listPublic') {
-						const options = this.getNodeParameter('options', i, {}) as any;
-						const vybits = await client.listPublicSubscriptions({
-							search: options.search,
-							limit: options.limit,
-							offset: options.offset,
-						});
-						returnData.push({ json: vybits });
+						const qs = buildSearchQs(this.getNodeParameter('options', i, {}));
+						const result = await vybitApiRequest(this, credentialType, 'GET', '/subscriptions/public', undefined, qs);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'getPublic') {
 						const subscriptionKey = this.getNodeParameter('subscriptionKey', i) as string;
-						const vybit = await client.getPublicSubscription(subscriptionKey);
-						returnData.push({ json: vybit });
+						const result = await vybitApiRequest(this, credentialType, 'GET', `/subscription/${subscriptionKey}`);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'subscribe') {
 						const subscriptionKey = this.getNodeParameter('subscriptionKey', i) as string;
-						const result = await client.subscribe(subscriptionKey);
-						returnData.push({ json: result });
+						const result = await vybitApiRequest(this, credentialType, 'POST', `/subscription/${subscriptionKey}`);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'listSubscriptions') {
-						const options = this.getNodeParameter('options', i, {}) as any;
-						const subscriptions = await client.listSubscriptions({
-							search: options.search,
-							limit: options.limit,
-							offset: options.offset,
-						});
-						returnData.push({ json: subscriptions });
+						const qs = buildSearchQs(this.getNodeParameter('options', i, {}));
+						const result = await vybitApiRequest(this, credentialType, 'GET', '/subscriptions/following', undefined, qs);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'getSubscription') {
 						const followingKey = this.getNodeParameter('followingKey', i) as string;
-						const subscription = await client.getSubscription(followingKey);
-						returnData.push({ json: subscription });
+						const result = await vybitApiRequest(this, credentialType, 'GET', `/subscription/following/${followingKey}`);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'updateSubscription') {
 						const followingKey = this.getNodeParameter('followingKey', i) as string;
 						const updateFields = this.getNodeParameter('updateFields', i, {}) as any;
-						const subscription = await client.updateSubscription(followingKey, updateFields);
-						returnData.push({ json: subscription });
+						const result = await vybitApiRequest(this, credentialType, 'PATCH', `/subscription/following/${followingKey}`, updateFields);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'unsubscribe') {
 						const followingKey = this.getNodeParameter('followingKey', i) as string;
-						await client.unsubscribe(followingKey);
-						returnData.push({ json: { success: true, followingKey } });
-					} else if (apiOperation === 'sendToOwner') {
+						await vybitApiRequest(this, credentialType, 'DELETE', `/subscription/following/${followingKey}`);
+						returnData.push({ json: { success: true, followingKey }, pairedItem: { item: i } });
+					} else if (apiOperation === 'sendToOwner' || apiOperation === 'sendToGroup') {
 						const followingKey = this.getNodeParameter('followingKey', i) as string;
-						const additionalFields = this.getNodeParameter('additionalFields', i, {}) as any;
-						const result = await client.sendToOwner(followingKey, {
-							message: additionalFields.message,
-						});
-						returnData.push({ json: result });
-					} else if (apiOperation === 'sendToGroup') {
-						const followingKey = this.getNodeParameter('followingKey', i) as string;
-						const additionalFields = this.getNodeParameter('additionalFields', i, {}) as any;
-						const result = await client.sendToGroup(followingKey, {
-							message: additionalFields.message,
-						});
-						returnData.push({ json: result });
+						const body = pickDefined(this.getNodeParameter('additionalFields', i, {}), ['message', 'imageUrl', 'linkUrl']);
+						const action = apiOperation === 'sendToOwner' ? 'send-to-owner' : 'send-to-group';
+						const result = await vybitApiRequest(this, credentialType, 'POST', `/subscription/following/${followingKey}/${action}`, body);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					}
 				} else if (actionType === 'sounds') {
 					const apiOperation = this.getNodeParameter('apiOperation', i) as string;
 
 					if (apiOperation === 'search') {
-						const options = this.getNodeParameter('options', i, {}) as any;
-						const sounds = await client.searchSounds({
-							search: options.search,
-							limit: options.limit,
-							offset: options.offset,
-						});
-						returnData.push({ json: sounds });
+						const qs = buildSearchQs(this.getNodeParameter('options', i, {}));
+						const result = await vybitApiRequest(this, credentialType, 'GET', '/sounds', undefined, qs);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'get') {
 						const soundKey = this.getNodeParameter('soundKey', i) as string;
-						const sound = await client.getSound(soundKey);
-						returnData.push({ json: sound });
+						const result = await vybitApiRequest(this, credentialType, 'GET', `/sound/${soundKey}`);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					}
 				} else if (actionType === 'logs') {
 					const apiOperation = this.getNodeParameter('apiOperation', i) as string;
 
 					if (apiOperation === 'listAll') {
-						const options = this.getNodeParameter('options', i, {}) as any;
-						const logs = await client.listLogs({
-						search: options.search,
-							limit: options.limit,
-							offset: options.offset,
-						});
-						returnData.push({ json: logs });
+						const qs = buildSearchQs(this.getNodeParameter('options', i, {}));
+						const result = await vybitApiRequest(this, credentialType, 'GET', '/logs', undefined, qs);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'get') {
 						const logKey = this.getNodeParameter('logKey', i) as string;
-						const log = await client.getLog(logKey);
-						returnData.push({ json: log });
+						const result = await vybitApiRequest(this, credentialType, 'GET', `/log/${logKey}`);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'listByVybit') {
 						const vybitKey = this.getNodeParameter('vybitKey', i) as string;
-						const options = this.getNodeParameter('options', i, {}) as any;
-						const logs = await client.listLogsByVybit(vybitKey, {
-						search: options.search,
-							limit: options.limit,
-							offset: options.offset,
-						});
-						returnData.push({ json: logs });
+						const qs = buildSearchQs(this.getNodeParameter('options', i, {}));
+						const result = await vybitApiRequest(this, credentialType, 'GET', `/logs/vybit/${vybitKey}`, undefined, qs);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'listBySubscription') {
 						const followingKey = this.getNodeParameter('followingKey', i) as string;
-						const options = this.getNodeParameter('options', i, {}) as any;
-						const logs = await client.listLogsBySubscription(followingKey, {
-						search: options.search,
-							limit: options.limit,
-							offset: options.offset,
-						});
-						returnData.push({ json: logs });
+						const qs = buildSearchQs(this.getNodeParameter('options', i, {}));
+						const result = await vybitApiRequest(this, credentialType, 'GET', `/logs/subscription/following/${followingKey}`, undefined, qs);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					}
 				} else if (actionType === 'peeps') {
 					const apiOperation = this.getNodeParameter('apiOperation', i) as string;
 
 					if (apiOperation === 'listAll') {
-						const options = this.getNodeParameter('options', i, {}) as any;
-						const peeps = await client.listPeeps({
-						search: options.search,
-							limit: options.limit,
-							offset: options.offset,
-						});
-						returnData.push({ json: peeps });
+						const qs = buildSearchQs(this.getNodeParameter('options', i, {}));
+						const result = await vybitApiRequest(this, credentialType, 'GET', '/peeps', undefined, qs);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'listByVybit') {
 						const vybitKey = this.getNodeParameter('vybitKey', i) as string;
-						const options = this.getNodeParameter('options', i, {}) as any;
-						const peeps = await client.listPeepsByVybit(vybitKey, {
-						search: options.search,
-							limit: options.limit,
-							offset: options.offset,
-						});
-						returnData.push({ json: peeps });
+						const qs = buildSearchQs(this.getNodeParameter('options', i, {}));
+						const result = await vybitApiRequest(this, credentialType, 'GET', `/peeps/${vybitKey}`, undefined, qs);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'create') {
-						const peepKey = this.getNodeParameter('peepKey', i) as string;
-						const result = await client.createPeep(peepKey);
-						returnData.push({ json: result });
+						const vybitKey = this.getNodeParameter('vybitKey', i) as string;
+						const email = this.getNodeParameter('peepEmail', i) as string;
+						const result = await vybitApiRequest(this, credentialType, 'POST', `/peep/${vybitKey}`, { email });
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'get') {
 						const peepKey = this.getNodeParameter('peepKey', i) as string;
-						const peep = await client.getPeep(peepKey);
-						returnData.push({ json: peep });
+						const result = await vybitApiRequest(this, credentialType, 'GET', `/peep/${peepKey}`);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'delete') {
 						const peepKey = this.getNodeParameter('peepKey', i) as string;
-						await client.deletePeep(peepKey);
-						returnData.push({ json: { success: true, peepKey } });
+						await vybitApiRequest(this, credentialType, 'DELETE', `/peep/${peepKey}`);
+						returnData.push({ json: { success: true, peepKey }, pairedItem: { item: i } });
 					}
 				} else if (actionType === 'reminders') {
 					const apiOperation = this.getNodeParameter('apiOperation', i) as string;
 					const vybitKey = this.getNodeParameter('vybitKey', i) as string;
 
 					if (apiOperation === 'list') {
-						const reminders = await client.listReminders(vybitKey);
-						returnData.push({ json: reminders });
+						const result = await vybitApiRequest(this, credentialType, 'GET', `/vybit/${vybitKey}/reminders`);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'create') {
 						const cron = this.getNodeParameter('cron', i) as string;
-						const optionalFields = this.getNodeParameter('optionalFields', i, {}) as any;
-						const params: any = { cron };
-						if (optionalFields.timeZone) params.timeZone = optionalFields.timeZone;
-						if (optionalFields.message) params.message = optionalFields.message;
-						if (optionalFields.imageUrl) params.imageUrl = optionalFields.imageUrl;
-						if (optionalFields.linkUrl) params.linkUrl = optionalFields.linkUrl;
-						if (optionalFields.log) params.log = optionalFields.log;
-						const result = await client.createReminder(vybitKey, params);
-						returnData.push({ json: result });
+						const body = { cron, ...pickDefined(this.getNodeParameter('optionalFields', i, {}), ['timeZone', 'message', 'imageUrl', 'linkUrl', 'log']) };
+						const result = await vybitApiRequest(this, credentialType, 'POST', `/vybit/${vybitKey}/reminders`, body);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'update') {
 						const reminderId = this.getNodeParameter('reminderId', i) as string;
-						const optionalFields = this.getNodeParameter('optionalFields', i, {}) as any;
-						const params: any = {};
-						if (optionalFields.cron) params.cron = optionalFields.cron;
-						if (optionalFields.timeZone) params.timeZone = optionalFields.timeZone;
-						if (optionalFields.message) params.message = optionalFields.message;
-						if (optionalFields.imageUrl) params.imageUrl = optionalFields.imageUrl;
-						if (optionalFields.linkUrl) params.linkUrl = optionalFields.linkUrl;
-						if (optionalFields.log) params.log = optionalFields.log;
-						const result = await client.updateReminder(vybitKey, reminderId, params);
-						returnData.push({ json: result });
+						const body = pickDefined(this.getNodeParameter('optionalFields', i, {}), ['cron', 'timeZone', 'message', 'imageUrl', 'linkUrl', 'log']);
+						const result = await vybitApiRequest(this, credentialType, 'PATCH', `/vybit/${vybitKey}/reminders/${reminderId}`, body);
+						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'delete') {
 						const reminderId = this.getNodeParameter('reminderId', i) as string;
-						await client.deleteReminder(vybitKey, reminderId);
-						returnData.push({ json: { success: true, vybitKey, reminderId } });
+						await vybitApiRequest(this, credentialType, 'DELETE', `/vybit/${vybitKey}/reminders/${reminderId}`);
+						returnData.push({ json: { success: true, vybitKey, reminderId }, pairedItem: { item: i } });
 					}
 				}
 			} catch (error) {
 				if (this.continueOnFail()) {
-					returnData.push({ json: { error: error.message } });
+					returnData.push({ json: { error: (error as Error).message }, pairedItem: { item: i } });
 					continue;
 				}
-				throw error;
+				throw new NodeApiError(this.getNode(), error as JsonObject);
 			}
 		}
 

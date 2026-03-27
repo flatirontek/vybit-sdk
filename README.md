@@ -464,7 +464,8 @@ npm install @vybit/n8n-nodes-vybit
 ```
 Then restart your n8n instance.
 
-<!-- n8n Cloud support coming soon -->
+**n8n Cloud:**
+Once verified, search for "Vybit" in the n8n nodes panel to install. Verification is currently under review.
 
 ### Getting Started
 
@@ -478,7 +479,7 @@ The Vybit n8n node supports both authentication methods:
 
 **Option 2: OAuth2 (For Multi-User Services)**
 1. Configure OAuth2 at [developer.vybit.net](https://developer.vybit.net)
-2. In n8n, select "OAuth2 Token" authentication
+2. In n8n, select "Vybit OAuth2 API" authentication
 3. Connect and authorize your Vybit account
 
 ### Available Operations
@@ -673,7 +674,7 @@ Interested in contributing? Check out our [Contributing Guide](./CONTRIBUTING.md
 ## Support
 
 - **Documentation**: [developer.vybit.net](https://developer.vybit.net)
-- **Issues**: [GitLab Issues](https://gitlab.com/flatirontek/vybit-sdk/-/issues)
+- **Issues**: [GitHub Issues](https://github.com/flatirontek/vybit-sdk/issues)
 - **Email**: developer@vybit.net
 
 ---

@@ -1,6 +1,6 @@
 {
   "name": "@vybit/n8n-nodes-vybit",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "Push notifications with personalized sounds - n8n community nodes for Vybit",
   "license": "MIT",
   "type": "module",
@@ -9,6 +9,7 @@
     "name": "Flatirontek LLC",
     "email": "support@vybit.net"
   },
+  "homepage": "https://developer.vybit.net",
   "repository": {
     "type": "git",
     "url": "https://github.com/flatirontek/vybit-sdk.git",
@@ -38,7 +39,7 @@
   "scripts": {
     "build": "npm run clean && rollup -c && npm run copy-assets",
     "clean": "rm -rf dist",
-    "copy-assets": "mkdir -p dist/nodes/Vybit && cp src/nodes/Vybit/vybit.png dist/nodes/Vybit/ 2>/dev/null || true",
+    "copy-assets": "mkdir -p dist/nodes/Vybit dist/credentials && cp src/nodes/Vybit/vybit.png dist/nodes/Vybit/ 2>/dev/null || true && cp src/nodes/Vybit/vybit.png dist/credentials/ 2>/dev/null || true",
     "dev": "rollup -c -w",
     "lint": "eslint src --ext .ts",
     "test": "echo \"Run 'npm run test:integration' for integration tests\"",
@@ -53,11 +54,7 @@
     "@rollup/plugin-commonjs": "^25.0.0",
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-node-resolve": "^15.0.0",
-    "@rollup/plugin-replace": "^6.0.3",
     "@types/node": "^20.0.0",
-    "@vybit/api-sdk": "^1.0.0",
-    "@vybit/core": "^1.0.0",
-    "@vybit/oauth2-sdk": "^1.0.0",
     "rollup": "^4.0.0",
     "rollup-plugin-esbuild": "^6.1.0",
     "tslib": "^2.6.0",

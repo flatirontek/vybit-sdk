@@ -1,5 +1,4 @@
 import type {
-	IAuthenticateGeneric,
 	ICredentialTestRequest,
 	ICredentialType,
 	INodeProperties,
@@ -7,7 +6,8 @@ import type {
 
 export class VybitOAuth2Api implements ICredentialType {
 	name = 'vybitOAuth2Api';
-	displayName = 'OAuth2 Token';
+	displayName = 'Vybit OAuth2 API';
+	icon = 'file:vybit.png' as const;
 	documentationUrl = 'https://developer.vybit.net/oauth-reference';
 
 	// Key description for users
@@ -72,15 +72,6 @@ export class VybitOAuth2Api implements ICredentialType {
 			default: 'body',
 		},
 	];
-
-	authenticate: IAuthenticateGeneric = {
-		type: 'generic',
-		properties: {
-			headers: {
-				Authorization: '=Bearer {{$credentials.accessToken}}',
-			},
-		},
-	};
 
 	test: ICredentialTestRequest = {
 		request: {

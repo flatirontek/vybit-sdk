@@ -28,7 +28,9 @@ npm install @vybit/n8n-nodes-vybit
 
 Then restart your n8n instance.
 
-<!-- n8n Cloud support coming soon -->
+### n8n Cloud
+
+Once verified, search for "Vybit" in the n8n nodes panel to install. Verification is currently under review.
 
 ### For Multi-User Deployments
 
@@ -182,7 +184,7 @@ Airtable Trigger (new record)
 
 ## Development
 
-This package bundles `@vybit/api-sdk` and `@vybit/oauth2-sdk` to meet n8n's verified node requirements (zero runtime dependencies).
+This package uses n8n's built-in `httpRequestWithAuthentication` helper for all API calls (no bundled SDK). API endpoint paths are maintained in `Vybit.node.ts` and must be kept in sync with `@vybit/api-sdk` when the API changes.
 
 ### Building
 
@@ -192,11 +194,30 @@ npm run build
 
 ### Testing Locally
 
+Using Docker (recommended):
+
+```bash
+# See docker-compose.yml in the project root's my-n8n directory
+# The dist is volume-mounted into the container via N8N_CUSTOM_EXTENSIONS
+docker compose up -d
+```
+
+Using npm link:
+
 ```bash
 npm link
 cd /path/to/n8n
 npm link @vybit/n8n-nodes-vybit
 n8n start
+```
+
+### Integration Tests
+
+```bash
+# Requires a running n8n instance with a configured Vybit API Key credential
+export N8N_API_KEY="your-n8n-api-key"
+export VYBIT_API_CREDENTIAL_ID="your-credential-id"
+node test/integration/test-runner.js
 ```
 
 ---
@@ -206,7 +227,7 @@ n8n start
 - [Developer API Documentation](https://developer.vybit.net/api-reference)
 - [OAuth2 Documentation](https://developer.vybit.net/oauth-reference)
 - [Support](mailto:developer@vybit.net)
-- [Report Issues](https://gitlab.com/flatirontek/vybit-sdk/-/issues)
+- [Report Issues](https://github.com/flatirontek/vybit-sdk/issues)
 
 ---
 
