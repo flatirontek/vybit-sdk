@@ -3,7 +3,6 @@ import type {
 	IHttpRequestOptions,
 	ILoadOptionsFunctions,
 	INodeExecutionData,
-	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
 	JsonObject,
@@ -65,7 +64,7 @@ export class Vybit implements INodeType {
 		icon: 'file:vybit.png',
 		group: ['transform'],
 		version: 1,
-		subtitle: '={{$parameter["actionType"]}}',
+		subtitle: '={{$parameter["actionType"] + ": " + $parameter["apiOperation"]}}',
 		description: 'Send notifications with personalized sounds',
 		defaults: {
 			name: 'Vybit Push Notifications',
@@ -332,6 +331,11 @@ export class Vybit implements INodeType {
 						value: 'get',
 						description: 'Get sound details',
 					},
+					{
+						name: 'Play',
+						value: 'play',
+						description: 'Get the playback URL for a sound',
+					},
 				],
 				default: 'search',
 			},
@@ -546,7 +550,7 @@ export class Vybit implements INodeType {
 				displayOptions: {
 					show: {
 						actionType: ['sounds'],
-						apiOperation: ['get'],
+						apiOperation: ['get', 'play'],
 					},
 				},
 				default: '',
@@ -697,6 +701,13 @@ export class Vybit implements INodeType {
 						type: 'string',
 						default: '',
 						description: 'Content to append to the vybit log (max 1024 characters)',
+					},
+					{
+						displayName: 'Year',
+						name: 'year',
+						type: 'number',
+						default: 0,
+						description: 'Year for the reminder (defaults to current year). Used for one-time future reminders.',
 					},
 				],
 			},
@@ -911,14 +922,14 @@ export class Vybit implements INodeType {
 					},
 					{
 						displayName: 'Image URL',
-						name: 'image',
+						name: 'imageUrl',
 						type: 'string',
 						default: '',
 						description: 'Optional image URL to attach to notification (must be a direct link to a JPG, PNG, or GIF image)',
 					},
 					{
 						displayName: 'Link URL',
-						name: 'link',
+						name: 'linkUrl',
 						type: 'string',
 						default: '',
 						description: 'Optional redirect URL when notification is tapped',
@@ -929,6 +940,13 @@ export class Vybit implements INodeType {
 						type: 'string',
 						default: '',
 						description: 'Optional content to append to the vybit log',
+					},
+					{
+						displayName: 'Run Once',
+						name: 'runOnce',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to automatically disable the vybit after this trigger fires',
 					},
 				],
 			},
@@ -969,6 +987,65 @@ export class Vybit implements INodeType {
 					},
 				],
 			},
+			// Update subscription parameters
+			{
+				displayName: 'Update Fields',
+				name: 'updateFields',
+				type: 'collection',
+				placeholder: 'Add Field',
+				displayOptions: {
+					show: {
+						actionType: ['subscriptions'],
+						apiOperation: ['updateSubscription'],
+					},
+				},
+				default: {},
+				options: [
+					{
+						displayName: 'Status',
+						name: 'status',
+						type: 'options',
+						options: [
+							{ name: 'On', value: 'on' },
+							{ name: 'Off', value: 'off' },
+						],
+						default: 'on',
+						description: 'Enable or disable notifications for this subscription',
+					},
+					{
+						displayName: 'Access Status',
+						name: 'accessStatus',
+						type: 'options',
+						options: [
+							{ name: 'Granted', value: 'granted' },
+							{ name: 'Declined', value: 'declined' },
+						],
+						default: 'granted',
+						description: 'Accept or decline an invitation (only when current status is invited)',
+					},
+					{
+						displayName: 'Message',
+						name: 'message',
+						type: 'string',
+						default: '',
+						description: 'Custom notification message (only if subscribers can send)',
+					},
+					{
+						displayName: 'Image URL',
+						name: 'imageUrl',
+						type: 'string',
+						default: '',
+						description: 'Custom image URL (must be a direct link to a JPG, PNG, or GIF image)',
+					},
+					{
+						displayName: 'Link URL',
+						name: 'linkUrl',
+						type: 'string',
+						default: '',
+						description: 'Custom link URL (only if subscribers can send)',
+					},
+				],
+			},
 			// Create vybit parameters
 			{
 				displayName: 'Vybit Name',
@@ -983,6 +1060,105 @@ export class Vybit implements INodeType {
 				},
 				default: '',
 				description: 'The name of the vybit to create',
+			},
+			{
+				displayName: 'Create Fields',
+				name: 'createFields',
+				type: 'collection',
+				placeholder: 'Add Field',
+				displayOptions: {
+					show: {
+						actionType: ['vybits'],
+						apiOperation: ['create'],
+					},
+				},
+				default: {},
+				options: [
+					{
+						displayName: 'Description',
+						name: 'description',
+						type: 'string',
+						default: '',
+						description: 'Detailed vybit description (max 512 characters)',
+					},
+					{
+						displayName: 'Sound Key',
+						name: 'soundKey',
+						type: 'string',
+						default: '',
+						description: 'Key of the sound to play (must be an available sound)',
+					},
+					{
+						displayName: 'Status',
+						name: 'status',
+						type: 'options',
+						options: [
+							{ name: 'On', value: 'on' },
+							{ name: 'Off', value: 'off' },
+						],
+						default: 'on',
+						description: 'Enable or disable the vybit',
+					},
+					{
+						displayName: 'Trigger Type',
+						name: 'triggerType',
+						type: 'options',
+						options: [
+							{ name: 'Webhook', value: 'webhook' },
+							{ name: 'Schedule', value: 'schedule' },
+							{ name: 'Geofence', value: 'geofence' },
+							{ name: 'Integration', value: 'integration' },
+							{ name: 'Reminders', value: 'reminders' },
+						],
+						default: 'webhook',
+						description: 'How this vybit is triggered',
+					},
+					{
+						displayName: 'Access',
+						name: 'access',
+						type: 'options',
+						options: [
+							{ name: 'Public', value: 'public' },
+							{ name: 'Private', value: 'private' },
+							{ name: 'Unlisted', value: 'unlisted' },
+						],
+						default: 'private',
+						description: 'Vybit visibility and access control',
+					},
+					{
+						displayName: 'Message',
+						name: 'message',
+						type: 'string',
+						default: '',
+						description: 'Default message displayed with notifications (max 500 characters)',
+					},
+					{
+						displayName: 'Image URL',
+						name: 'imageUrl',
+						type: 'string',
+						default: '',
+						description: 'Default image URL for notifications (must be a direct link to a JPG, PNG, or GIF image)',
+					},
+					{
+						displayName: 'Link URL',
+						name: 'linkUrl',
+						type: 'string',
+						default: '',
+						description: 'Default URL to open when notification is tapped',
+					},
+					{
+						displayName: 'Send Permissions',
+						name: 'sendPermissions',
+						type: 'options',
+						options: [
+							{ name: 'Owner to Subscribers (one-way)', value: 'owner_subs' },
+							{ name: 'Owner and Subscribers (two-way)', value: 'subs_owner' },
+							{ name: 'Subscribers to Group (group broadcast)', value: 'subs_group' },
+						],
+						default: 'owner_subs',
+						description: 'Who can trigger and receive notifications',
+					},
+				],
 			},
 			// Update vybit parameters
 			{
@@ -1082,9 +1258,9 @@ export class Vybit implements INodeType {
 						name: 'sendPermissions',
 						type: 'options',
 						options: [
-							{ name: 'Owner → Subscribers (one-way)', value: 'owner_subs' },
-							{ name: 'Owner ↔ Subscribers (two-way)', value: 'subs_owner' },
-							{ name: 'Subscribers → Group (group broadcast)', value: 'subs_group' },
+							{ name: 'Owner to Subscribers (one-way)', value: 'owner_subs' },
+							{ name: 'Owner and Subscribers (two-way)', value: 'subs_owner' },
+							{ name: 'Subscribers to Group (group broadcast)', value: 'subs_group' },
 						],
 						default: 'owner_subs',
 						description: 'Who can trigger and receive notifications',
@@ -1092,57 +1268,6 @@ export class Vybit implements INodeType {
 				],
 			},
 		],
-	};
-
-	methods = {
-		loadOptions: {
-			async getVybits(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				try {
-					const authType = this.getNodeParameter('authentication', 0) as string;
-					const credentialType = authType === 'oAuth2' ? 'vybitOAuth2Api' : 'vybitApi';
-
-					let vybits;
-					try {
-						vybits = await vybitApiRequest(this, credentialType, 'GET', '/vybits');
-					} catch (error) {
-						return [{
-							name: 'Please connect your Vybit account first',
-							value: '',
-							description: 'Click above to create or select a credential',
-						}];
-					}
-
-					if (!Array.isArray(vybits) || vybits.length === 0) {
-						return [{
-							name: 'No vybits found',
-							value: '__no_vybits__',
-							description: 'Create a vybit at vybit.net first',
-						}];
-					}
-
-					return vybits
-						.filter((vybit: any) => {
-							const key = vybit.triggerKey || vybit.key;
-							return key && key.length > 0;
-						})
-						.map((vybit: any) => ({
-							name: vybit.name || 'Unnamed Vybit',
-							value: vybit.triggerKey || vybit.key,
-							description: vybit.description || undefined,
-						}));
-				} catch (error: any) {
-					if (error.message?.includes('401')) {
-						return [{
-							name: 'Authorization failed - please reconnect',
-							value: '',
-							description: 'Your credentials may have expired',
-						}];
-					}
-
-					throw new NodeApiError(this.getNode(), error as JsonObject);
-				}
-			},
-		},
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
@@ -1180,12 +1305,13 @@ export class Vybit implements INodeType {
 						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'create') {
 						const name = this.getNodeParameter('vybitName', i) as string;
-						const result = await vybitApiRequest(this, credentialType, 'POST', '/vybit', { name });
+						const createFields = this.getNodeParameter('createFields', i, {}) as any;
+						const result = await vybitApiRequest(this, credentialType, 'POST', '/vybit', { name, ...createFields });
 						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'update') {
 						const vybitKey = this.getNodeParameter('vybitKey', i) as string;
 						const updateFields = this.getNodeParameter('updateFields', i, {}) as any;
-						const result = await vybitApiRequest(this, credentialType, 'PUT', `/vybit/${vybitKey}`, updateFields);
+						const result = await vybitApiRequest(this, credentialType, 'PATCH', `/vybit/${vybitKey}`, updateFields);
 						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'delete') {
 						const vybitKey = this.getNodeParameter('vybitKey', i) as string;
@@ -1193,7 +1319,7 @@ export class Vybit implements INodeType {
 						returnData.push({ json: { success: true, vybitKey }, pairedItem: { item: i } });
 					} else if (apiOperation === 'trigger') {
 						const vybitKey = this.getNodeParameter('vybitKey', i) as string;
-						const body = pickDefined(this.getNodeParameter('additionalFields', i, {}), ['message', 'image', 'link', 'log']);
+						const body = pickDefined(this.getNodeParameter('additionalFields', i, {}), ['message', 'imageUrl', 'linkUrl', 'log', 'runOnce']);
 						const result = await vybitApiRequest(this, credentialType, 'POST', `/vybit/${vybitKey}/trigger`, body);
 						returnData.push({ json: result, pairedItem: { item: i } });
 					}
@@ -1247,6 +1373,9 @@ export class Vybit implements INodeType {
 						const soundKey = this.getNodeParameter('soundKey', i) as string;
 						const result = await vybitApiRequest(this, credentialType, 'GET', `/sound/${soundKey}`);
 						returnData.push({ json: result, pairedItem: { item: i } });
+					} else if (apiOperation === 'play') {
+						const soundKey = this.getNodeParameter('soundKey', i) as string;
+						returnData.push({ json: { playUrl: `${VYBIT_BASE_URL}/sound/${soundKey}/play` }, pairedItem: { item: i } });
 					}
 				} else if (actionType === 'logs') {
 					const apiOperation = this.getNodeParameter('apiOperation', i) as string;
@@ -1305,12 +1434,12 @@ export class Vybit implements INodeType {
 						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'create') {
 						const cron = this.getNodeParameter('cron', i) as string;
-						const body = { cron, ...pickDefined(this.getNodeParameter('optionalFields', i, {}), ['timeZone', 'message', 'imageUrl', 'linkUrl', 'log']) };
+						const body = { cron, ...pickDefined(this.getNodeParameter('optionalFields', i, {}), ['timeZone', 'message', 'imageUrl', 'linkUrl', 'log', 'year']) };
 						const result = await vybitApiRequest(this, credentialType, 'POST', `/vybit/${vybitKey}/reminders`, body);
 						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'update') {
 						const reminderId = this.getNodeParameter('reminderId', i) as string;
-						const body = pickDefined(this.getNodeParameter('optionalFields', i, {}), ['cron', 'timeZone', 'message', 'imageUrl', 'linkUrl', 'log']);
+						const body = pickDefined(this.getNodeParameter('optionalFields', i, {}), ['cron', 'timeZone', 'message', 'imageUrl', 'linkUrl', 'log', 'year']);
 						const result = await vybitApiRequest(this, credentialType, 'PATCH', `/vybit/${vybitKey}/reminders/${reminderId}`, body);
 						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'delete') {

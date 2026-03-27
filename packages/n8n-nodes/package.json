@@ -1,6 +1,6 @@
 {
   "name": "@vybit/n8n-nodes-vybit",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Push notifications with personalized sounds - n8n community nodes for Vybit",
   "license": "MIT",
   "type": "module",
@@ -43,7 +43,7 @@
     "dev": "rollup -c -w",
     "lint": "eslint src --ext .ts",
     "test": "echo \"Run 'npm run test:integration' for integration tests\"",
-    "test:integration": "node test/integration/test-runner.js",
+    "test:integration": "node test/integration/test-runner.cjs",
     "prepublishOnly": "npm run build"
   },
   "files": [

@@ -9,7 +9,7 @@ Official n8n community nodes for [Vybit](https://vybit.net) - the personalized a
 
 - **Dual Authentication**: API Key for personal automation or OAuth2 for multi-user services
 - **Push Notifications**: Send personalized audio notifications from your workflows
-- **Full API Access**: 33 operations across 7 resources, available with either auth method
+- **Full API Access**: 34 operations across 7 resources, available with either auth method
 - **Manage Vybits**: Create, update, trigger, and delete vybits programmatically
 - **Subscriptions & Peeps**: Subscribe to vybits and manage access invitations
 - **Reminders**: Create and manage scheduled reminders on vybits
@@ -83,7 +83,7 @@ Both methods provide full access to all operations. Choose based on your use cas
 
 ## Available Operations
 
-All 33 operations are available with both API Key and OAuth2 authentication.
+All 34 operations are available with both API Key and OAuth2 authentication.
 
 ### Profile
 
@@ -124,6 +124,7 @@ All 33 operations are available with both API Key and OAuth2 authentication.
 |-----------|-------------|
 | Search | Search available sounds |
 | Get | Get sound details |
+| Play | Get the playback URL for a sound |
 
 ### Logs
 

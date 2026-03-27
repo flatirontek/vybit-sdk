@@ -7,7 +7,7 @@ Automated integration tests that validate the Vybit n8n node against a running n
 These are **structural/configuration tests** that:
 - Create test workflows via n8n's REST API
 - Validate that all node parameters are configured correctly
-- Test all 28 operations across 6 resources: Profile, Vybits, Subscriptions, Sounds, Logs, Peeps
+- Test all 34 operations across 7 resources: Profile, Vybits, Subscriptions, Sounds, Logs, Peeps, Reminders
 - Clean up test workflows after completion
 
 **Important:** These tests validate node configuration but do NOT execute the workflows or make actual API calls to Vybit. This is because n8n's public API doesn't support workflow execution. For actual execution testing, use the n8n UI to manually test workflows.
@@ -104,26 +104,28 @@ npm run test:integration
 VYBIT_API_KEY=xxx npm run test:integration
 ```
 
-## Test Coverage
+## Test Coverage (37 tests)
 
-### Profile Resource
-- ✅ Get Profile
-- ⏭️ Get Usage Metrics (skipped - similar structure)
+### Profile Resource (3)
+- ✅ Get Profile, Get Usage Metrics, Check API Status
 
-### Vybits Resource
-- ✅ List
+### Vybits Resource (8)
+- ✅ List, Get, Create, Create with Fields, Update, Delete, Trigger, Trigger with Fields
 
-### Subscriptions Resource
-- ✅ List Public
+### Subscriptions Resource (10)
+- ✅ List Public, Get Public, Subscribe, List My Subscriptions, Get Subscription, Update Subscription, Update with Fields, Unsubscribe, Send to Owner, Send to Group
 
-### Sounds Resource
-- ✅ Search
+### Sounds Resource (3)
+- ✅ Search, Get, Play
 
-### Logs Resource
-- ✅ List All
+### Logs Resource (4)
+- ✅ List All, Get, List by Vybit, List by Subscription
 
-### Peeps Resource
-- ✅ List All
+### Peeps Resource (5)
+- ✅ List All, List by Vybit, Create, Get, Delete
+
+### Reminders Resource (4)
+- ✅ List, Create, Update, Delete
 
 ## How It Works
 

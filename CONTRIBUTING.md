@@ -163,7 +163,7 @@ Validates the Vybit n8n node configuration against a running n8n instance.
    ```
 
 **What it tests**:
-- All 33 operations across 7 resources
+- All 34 operations across 7 resources
 - Node configuration and parameters
 - Credential linking
 - Required fields validation

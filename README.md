@@ -484,12 +484,10 @@ The Vybit n8n node supports both authentication methods:
 
 ### Available Operations
 
-The n8n node provides access to **33 operations** across 7 resources:
+The n8n node provides access to **34 operations** across 7 resources:
 
 **Profile** (3 operations)
-- Get Profile
-- Get Usage Metrics
-- Check API Status
+- Get Profile, Get Usage Metrics, Check API Status
 
 **Vybits** (6 operations)
 - List, Get, Create, Update, Delete, Trigger
@@ -497,8 +495,8 @@ The n8n node provides access to **33 operations** across 7 resources:
 **Logs** (4 operations)
 - List All, Get, List by Vybit, List by Subscription
 
-**Sounds** (2 operations)
-- Search, Get
+**Sounds** (3 operations)
+- Search, Get, Play
 
 **Peeps** (5 operations)
 - List All, List by Vybit, Invite, Get, Delete
