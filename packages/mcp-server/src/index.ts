@@ -49,7 +49,7 @@ export function jsonResponse(result: any) {
 }
 
 // Tool annotation constants
-const READ_ONLY_ANNOTATIONS = { readOnlyHint: true } as const;
+const READ_ONLY_ANNOTATIONS = { readOnlyHint: true, destructiveHint: false, openWorldHint: false } as const;
 const WRITE_ANNOTATIONS = { readOnlyHint: false, destructiveHint: false, openWorldHint: false } as const;
 const DESTRUCTIVE_ANNOTATIONS = { readOnlyHint: false, destructiveHint: true, openWorldHint: false } as const;
 
