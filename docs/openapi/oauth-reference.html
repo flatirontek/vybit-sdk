@@ -20,6 +20,7 @@
 <body>
     <script
         id="api-reference"
+        data-url="./oauth2.yaml"
         data-configuration='{
             "theme": "default",
             "layout": "modern",
@@ -31,28 +32,15 @@
             "hideDarkModeToggle": false,
             "searchHotKey": "k",
             "authentication": {
-                "preferredSecurityScheme": "BearerAuth"
+                "preferredSecurityScheme": "BearerAuth",
+                "apiKey": {
+                    "token": ""
+                }
             },
             "showSidebar": true,
             "hideDownloadButton": false
         }'
     ></script>
-
-    <script>
-        // Dynamically set OpenAPI spec URL based on environment
-        // Local: Use local file from vybit-sdk repo
-        // Production: Use GitLab raw file URL
-        (function() {
-            const hostname = window.location.hostname;
-            const isDev = hostname.includes('localhost');
-
-            const specUrl = isDev
-                ? './oauth2.yaml'  // Local file served by Node
-                : 'https://gitlab.com/flatirontek/vybit-sdk/-/raw/main/docs/openapi/oauth2.yaml';
-
-            document.getElementById('api-reference').setAttribute('data-url', specUrl);
-        })();
-    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
 </body>
