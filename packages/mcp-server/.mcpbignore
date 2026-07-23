@@ -11,3 +11,7 @@ coverage/
 .mcpbignore
 dist/index.js
 dist/index.d.ts
+dist/bundle.js
+*.mcpb
+*.mcpb.zip
+*.zip
