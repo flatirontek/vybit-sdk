@@ -82,7 +82,7 @@ publish-core:
     SIGSTORE_ID_TOKEN:
       aud: sigstore
   before_script:
-    - npm install -g npm@latest
+    - npm install -g npm@11
     - npm --version
   script:
     - |
@@ -119,7 +119,7 @@ publish-oauth2:
     SIGSTORE_ID_TOKEN:
       aud: sigstore
   before_script:
-    - npm install -g npm@latest
+    - npm install -g npm@11
     - npm --version
   script:
     - |
@@ -156,7 +156,7 @@ publish-api:
     SIGSTORE_ID_TOKEN:
       aud: sigstore
   before_script:
-    - npm install -g npm@latest
+    - npm install -g npm@11
     - npm --version
   script:
     - |
@@ -193,7 +193,7 @@ publish-cli:
     SIGSTORE_ID_TOKEN:
       aud: sigstore
   before_script:
-    - npm install -g npm@latest
+    - npm install -g npm@11
     - npm --version
   script:
     - |
@@ -230,7 +230,7 @@ publish-mcp:
     SIGSTORE_ID_TOKEN:
       aud: sigstore
   before_script:
-    - npm install -g npm@latest
+    - npm install -g npm@11
     - npm --version
   script:
     - |
@@ -267,7 +267,7 @@ publish-n8n:
     SIGSTORE_ID_TOKEN:
       aud: sigstore
   before_script:
-    - npm install -g npm@latest
+    - npm install -g npm@11
     - npm --version
   script:
     - |
