@@ -116,15 +116,15 @@ export const TOOLS: Tool[] = [
           enum: ['public', 'private', 'unlisted'],
         },
         message: {
-          type: 'string',
+          type: ['string', 'null'],
           description: 'Default message included when a notification is triggered',
         },
         imageUrl: {
-          type: 'string',
+          type: ['string', 'null'],
           description: 'Default image URL included when a notification is triggered. Must be a direct link to a JPG, PNG, or GIF image and the filename in the url must end with .jpg, .jpeg, .png, or .gif',
         },
         linkUrl: {
-          type: 'string',
+          type: ['string', 'null'],
           description: 'Default URL to open when notification is tapped',
         },
         triggerSettings: TRIGGER_SETTINGS_SCHEMA,
@@ -150,8 +150,8 @@ export const TOOLS: Tool[] = [
           description: 'New name for the vybit',
         },
         description: {
-          type: 'string',
-          description: 'New description for the vybit',
+          type: ['string', 'null'],
+          description: 'New description for the vybit. Pass null or an empty string to clear it.',
         },
         soundKey: {
           type: 'string',
@@ -173,16 +173,16 @@ export const TOOLS: Tool[] = [
           enum: ['public', 'private', 'unlisted'],
         },
         message: {
-          type: 'string',
-          description: 'Default message included when a notification is triggered',
+          type: ['string', 'null'],
+          description: 'Default message included when a notification is triggered. Pass null or an empty string to clear it.',
         },
         imageUrl: {
-          type: 'string',
-          description: 'Default image URL included when a notification is triggered. Must be a direct link to a JPG, PNG, or GIF image and the filename in the url must end with .jpg, .jpeg, .png, or .gif',
+          type: ['string', 'null'],
+          description: 'Default image URL included when a notification is triggered. Must be a direct link to a JPG, PNG, or GIF image and the filename in the url must end with .jpg, .jpeg, .png, or .gif. Pass null or an empty string to clear it.',
         },
         linkUrl: {
-          type: 'string',
-          description: 'Default URL to open when notification is tapped',
+          type: ['string', 'null'],
+          description: 'Default URL to open when notification is tapped. Pass null or an empty string to clear it.',
         },
         triggerSettings: TRIGGER_SETTINGS_SCHEMA,
         geofence: GEOFENCE_SCHEMA,
@@ -268,19 +268,19 @@ export const TOOLS: Tool[] = [
           description: 'Year for the reminder (defaults to current year). Used for one-time reminders.',
         },
         message: {
-          type: 'string',
+          type: ['string', 'null'],
           description: 'Notification message for this reminder (max 256 characters)',
         },
         imageUrl: {
-          type: 'string',
+          type: ['string', 'null'],
           description: 'Image URL for the notification (must be a direct link to a JPG, PNG, or GIF image, max 512 characters, and the filename in the url must end with .jpg, .jpeg, .png, or .gif)',
         },
         linkUrl: {
-          type: 'string',
+          type: ['string', 'null'],
           description: 'URL to open when notification is tapped (max 512 characters, must be a valid URL)',
         },
         log: {
-          type: 'string',
+          type: ['string', 'null'],
           description: 'Log content sent with the notification that will be appended to the notification log (max 1024 characters)',
         },
       },
@@ -328,20 +328,20 @@ export const TOOLS: Tool[] = [
           description: 'IANA timezone identifier. Defaults to UTC if omitted — always set this to the user\'s local timezone. Examples: "America/New_York", "America/Denver", "America/Los_Angeles", "Europe/London"',
         },
         message: {
-          type: 'string',
-          description: 'Notification message for this reminder (max 256 characters)',
+          type: ['string', 'null'],
+          description: 'Notification message for this reminder (max 256 characters). Pass null or an empty string to clear it.',
         },
         imageUrl: {
-          type: 'string',
-          description: 'Image URL for the notification (must be a direct link to a JPG, PNG, or GIF image, max 512 characters, and the filename in the url must end with .jpg, .jpeg, .png, or .gif)',
+          type: ['string', 'null'],
+          description: 'Image URL for the notification (must be a direct link to a JPG, PNG, or GIF image, max 512 characters, and the filename in the url must end with .jpg, .jpeg, .png, or .gif). Pass null or an empty string to clear it.',
         },
         linkUrl: {
-          type: 'string',
-          description: 'URL to open when notification is tapped (max 512 characters, must be a valid URL)',
+          type: ['string', 'null'],
+          description: 'URL to open when notification is tapped (max 512 characters, must be a valid URL). Pass null or an empty string to clear it.',
         },
         log: {
-          type: 'string',
-          description: 'Log content for the notification (max 1024 characters)',
+          type: ['string', 'null'],
+          description: 'Log content for the notification (max 1024 characters). Pass null or an empty string to clear it.',
         },
       },
       required: ['key', 'reminderId'],
@@ -509,16 +509,16 @@ export const TOOLS: Tool[] = [
           enum: ['granted', 'declined'],
         },
         message: {
-          type: 'string',
-          description: 'Custom notification message (only if subscribers can send)',
+          type: ['string', 'null'],
+          description: 'Custom notification message (only if subscribers can send). Pass null or an empty string to clear it.',
         },
         imageUrl: {
-          type: 'string',
-          description: 'Custom image URL (must be a direct link to a JPG, PNG, or GIF image and the filename in the url must end with .jpg, .jpeg, .png, or .gif, only if subscribers can send)',
+          type: ['string', 'null'],
+          description: 'Custom image URL (must be a direct link to a JPG, PNG, or GIF image and the filename in the url must end with .jpg, .jpeg, .png, or .gif, only if subscribers can send). Pass null or an empty string to clear it.',
         },
         linkUrl: {
-          type: 'string',
-          description: 'Custom link URL (only if subscribers can send)',
+          type: ['string', 'null'],
+          description: 'Custom link URL (only if subscribers can send). Pass null or an empty string to clear it.',
         },
       },
       required: ['followingKey'],
@@ -686,6 +686,266 @@ export const TOOLS: Tool[] = [
   },
 ];
 
+// Guard against dispatching a write with an empty body — the API returns an
+// opaque 500 for an empty PATCH, so fail client-side with a usable message.
+function assertHasFields(data: Record<string, any>, hint: string): void {
+  if (Object.keys(data).length === 0) {
+    throw new Error(`No updatable fields provided. ${hint}`);
+  }
+}
+
+// Execute a tool call against the Vybit API. Exported so the parameter
+// forwarding can be unit tested without a stdio transport; the server
+// request handler below delegates here.
+export async function handleToolCall(
+  name: string,
+  args: Record<string, any>,
+  client: VybitAPIClient
+): Promise<ReturnType<typeof jsonResponse>> {
+  switch (name) {
+    case 'vybit_list':
+      return jsonResponse(await client.listVybits({
+        search: args.search as string | undefined,
+        limit: args.limit as number | undefined,
+        offset: args.offset as number | undefined,
+      }));
+
+    case 'vybit_get':
+      return jsonResponse(await client.getVybit(args.key as string));
+
+    case 'vybit_create': {
+      const createData: any = {
+        name: args.name as string,
+      };
+      // Clearable fields (description, message, imageUrl, linkUrl) forward "" and
+      // null rather than silently dropping them — the API accepts both.
+      if (args.description !== undefined) createData.description = args.description;
+      if (args.soundKey) createData.soundKey = args.soundKey;
+      if (args.status) createData.status = args.status;
+      if (args.triggerType) createData.triggerType = args.triggerType;
+      if (args.access) createData.access = args.access;
+      if (args.message !== undefined) createData.message = args.message;
+      if (args.imageUrl !== undefined) createData.imageUrl = args.imageUrl;
+      if (args.linkUrl !== undefined) createData.linkUrl = args.linkUrl;
+      if (args.triggerSettings) createData.triggerSettings = args.triggerSettings;
+      if (args.geofence) createData.geofence = normalizeGeofence(args.geofence);
+
+      return jsonResponse(await client.createVybit(createData));
+    }
+
+    case 'vybit_update': {
+      const updateData: any = {};
+      if (args.name) updateData.name = args.name;
+      if (args.description !== undefined) updateData.description = args.description;
+      if (args.soundKey) updateData.soundKey = args.soundKey;
+      if (args.status) updateData.status = args.status;
+      if (args.triggerType) updateData.triggerType = args.triggerType;
+      if (args.access) updateData.access = args.access;
+      if (args.message !== undefined) updateData.message = args.message;
+      if (args.imageUrl !== undefined) updateData.imageUrl = args.imageUrl;
+      if (args.linkUrl !== undefined) updateData.linkUrl = args.linkUrl;
+      if (args.triggerSettings) updateData.triggerSettings = args.triggerSettings;
+      if (args.geofence) updateData.geofence = normalizeGeofence(args.geofence);
+      assertHasFields(updateData, 'Pass null or "" to clear description, message, imageUrl, or linkUrl.');
+
+      return jsonResponse(await client.patchVybit(
+        args.key as string,
+        updateData
+      ));
+    }
+
+    case 'vybit_delete':
+      await client.deleteVybit(args.key as string);
+      return jsonResponse({ success: true, message: 'Vybit deleted successfully' });
+
+    case 'vybit_trigger': {
+      const options: any = {};
+      if (args.message) options.message = args.message;
+      if (args.imageUrl) options.imageUrl = args.imageUrl;
+      if (args.linkUrl) options.linkUrl = args.linkUrl;
+      if (args.log) options.log = args.log;
+      if (args.runOnce !== undefined) options.runOnce = args.runOnce;
+
+      return jsonResponse(await client.triggerVybit(
+        args.key as string,
+        Object.keys(options).length > 0 ? options : undefined
+      ));
+    }
+
+    // Reminders
+    case 'reminder_create': {
+      const params: any = {
+        cron: args.cron as string,
+      };
+      if (args.timeZone) params.timeZone = args.timeZone;
+      if (args.year !== undefined) params.year = args.year;
+      if (args.message !== undefined) params.message = args.message;
+      if (args.imageUrl !== undefined) params.imageUrl = args.imageUrl;
+      if (args.linkUrl !== undefined) params.linkUrl = args.linkUrl;
+      if (args.log !== undefined) params.log = args.log;
+
+      return jsonResponse(await client.createReminder(
+        args.key as string,
+        params
+      ));
+    }
+
+    case 'reminder_list':
+      return jsonResponse(await client.listReminders(args.key as string));
+
+    case 'reminder_update': {
+      // The reminder PATCH endpoint returns a 500 for JSON null values, while
+      // "" clears the field. Accept null in the schema but send "" instead.
+      const nullToEmpty = (v: any) => (v === null ? '' : v);
+      const params: any = {};
+      if (args.cron) params.cron = args.cron;
+      if (args.timeZone) params.timeZone = args.timeZone;
+      if (args.message !== undefined) params.message = nullToEmpty(args.message);
+      if (args.imageUrl !== undefined) params.imageUrl = nullToEmpty(args.imageUrl);
+      if (args.linkUrl !== undefined) params.linkUrl = nullToEmpty(args.linkUrl);
+      if (args.log !== undefined) params.log = nullToEmpty(args.log);
+      assertHasFields(params, 'Pass null or "" to clear message, imageUrl, linkUrl, or log.');
+
+      return jsonResponse(await client.updateReminder(
+        args.key as string,
+        args.reminderId as string,
+        params
+      ));
+    }
+
+    case 'reminder_delete':
+      await client.deleteReminder(
+        args.key as string,
+        args.reminderId as string
+      );
+      return jsonResponse({ success: true, message: 'Reminder deleted successfully' });
+
+    case 'sounds_list':
+      return jsonResponse(await client.searchSounds({
+        search: args.search as string | undefined,
+        limit: args.limit as number | undefined,
+        offset: args.offset as number | undefined,
+      }));
+
+    case 'sound_get':
+      return jsonResponse(await client.getSound(args.soundKey as string));
+
+    case 'meter_get':
+      return jsonResponse(await client.getMeter());
+
+    case 'get_current_time': {
+      const now = new Date();
+      return jsonResponse({
+        utc: now.toISOString(),
+        local: now.toLocaleString(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      });
+    }
+
+    // Public Vybit Discovery
+    case 'vybits_browse_public':
+      return jsonResponse(await client.listPublicVybits({
+        search: args.search as string | undefined,
+        limit: args.limit as number | undefined,
+        offset: args.offset as number | undefined,
+      }));
+
+    case 'vybit_get_public':
+      return jsonResponse(await client.getPublicVybit(args.subscriptionKey as string));
+
+    // Subscription Management
+    case 'subscription_create':
+      return jsonResponse(await client.createVybitFollow(
+        args.subscriptionKey as string
+      ));
+
+    case 'subscriptions_list':
+      return jsonResponse(await client.listVybitFollows({
+        search: args.search as string | undefined,
+        limit: args.limit as number | undefined,
+        offset: args.offset as number | undefined,
+      }));
+
+    case 'subscription_get':
+      return jsonResponse(await client.getVybitFollow(args.followingKey as string));
+
+    case 'subscription_update': {
+      const updateData: any = {};
+      if (args.status) updateData.status = args.status;
+      if (args.accessStatus) updateData.accessStatus = args.accessStatus;
+      if (args.message !== undefined) updateData.message = args.message;
+      if (args.imageUrl !== undefined) updateData.imageUrl = args.imageUrl;
+      if (args.linkUrl !== undefined) updateData.linkUrl = args.linkUrl;
+      assertHasFields(updateData, 'Pass null or "" to clear message, imageUrl, or linkUrl.');
+
+      return jsonResponse(await client.updateVybitFollow(
+        args.followingKey as string,
+        updateData
+      ));
+    }
+
+    case 'subscription_delete':
+      await client.deleteVybitFollow(args.followingKey as string);
+      return jsonResponse({ success: true, message: 'Unsubscribed successfully' });
+
+    // Logs
+    case 'logs_list':
+      return jsonResponse(await client.listLogs({
+        search: args.search as string | undefined,
+        limit: args.limit as number | undefined,
+        offset: args.offset as number | undefined,
+      }));
+
+    case 'log_get':
+      return jsonResponse(await client.getLog(args.logKey as string));
+
+    case 'vybit_logs':
+      return jsonResponse(await client.listVybitLogs(args.key as string, {
+        search: args.search as string | undefined,
+        limit: args.limit as number | undefined,
+        offset: args.offset as number | undefined,
+      }));
+
+    case 'subscription_logs':
+      return jsonResponse(await client.listVybitFollowLogs(args.followingKey as string, {
+        search: args.search as string | undefined,
+        limit: args.limit as number | undefined,
+        offset: args.offset as number | undefined,
+      }));
+
+    // Peeps
+    case 'peeps_list':
+      return jsonResponse(await client.listPeeps({
+        search: args.search as string | undefined,
+        limit: args.limit as number | undefined,
+        offset: args.offset as number | undefined,
+      }));
+
+    case 'peep_get':
+      return jsonResponse(await client.getPeep(args.peepKey as string));
+
+    case 'peep_create':
+      return jsonResponse(await client.createPeep(
+        args.key as string,
+        args.email as string
+      ));
+
+    case 'peep_delete':
+      await client.deletePeep(args.peepKey as string);
+      return jsonResponse({ success: true, message: 'Peep removed successfully' });
+
+    case 'vybit_peeps_list':
+      return jsonResponse(await client.listVybitPeeps(args.key as string, {
+        search: args.search as string | undefined,
+        limit: args.limit as number | undefined,
+        offset: args.offset as number | undefined,
+      }));
+
+    default:
+      throw new Error(`Unknown tool: ${name}`);
+  }
+}
+
 // --- Stdio server ---
 // Set VYBIT_MCP_NO_STDIO=true to import TOOLS/jsonResponse without starting the stdio server.
 if (process.env.VYBIT_MCP_NO_STDIO !== 'true') {
@@ -697,7 +957,7 @@ const VYBIT_ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAA
 const server = new Server(
   {
     name: 'vybit-mcp-server',
-    version: '1.5.8',
+    version: '1.6.0',
     icons: [
       {
         src: VYBIT_ICON,
@@ -750,240 +1010,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 
   try {
-    switch (name) {
-      case 'vybit_list':
-        return jsonResponse(await vybitClient.listVybits({
-          search: args.search as string | undefined,
-          limit: args.limit as number | undefined,
-          offset: args.offset as number | undefined,
-        }));
-
-      case 'vybit_get':
-        return jsonResponse(await vybitClient.getVybit(args.key as string));
-
-      case 'vybit_create': {
-        const createData: any = {
-          name: args.name as string,
-        };
-        if (args.description) createData.description = args.description;
-        if (args.soundKey) createData.soundKey = args.soundKey;
-        if (args.status) createData.status = args.status;
-        if (args.triggerType) createData.triggerType = args.triggerType;
-        if (args.access) createData.access = args.access;
-        if (args.message !== undefined) createData.message = args.message;
-        if (args.imageUrl) createData.imageUrl = args.imageUrl;
-        if (args.linkUrl) createData.linkUrl = args.linkUrl;
-        if (args.triggerSettings) createData.triggerSettings = args.triggerSettings;
-        if (args.geofence) createData.geofence = normalizeGeofence(args.geofence);
-
-        return jsonResponse(await vybitClient.createVybit(createData));
-      }
-
-      case 'vybit_update': {
-        const updateData: any = {};
-        if (args.name) updateData.name = args.name;
-        if (args.description) updateData.description = args.description;
-        if (args.soundKey) updateData.soundKey = args.soundKey;
-        if (args.status) updateData.status = args.status;
-        if (args.triggerType) updateData.triggerType = args.triggerType;
-        if (args.access) updateData.access = args.access;
-        if (args.message !== undefined) updateData.message = args.message;
-        if (args.imageUrl) updateData.imageUrl = args.imageUrl;
-        if (args.linkUrl) updateData.linkUrl = args.linkUrl;
-        if (args.triggerSettings) updateData.triggerSettings = args.triggerSettings;
-        if (args.geofence) updateData.geofence = normalizeGeofence(args.geofence);
-
-        return jsonResponse(await vybitClient.patchVybit(
-          args.key as string,
-          updateData
-        ));
-      }
-
-      case 'vybit_delete':
-        await vybitClient.deleteVybit(args.key as string);
-        return jsonResponse({ success: true, message: 'Vybit deleted successfully' });
-
-      case 'vybit_trigger': {
-        const options: any = {};
-        if (args.message) options.message = args.message;
-        if (args.imageUrl) options.imageUrl = args.imageUrl;
-        if (args.linkUrl) options.linkUrl = args.linkUrl;
-        if (args.log) options.log = args.log;
-        if (args.runOnce !== undefined) options.runOnce = args.runOnce;
-
-        return jsonResponse(await vybitClient.triggerVybit(
-          args.key as string,
-          Object.keys(options).length > 0 ? options : undefined
-        ));
-      }
-
-      // Reminders
-      case 'reminder_create': {
-        const params: any = {
-          cron: args.cron as string,
-        };
-        if (args.timeZone) params.timeZone = args.timeZone;
-        if (args.year !== undefined) params.year = args.year;
-        if (args.message !== undefined) params.message = args.message;
-        if (args.imageUrl) params.imageUrl = args.imageUrl;
-        if (args.linkUrl) params.linkUrl = args.linkUrl;
-        if (args.log) params.log = args.log;
-
-        return jsonResponse(await vybitClient.createReminder(
-          args.key as string,
-          params
-        ));
-      }
-
-      case 'reminder_list':
-        return jsonResponse(await vybitClient.listReminders(args.key as string));
-
-      case 'reminder_update': {
-        const params: any = {};
-        if (args.cron) params.cron = args.cron;
-        if (args.timeZone) params.timeZone = args.timeZone;
-        if (args.message !== undefined) params.message = args.message;
-        if (args.imageUrl !== undefined) params.imageUrl = args.imageUrl;
-        if (args.linkUrl !== undefined) params.linkUrl = args.linkUrl;
-        if (args.log !== undefined) params.log = args.log;
-
-        return jsonResponse(await vybitClient.updateReminder(
-          args.key as string,
-          args.reminderId as string,
-          params
-        ));
-      }
-
-      case 'reminder_delete':
-        await vybitClient.deleteReminder(
-          args.key as string,
-          args.reminderId as string
-        );
-        return jsonResponse({ success: true, message: 'Reminder deleted successfully' });
-
-      case 'sounds_list':
-        return jsonResponse(await vybitClient.searchSounds({
-          search: args.search as string | undefined,
-          limit: args.limit as number | undefined,
-          offset: args.offset as number | undefined,
-        }));
-
-      case 'sound_get':
-        return jsonResponse(await vybitClient.getSound(args.soundKey as string));
-
-      case 'meter_get':
-        return jsonResponse(await vybitClient.getMeter());
-
-      case 'get_current_time': {
-        const now = new Date();
-        return jsonResponse({
-          utc: now.toISOString(),
-          local: now.toLocaleString(),
-          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        });
-      }
-
-      // Public Vybit Discovery
-      case 'vybits_browse_public':
-        return jsonResponse(await vybitClient.listPublicVybits({
-          search: args.search as string | undefined,
-          limit: args.limit as number | undefined,
-          offset: args.offset as number | undefined,
-        }));
-
-      case 'vybit_get_public':
-        return jsonResponse(await vybitClient.getPublicVybit(args.subscriptionKey as string));
-
-      // Subscription Management
-      case 'subscription_create':
-        return jsonResponse(await vybitClient.createVybitFollow(
-          args.subscriptionKey as string
-        ));
-
-      case 'subscriptions_list':
-        return jsonResponse(await vybitClient.listVybitFollows({
-          search: args.search as string | undefined,
-          limit: args.limit as number | undefined,
-          offset: args.offset as number | undefined,
-        }));
-
-      case 'subscription_get':
-        return jsonResponse(await vybitClient.getVybitFollow(args.followingKey as string));
-
-      case 'subscription_update': {
-        const updateData: any = {};
-        if (args.status) updateData.status = args.status;
-        if (args.accessStatus) updateData.accessStatus = args.accessStatus;
-        if (args.message !== undefined) updateData.message = args.message;
-        if (args.imageUrl) updateData.imageUrl = args.imageUrl;
-        if (args.linkUrl) updateData.linkUrl = args.linkUrl;
-
-        return jsonResponse(await vybitClient.updateVybitFollow(
-          args.followingKey as string,
-          updateData
-        ));
-      }
-
-      case 'subscription_delete':
-        await vybitClient.deleteVybitFollow(args.followingKey as string);
-        return jsonResponse({ success: true, message: 'Unsubscribed successfully' });
-
-      // Logs
-      case 'logs_list':
-        return jsonResponse(await vybitClient.listLogs({
-          search: args.search as string | undefined,
-          limit: args.limit as number | undefined,
-          offset: args.offset as number | undefined,
-        }));
-
-      case 'log_get':
-        return jsonResponse(await vybitClient.getLog(args.logKey as string));
-
-      case 'vybit_logs':
-        return jsonResponse(await vybitClient.listVybitLogs(args.key as string, {
-          search: args.search as string | undefined,
-          limit: args.limit as number | undefined,
-          offset: args.offset as number | undefined,
-        }));
-
-      case 'subscription_logs':
-        return jsonResponse(await vybitClient.listVybitFollowLogs(args.followingKey as string, {
-          search: args.search as string | undefined,
-          limit: args.limit as number | undefined,
-          offset: args.offset as number | undefined,
-        }));
-
-      // Peeps
-      case 'peeps_list':
-        return jsonResponse(await vybitClient.listPeeps({
-          search: args.search as string | undefined,
-          limit: args.limit as number | undefined,
-          offset: args.offset as number | undefined,
-        }));
-
-      case 'peep_get':
-        return jsonResponse(await vybitClient.getPeep(args.peepKey as string));
-
-      case 'peep_create':
-        return jsonResponse(await vybitClient.createPeep(
-          args.key as string,
-          args.email as string
-        ));
-
-      case 'peep_delete':
-        await vybitClient.deletePeep(args.peepKey as string);
-        return jsonResponse({ success: true, message: 'Peep removed successfully' });
-
-      case 'vybit_peeps_list':
-        return jsonResponse(await vybitClient.listVybitPeeps(args.key as string, {
-          search: args.search as string | undefined,
-          limit: args.limit as number | undefined,
-          offset: args.offset as number | undefined,
-        }));
-
-      default:
-        throw new Error(`Unknown tool: ${name}`);
-    }
+    return await handleToolCall(name, args, vybitClient);
   } catch (error: any) {
     const errorMessage = error.message || 'Unknown error';
     const statusCode = error.statusCode ? ` (Status: ${error.statusCode})` : '';

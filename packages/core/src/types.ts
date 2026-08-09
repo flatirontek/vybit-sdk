@@ -189,12 +189,12 @@ export interface VybitCreateParams {
   triggerSettings?: any;
   /** Vybit visibility and access control (defaults to "private") */
   access?: 'public' | 'private' | 'unlisted';
-  /** Default message displayed with notifications */
-  message?: string;
-  /** Default image URL for notifications (must be a direct link to a JPG, PNG, or GIF image) */
-  imageUrl?: string;
-  /** Default URL to open when notification is tapped */
-  linkUrl?: string;
+  /** Default message displayed with notifications (null or "" leaves the field empty) */
+  message?: string | null;
+  /** Default image URL for notifications (must be a direct link to a JPG, PNG, or GIF image; null or "" leaves the field empty) */
+  imageUrl?: string | null;
+  /** Default URL to open when notification is tapped (null or "" leaves the field empty) */
+  linkUrl?: string | null;
   /** Geofence configuration (for geofence trigger type) */
   geofence?: any;
   /** Who can trigger this vybit (defaults to "owner_subs") */
@@ -207,8 +207,8 @@ export interface VybitCreateParams {
 export interface VybitUpdateParams {
   /** Vybit display name */
   name?: string;
-  /** Detailed vybit description */
-  description?: string;
+  /** Detailed vybit description (null or "" clears the field) */
+  description?: string | null;
   /** Key of the sound to play */
   soundKey?: string;
   /** Vybit status (on = active, off = disabled) */
@@ -219,12 +219,12 @@ export interface VybitUpdateParams {
   triggerSettings?: any;
   /** Vybit visibility and access control */
   access?: 'public' | 'private' | 'unlisted';
-  /** Default message displayed with notifications */
-  message?: string;
-  /** Default image URL for notifications (must be a direct link to a JPG, PNG, or GIF image) */
-  imageUrl?: string;
-  /** Default URL to open when notification is tapped */
-  linkUrl?: string;
+  /** Default message displayed with notifications (null or "" clears the field) */
+  message?: string | null;
+  /** Default image URL for notifications (must be a direct link to a JPG, PNG, or GIF image; null or "" clears the field) */
+  imageUrl?: string | null;
+  /** Default URL to open when notification is tapped (null or "" clears the field) */
+  linkUrl?: string | null;
   /** Geofence configuration (for geofence trigger type) */
   geofence?: any;
   /** Who can trigger this vybit */
@@ -315,12 +315,12 @@ export interface VybitFollowUpdateParams {
   status?: 'on' | 'off';
   /** Access status (only applicable when current status is 'invited') */
   accessStatus?: 'granted' | 'declined';
-  /** Custom notification message (only if subscribers can send notifications) */
-  message?: string;
-  /** Custom image URL (must be a direct link to a JPG, PNG, or GIF image, only if subscribers can send notifications) */
-  imageUrl?: string;
-  /** Custom link URL (only if subscribers can send notifications) */
-  linkUrl?: string;
+  /** Custom notification message (only if subscribers can send notifications; null or "" clears the field) */
+  message?: string | null;
+  /** Custom image URL (must be a direct link to a JPG, PNG, or GIF image, only if subscribers can send notifications; null or "" clears the field) */
+  imageUrl?: string | null;
+  /** Custom link URL (only if subscribers can send notifications; null or "" clears the field) */
+  linkUrl?: string | null;
 }
 
 /**
@@ -508,13 +508,13 @@ export interface ReminderCreateParams {
   /** Year for the reminder (defaults to current year). Used for one-time reminders. */
   year?: number;
   /** Notification message (max 256 characters) */
-  message?: string;
+  message?: string | null;
   /** Image URL for the notification (must be a direct link to a JPG, PNG, or GIF image, max 512 characters) */
-  imageUrl?: string;
+  imageUrl?: string | null;
   /** Link URL for the notification (max 512 characters, must be a valid URL) */
-  linkUrl?: string;
+  linkUrl?: string | null;
   /** Log content for the notification (max 1024 characters) */
-  log?: string;
+  log?: string | null;
 }
 
 /**
