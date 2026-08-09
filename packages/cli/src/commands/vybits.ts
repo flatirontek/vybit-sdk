@@ -67,11 +67,11 @@ export function registerVybitsCommands(program: Command): void {
         if (opts.soundKey) params.soundKey = opts.soundKey;
         if (opts.status) params.status = opts.status;
         if (opts.triggerType) params.triggerType = opts.triggerType;
-        if (opts.description) params.description = opts.description;
+        if (opts.description !== undefined) params.description = opts.description;
         if (opts.access) params.access = opts.access;
         if (opts.message !== undefined) params.message = opts.message;
-        if (opts.imageUrl) params.imageUrl = opts.imageUrl;
-        if (opts.linkUrl) params.linkUrl = opts.linkUrl;
+        if (opts.imageUrl !== undefined) params.imageUrl = opts.imageUrl;
+        if (opts.linkUrl !== undefined) params.linkUrl = opts.linkUrl;
         if (opts.sendPermissions) params.sendPermissions = opts.sendPermissions;
         if (opts.triggerSettings) params.triggerSettings = JSON.parse(opts.triggerSettings);
         if (opts.geofence) params.geofence = normalizeGeofence(JSON.parse(opts.geofence));
@@ -91,11 +91,11 @@ export function registerVybitsCommands(program: Command): void {
     .option('--sound-key <key>', 'New sound key')
     .option('--status <status>', 'Status (on/off)')
     .option('--trigger-type <type>', 'Trigger type')
-    .option('--description <text>', 'New description')
+    .option('--description <text>', 'New description (pass "" to clear)')
     .option('--access <access>', 'Visibility (public/private/unlisted)')
-    .option('--message <text>', 'Default notification message')
-    .option('--image-url <url>', 'Default image URL (must end in .jpg/.png/.gif)')
-    .option('--link-url <url>', 'Default link URL')
+    .option('--message <text>', 'Default notification message (pass "" to clear)')
+    .option('--image-url <url>', 'Default image URL, must end in .jpg/.png/.gif (pass "" to clear)')
+    .option('--link-url <url>', 'Default link URL (pass "" to clear)')
     .option('--trigger-settings <json>', 'Trigger settings as JSON')
     .option('--geofence <json>', 'Geofence config as JSON')
     .option('--send-permissions <perm>', 'Send permissions (owner_subs/subs_owner/subs_group)')
@@ -108,14 +108,19 @@ export function registerVybitsCommands(program: Command): void {
         if (opts.soundKey) params.soundKey = opts.soundKey;
         if (opts.status) params.status = opts.status;
         if (opts.triggerType) params.triggerType = opts.triggerType;
-        if (opts.description) params.description = opts.description;
+        if (opts.description !== undefined) params.description = opts.description;
         if (opts.access) params.access = opts.access;
         if (opts.message !== undefined) params.message = opts.message;
-        if (opts.imageUrl) params.imageUrl = opts.imageUrl;
-        if (opts.linkUrl) params.linkUrl = opts.linkUrl;
+        if (opts.imageUrl !== undefined) params.imageUrl = opts.imageUrl;
+        if (opts.linkUrl !== undefined) params.linkUrl = opts.linkUrl;
         if (opts.sendPermissions) params.sendPermissions = opts.sendPermissions;
         if (opts.triggerSettings) params.triggerSettings = JSON.parse(opts.triggerSettings);
         if (opts.geofence) params.geofence = normalizeGeofence(JSON.parse(opts.geofence));
+
+        // An empty PATCH body draws an opaque 500 from the API — fail here instead.
+        if (Object.keys(params).length === 0) {
+          throw new Error('No updatable fields provided. Pass "" to clear description, message, image-url, or link-url.');
+        }
 
         const result = await client.patchVybit(key, params);
         output(result, globals.quiet);

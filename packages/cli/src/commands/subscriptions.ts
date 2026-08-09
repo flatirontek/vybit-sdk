@@ -65,9 +65,9 @@ export function registerSubscriptionsCommands(program: Command): void {
     .argument('<following-key>', 'Following key of the subscription')
     .option('--status <status>', 'Enable or disable notifications (on/off)')
     .option('--access-status <status>', 'Accept or decline invitation (granted/declined)')
-    .option('--message <text>', 'Custom notification message')
-    .option('--image-url <url>', 'Custom image URL (must end in .jpg/.png/.gif)')
-    .option('--link-url <url>', 'Custom link URL')
+    .option('--message <text>', 'Custom notification message (pass "" to clear)')
+    .option('--image-url <url>', 'Custom image URL, must end in .jpg/.png/.gif (pass "" to clear)')
+    .option('--link-url <url>', 'Custom link URL (pass "" to clear)')
     .action(async (followingKey, opts, cmd) => {
       const globals = resolveGlobalOpts(cmd);
       try {
@@ -76,8 +76,13 @@ export function registerSubscriptionsCommands(program: Command): void {
         if (opts.status) params.status = opts.status;
         if (opts.accessStatus) params.accessStatus = opts.accessStatus;
         if (opts.message !== undefined) params.message = opts.message;
-        if (opts.imageUrl) params.imageUrl = opts.imageUrl;
-        if (opts.linkUrl) params.linkUrl = opts.linkUrl;
+        if (opts.imageUrl !== undefined) params.imageUrl = opts.imageUrl;
+        if (opts.linkUrl !== undefined) params.linkUrl = opts.linkUrl;
+
+        // An empty PATCH body draws an opaque 500 from the API — fail here instead.
+        if (Object.keys(params).length === 0) {
+          throw new Error('No updatable fields provided. Pass "" to clear message, image-url, or link-url.');
+        }
 
         const result = await client.updateVybitFollow(followingKey, params);
         output(result, globals.quiet);

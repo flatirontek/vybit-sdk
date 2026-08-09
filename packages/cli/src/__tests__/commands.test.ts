@@ -427,3 +427,79 @@ describe('profile', () => {
     expect(mockClient.getProfile).toHaveBeenCalled();
   });
 });
+
+// ==================== Clearing fields (issue #1 bug class) ====================
+
+describe('clearing fields with ""', () => {
+  let exitSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    // outputError calls process.exit; keep the test process alive
+    exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+  });
+
+  afterEach(() => {
+    exitSpy.mockRestore();
+  });
+
+  it('vybits update forwards empty strings instead of dropping them', async () => {
+    await run(['vybits', 'update', 'v1', '--description', '', '--image-url', '', '--link-url', '']);
+    expect(mockClient.patchVybit).toHaveBeenCalledWith('v1', {
+      description: '',
+      imageUrl: '',
+      linkUrl: '',
+    });
+  });
+
+  it('vybits update with no fields fails client-side instead of sending an empty PATCH', async () => {
+    await run(['vybits', 'update', 'v1']);
+    expect(mockClient.patchVybit).not.toHaveBeenCalled();
+    expect(stderrData).toContain('No updatable fields provided');
+  });
+
+  it('vybits create forwards empty strings', async () => {
+    await run(['vybits', 'create', '--name', 'Test', '--link-url', '']);
+    expect(mockClient.createVybit).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Test', linkUrl: '' })
+    );
+  });
+
+  it('subscriptions update forwards empty strings', async () => {
+    await run(['subscriptions', 'update', 'f1', '--message', '', '--image-url', '', '--link-url', '']);
+    expect(mockClient.updateVybitFollow).toHaveBeenCalledWith('f1', {
+      message: '',
+      imageUrl: '',
+      linkUrl: '',
+    });
+  });
+
+  it('subscriptions update with no fields fails client-side', async () => {
+    await run(['subscriptions', 'update', 'f1']);
+    expect(mockClient.updateVybitFollow).not.toHaveBeenCalled();
+    expect(stderrData).toContain('No updatable fields provided');
+  });
+
+  it('reminders update forwards empty strings', async () => {
+    await run(['reminders', 'update', 'v1', 'r1', '--image-url', '', '--log', '']);
+    expect(mockClient.updateReminder).toHaveBeenCalledWith('v1', 'r1', {
+      imageUrl: '',
+      log: '',
+    });
+  });
+
+  it('reminders update with no fields fails client-side', async () => {
+    await run(['reminders', 'update', 'v1', 'r1']);
+    expect(mockClient.updateReminder).not.toHaveBeenCalled();
+    expect(stderrData).toContain('No updatable fields provided');
+  });
+
+  it('reminders create forwards empty strings', async () => {
+    await run(['reminders', 'create', 'v1', '--cron', '0 9 * * *', '--image-url', '', '--link-url', '', '--log', '']);
+    expect(mockClient.createReminder).toHaveBeenCalledWith('v1', {
+      cron: '0 9 * * *',
+      imageUrl: '',
+      linkUrl: '',
+      log: '',
+    });
+  });
+});
