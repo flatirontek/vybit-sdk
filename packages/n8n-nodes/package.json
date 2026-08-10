@@ -12,7 +12,7 @@
   "homepage": "https://developer.vybit.net",
   "repository": {
     "type": "git",
-    "url": "https://github.com/flatirontek/vybit-sdk.git",
+    "url": "https://gitlab.com/flatirontek/vybit-sdk.git",
     "directory": "packages/n8n-nodes"
   },
   "keywords": [
