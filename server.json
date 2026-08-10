@@ -5,8 +5,8 @@
   "version": "1.6.0",
   "website_url": "https://www.vybit.net",
   "repository": {
-    "url": "https://gitlab.com/flatirontek/vybit-sdk",
-    "source": "gitlab"
+    "url": "https://github.com/flatirontek/vybit-sdk",
+    "source": "github"
   },
   "remotes": [
     {
