@@ -42,9 +42,9 @@ export function registerRemindersCommands(program: Command): void {
         if (opts.timeZone) params.timeZone = opts.timeZone;
         if (opts.year) params.year = parseInt(opts.year);
         if (opts.message !== undefined) params.message = opts.message;
-        if (opts.imageUrl) params.imageUrl = opts.imageUrl;
-        if (opts.linkUrl) params.linkUrl = opts.linkUrl;
-        if (opts.log) params.log = opts.log;
+        if (opts.imageUrl !== undefined) params.imageUrl = opts.imageUrl;
+        if (opts.linkUrl !== undefined) params.linkUrl = opts.linkUrl;
+        if (opts.log !== undefined) params.log = opts.log;
 
         const result = await client.createReminder(vybitKey, params);
         output(result, globals.quiet);
@@ -60,10 +60,10 @@ export function registerRemindersCommands(program: Command): void {
     .argument('<reminder-id>', 'Reminder ID')
     .option('--cron <expr>', 'New cron expression')
     .option('--time-zone <tz>', 'New IANA timezone')
-    .option('--message <text>', 'New notification message')
-    .option('--image-url <url>', 'New image URL')
-    .option('--link-url <url>', 'New link URL')
-    .option('--log <text>', 'New log content')
+    .option('--message <text>', 'New notification message (pass "" to clear)')
+    .option('--image-url <url>', 'New image URL (pass "" to clear)')
+    .option('--link-url <url>', 'New link URL (pass "" to clear)')
+    .option('--log <text>', 'New log content (pass "" to clear)')
     .action(async (vybitKey, reminderId, opts, cmd) => {
       const globals = resolveGlobalOpts(cmd);
       try {
@@ -75,6 +75,11 @@ export function registerRemindersCommands(program: Command): void {
         if (opts.imageUrl !== undefined) params.imageUrl = opts.imageUrl;
         if (opts.linkUrl !== undefined) params.linkUrl = opts.linkUrl;
         if (opts.log !== undefined) params.log = opts.log;
+
+        // An empty PATCH body draws an opaque 500 from the API — fail here instead.
+        if (Object.keys(params).length === 0) {
+          throw new Error('No updatable fields provided. Pass "" to clear message, image-url, link-url, or log.');
+        }
 
         const result = await client.updateReminder(vybitKey, reminderId, params);
         output(result, globals.quiet);
