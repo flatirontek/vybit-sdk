@@ -8,7 +8,7 @@ import type {
 	JsonObject,
 } from 'n8n-workflow';
 
-import { NodeApiError, NodeConnectionTypes } from 'n8n-workflow';
+import { NodeApiError, NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
 
 const VYBIT_BASE_URL = 'https://api.vybit.net/v1';
 
@@ -711,6 +711,26 @@ export class Vybit implements INodeType {
 					},
 				],
 			},
+			// Fields to clear on reminder update
+			{
+				displayName: 'Fields to Clear',
+				name: 'fieldsToClear',
+				type: 'multiOptions',
+				displayOptions: {
+					show: {
+						actionType: ['reminders'],
+						apiOperation: ['update'],
+					},
+				},
+				default: [],
+				description: 'Reminder fields to reset to empty. Applied after Optional Fields, so a field listed here ends up cleared even if also set above.',
+				options: [
+					{ name: 'Image URL', value: 'imageUrl' },
+					{ name: 'Link URL', value: 'linkUrl' },
+					{ name: 'Log', value: 'log' },
+					{ name: 'Message', value: 'message' },
+				],
+			},
 
 			// ===== LIST/SEARCH OPTIONS =====
 
@@ -1046,6 +1066,25 @@ export class Vybit implements INodeType {
 					},
 				],
 			},
+			// Fields to clear on subscription update
+			{
+				displayName: 'Fields to Clear',
+				name: 'fieldsToClear',
+				type: 'multiOptions',
+				displayOptions: {
+					show: {
+						actionType: ['subscriptions'],
+						apiOperation: ['updateSubscription'],
+					},
+				},
+				default: [],
+				description: 'Subscription fields to reset to empty. Applied after Update Fields, so a field listed here ends up cleared even if also set above.',
+				options: [
+					{ name: 'Image URL', value: 'imageUrl' },
+					{ name: 'Link URL', value: 'linkUrl' },
+					{ name: 'Message', value: 'message' },
+				],
+			},
 			// Create vybit parameters
 			{
 				displayName: 'Vybit Name',
@@ -1267,6 +1306,26 @@ export class Vybit implements INodeType {
 					},
 				],
 			},
+			// Fields to clear on vybit update
+			{
+				displayName: 'Fields to Clear',
+				name: 'fieldsToClear',
+				type: 'multiOptions',
+				displayOptions: {
+					show: {
+						actionType: ['vybits'],
+						apiOperation: ['update'],
+					},
+				},
+				default: [],
+				description: 'Vybit fields to reset to empty. Applied after Update Fields, so a field listed here ends up cleared even if also set above.',
+				options: [
+					{ name: 'Description', value: 'description' },
+					{ name: 'Image URL', value: 'imageUrl' },
+					{ name: 'Link URL', value: 'linkUrl' },
+					{ name: 'Message', value: 'message' },
+				],
+			},
 		],
 	};
 
@@ -1311,7 +1370,14 @@ export class Vybit implements INodeType {
 					} else if (apiOperation === 'update') {
 						const vybitKey = this.getNodeParameter('vybitKey', i) as string;
 						const updateFields = this.getNodeParameter('updateFields', i, {}) as any;
-						const result = await vybitApiRequest(this, credentialType, 'PATCH', `/vybit/${vybitKey}`, updateFields);
+						const fieldsToClear = this.getNodeParameter('fieldsToClear', i, []) as string[];
+						const body: Record<string, any> = { ...updateFields };
+						for (const field of fieldsToClear) body[field] = null;
+						if (Object.keys(body).length === 0) {
+							// An empty PATCH draws an opaque 500 from the API — fail here instead
+							throw new NodeOperationError(this.getNode(), 'No updatable fields provided. Add Update Fields or select Fields to Clear.', { itemIndex: i });
+						}
+						const result = await vybitApiRequest(this, credentialType, 'PATCH', `/vybit/${vybitKey}`, body);
 						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'delete') {
 						const vybitKey = this.getNodeParameter('vybitKey', i) as string;
@@ -1349,7 +1415,14 @@ export class Vybit implements INodeType {
 					} else if (apiOperation === 'updateSubscription') {
 						const followingKey = this.getNodeParameter('followingKey', i) as string;
 						const updateFields = this.getNodeParameter('updateFields', i, {}) as any;
-						const result = await vybitApiRequest(this, credentialType, 'PATCH', `/subscription/following/${followingKey}`, updateFields);
+						const fieldsToClear = this.getNodeParameter('fieldsToClear', i, []) as string[];
+						const body: Record<string, any> = { ...updateFields };
+						for (const field of fieldsToClear) body[field] = null;
+						if (Object.keys(body).length === 0) {
+							// An empty PATCH draws an opaque 500 from the API — fail here instead
+							throw new NodeOperationError(this.getNode(), 'No updatable fields provided. Add Update Fields or select Fields to Clear.', { itemIndex: i });
+						}
+						const result = await vybitApiRequest(this, credentialType, 'PATCH', `/subscription/following/${followingKey}`, body);
 						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'unsubscribe') {
 						const followingKey = this.getNodeParameter('followingKey', i) as string;
@@ -1440,6 +1513,13 @@ export class Vybit implements INodeType {
 					} else if (apiOperation === 'update') {
 						const reminderId = this.getNodeParameter('reminderId', i) as string;
 						const body = pickDefined(this.getNodeParameter('optionalFields', i, {}), ['cron', 'timeZone', 'message', 'imageUrl', 'linkUrl', 'log', 'year']);
+						const fieldsToClear = this.getNodeParameter('fieldsToClear', i, []) as string[];
+						// The reminder PATCH endpoint 500s on JSON null; "" clears the field
+						for (const field of fieldsToClear) body[field] = '';
+						if (Object.keys(body).length === 0) {
+							// An empty PATCH draws an opaque 500 from the API — fail here instead
+							throw new NodeOperationError(this.getNode(), 'No updatable fields provided. Add Optional Fields or select Fields to Clear.', { itemIndex: i });
+						}
 						const result = await vybitApiRequest(this, credentialType, 'PATCH', `/vybit/${vybitKey}/reminders/${reminderId}`, body);
 						returnData.push({ json: result, pairedItem: { item: i } });
 					} else if (apiOperation === 'delete') {
@@ -1452,6 +1532,9 @@ export class Vybit implements INodeType {
 				if (this.continueOnFail()) {
 					returnData.push({ json: { error: (error as Error).message }, pairedItem: { item: i } });
 					continue;
+				}
+				if (error instanceof NodeOperationError) {
+					throw error;
 				}
 				throw new NodeApiError(this.getNode(), error as JsonObject);
 			}
