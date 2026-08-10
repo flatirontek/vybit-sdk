@@ -284,7 +284,10 @@ publish-n8n:
       fi
 
       echo "Publishing $CURRENT_VERSION (currently $PUBLISHED_VERSION on npm)"
-      npm publish --provenance --access public
+      # No --provenance: n8n community nodes must declare the GitHub mirror as
+      # repository.url, but provenance validation requires it to match the
+      # GitLab CI build source. Auth still uses the OIDC trusted publisher.
+      npm publish --access public
   when: manual
   environment:
     name: npm-registry
