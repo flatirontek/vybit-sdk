@@ -1533,6 +1533,9 @@ export class Vybit implements INodeType {
 					returnData.push({ json: { error: (error as Error).message }, pairedItem: { item: i } });
 					continue;
 				}
+				if (error instanceof NodeOperationError) {
+					throw error;
+				}
 				throw new NodeApiError(this.getNode(), error as JsonObject);
 			}
 		}

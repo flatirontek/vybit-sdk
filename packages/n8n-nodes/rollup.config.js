@@ -33,6 +33,21 @@ export class NodeApiError extends Error {
     if (errorResponse?.stack) this.stack = errorResponse.stack;
   }
 }
+
+export class NodeOperationError extends Error {
+  constructor(node, error, options) {
+    const message = options?.message
+      || (typeof error === 'string' ? error : error?.message)
+      || 'UNKNOWN ERROR';
+    super(message);
+    this.name = 'NodeOperationError';
+    this.node = node;
+    this.description = options?.description || '';
+    this.context = {};
+    if (options?.itemIndex !== undefined) this.context.itemIndex = options.itemIndex;
+    if (typeof error !== 'string' && error?.stack) this.stack = error.stack;
+  }
+}
 `;
       }
       return null;
