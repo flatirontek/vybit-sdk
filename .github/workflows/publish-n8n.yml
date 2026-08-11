@@ -1,0 +1,57 @@
+# Publishes @vybit/n8n-nodes-vybit to npm WITH provenance.
+#
+# This workflow runs on the GitHub mirror (github.com/flatirontek/vybit-sdk),
+# not GitLab, because of three interlocking requirements:
+#   1. n8n verified community nodes must be published with npm provenance.
+#   2. npm provenance validation requires package.json repository.url to match
+#      the repository the attestation was built from.
+#   3. n8n requires repository.url to point at GitHub.
+# A GitLab CI build attests gitlab.com as the source, which can never match
+# the required GitHub repository.url — so this one package publishes from here.
+#
+# Auth is npm trusted publishing (OIDC) — configure the trusted publisher for
+# @vybit/n8n-nodes-vybit on npmjs.com as: GitHub, owner flatirontek, repo
+# vybit-sdk, workflow publish-n8n.yml. No NPM_TOKEN secret is needed.
+#
+# Trigger manually from the Actions tab after a version bump lands on main.
+
+name: Publish n8n package
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+
+      # Trusted publishing needs a recent npm
+      - run: npm install -g npm@11
+
+      - run: npm ci
+
+      - run: npm run build -w @vybit/n8n-nodes-vybit
+
+      - name: Publish
+        working-directory: packages/n8n-nodes
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          PUBLISHED_VERSION=$(npm view @vybit/n8n-nodes-vybit version 2>/dev/null || echo "0.0.0")
+          echo "Current version: $CURRENT_VERSION"
+          echo "Published version: $PUBLISHED_VERSION"
+          if [ "$CURRENT_VERSION" = "$PUBLISHED_VERSION" ]; then
+            echo "Version unchanged ($CURRENT_VERSION) - skipping publish"
+            exit 0
+          fi
+          echo "Publishing $CURRENT_VERSION (currently $PUBLISHED_VERSION on npm)"
+          npm publish --provenance --access public

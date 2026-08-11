@@ -253,43 +253,8 @@ publish-mcp:
     name: npm-registry
     url: https://www.npmjs.com/package/@vybit/mcp-server
 
-# Publish n8n nodes
-publish-n8n:
-  stage: publish
-  image: node:$NODE_VERSION
-  needs: ["build", "test"]
-  only:
-    - main
-    - master
-  id_tokens:
-    NPM_ID_TOKEN:
-      aud: npm:registry.npmjs.org
-    SIGSTORE_ID_TOKEN:
-      aud: sigstore
-  before_script:
-    - npm install -g npm@11
-    - npm --version
-  script:
-    - |
-      cd packages/n8n-nodes
-      CURRENT_VERSION=$(node -p "require('./package.json').version")
-      PUBLISHED_VERSION=$(npm view @vybit/n8n-nodes-vybit version 2>/dev/null || echo "0.0.0")
-      echo "Current version: $CURRENT_VERSION"
-      echo "Published version: $PUBLISHED_VERSION"
-
-      if [ "$CURRENT_VERSION" = "$PUBLISHED_VERSION" ]; then
-        echo "⚠️  Version unchanged ($CURRENT_VERSION) - skipping publish"
-        echo "Bump version in package.json before publishing"
-        exit 0
-      fi
-
-      echo "Publishing $CURRENT_VERSION (currently $PUBLISHED_VERSION on npm)"
-      # Provenance must be explicitly disabled (trusted publishing generates it
-      # by default): n8n community nodes must declare the GitHub mirror as
-      # repository.url, but provenance validation requires it to match the
-      # GitLab CI build source. Auth still uses the OIDC trusted publisher.
-      npm publish --provenance=false --access public
-  when: manual
-  environment:
-    name: npm-registry
-    url: https://www.npmjs.com/package/@vybit/n8n-nodes-vybit
+# publish-n8n has moved to GitHub Actions (.github/workflows/publish-n8n.yml),
+# run from the github.com/flatirontek/vybit-sdk mirror: n8n verified community
+# nodes must be published with npm provenance, and provenance must attest the
+# repo declared in package.json repository.url (the GitHub mirror) — which a
+# GitLab CI build can never satisfy.
