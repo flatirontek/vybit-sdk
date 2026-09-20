@@ -4,11 +4,15 @@ import type {
 	INodeProperties,
 } from 'n8n-workflow';
 
+// Client ID and Client Secret are inherited from oAuth2Api and deliberately not
+// redeclared here: on n8n Cloud they are supplied by n8n's Managed OAuth
+// credential overwrite, so users see a single Connect button. Self-hosted
+// instances still show the inherited fields for a bring-your-own OAuth app.
 export class VybitOAuth2Api implements ICredentialType {
 	name = 'vybitOAuth2Api';
 	displayName = 'Vybit OAuth2 API';
 	icon = 'file:vybit.png' as const;
-	documentationUrl = 'https://developer.vybit.net/oauth-reference';
+	documentationUrl = 'https://github.com/flatirontek/vybit-sdk/tree/main/packages/n8n-nodes#credentials';
 
 	// Key description for users
 	description = 'Connect your Vybit account to n8n. You will be asked to authorize access to your vybits.';
@@ -27,12 +31,14 @@ export class VybitOAuth2Api implements ICredentialType {
 			name: 'authUrl',
 			type: 'hidden',
 			default: 'https://app.vybit.net',
+			required: true,
 		},
 		{
 			displayName: 'Access Token URL',
 			name: 'accessTokenUrl',
 			type: 'hidden',
 			default: 'https://app.vybit.net/service/token',
+			required: true,
 		},
 		{
 			displayName: 'Scope',
@@ -45,25 +51,6 @@ export class VybitOAuth2Api implements ICredentialType {
 			name: 'authQueryParameters',
 			type: 'hidden',
 			default: '',
-		},
-		{
-			displayName: 'Client ID',
-			name: 'clientId',
-			type: 'string',
-			default: '',
-			required: true,
-			description: 'OAuth2 Client ID from <a href="https://developer.vybit.net" target="_blank">developer.vybit.net</a>',
-		},
-		{
-			displayName: 'Client Secret',
-			name: 'clientSecret',
-			type: 'string',
-			typeOptions: {
-				password: true,
-			},
-			default: '',
-			required: true,
-			description: 'OAuth2 Client Secret from your Vybit developer portal',
 		},
 		{
 			displayName: 'Authentication',

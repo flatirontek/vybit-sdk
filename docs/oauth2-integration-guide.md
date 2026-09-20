@@ -48,12 +48,15 @@ Fill in the required fields in the developer portal:
 
 ```
 Service Name: Your Application Name
-Redirect URI: https://yourapp.com/oauth/callback
+Redirect URI 1: https://yourapp.com/oauth/callback
+Redirect URI 2: https://staging.yourapp.com/oauth/callback   (optional)
+Redirect URI 3: http://localhost                              (optional)
 ```
 
 **Important Notes:**
-- The redirect URI must exactly match what you'll use in your application
-- Use HTTPS for production redirects
+- Up to three redirect URIs can be registered; the `redirect_uri` in each authorization request must exactly match one of them
+- Redirect URIs must use HTTPS, except `http://localhost` or `http://127.0.0.1` for local development
+- Registering exactly `http://localhost` acts as a wildcard for any localhost port and path
 - Create separate Vybit accounts for non-production environments
 
 ### Step 3: Get Your Credentials

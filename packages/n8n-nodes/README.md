@@ -30,11 +30,11 @@ Then restart your n8n instance.
 
 ### n8n Cloud
 
-Once verified, search for "Vybit" in the n8n nodes panel to install. Verification is currently under review.
+Search for "Vybit" in the n8n nodes panel to install. On n8n Cloud, the OAuth2 credential is pre-configured through n8n's Managed OAuth: click **Connect my account**, sign in to Vybit, and you're done. No OAuth app registration is needed.
 
 ### For Multi-User Deployments
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for configuring credential sharing in multi-user n8n instances to centrally manage OAuth2 Client Secrets.
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for configuring credential sharing in self-hosted multi-user n8n instances to centrally manage OAuth2 Client Secrets.
 
 ---
 
@@ -71,13 +71,49 @@ Both methods provide full access to all operations. Choose based on your use cas
 
 ### OAuth2 Setup
 
-1. Go to [developer.vybit.net](https://developer.vybit.net)
-2. Configure OAuth2 settings (client ID, redirect URI)
+**n8n Cloud:**
+
+1. Add a Vybit node, Authentication: "OAuth2"
+2. Create a new Vybit OAuth2 credential and click **Connect my account**
+3. Sign in to Vybit and approve access
+
+**Self-hosted n8n:**
+
+1. Go to [developer.vybit.net](https://developer.vybit.net) and open the OAuth configuration
+2. Set a service name and add your n8n callback as a redirect URI: `https://your-n8n-host/rest/oauth2-credential/callback`
 3. In n8n:
    - Add Vybit node
    - Authentication: "OAuth2"
    - Create OAuth2 credential with your client ID/secret
 4. Users authorize their Vybit accounts to connect
+
+See [Credentials](#credentials) for details on both credential types.
+
+---
+
+## Credentials
+
+The node ships two credential types. Both give access to every operation.
+
+### Vybit OAuth2 API
+
+Standard OAuth2 authorization code flow against your Vybit account.
+
+| Setting | Value |
+|---------|-------|
+| Authorization URL | `https://app.vybit.net` |
+| Access Token URL | `https://app.vybit.net/service/token` |
+| Scopes | none (full access to the authorizing account) |
+| Client authentication | client ID and secret in the request body |
+| Token lifetime | long-lived, no refresh token |
+
+**On n8n Cloud** the client ID and secret are managed by n8n, so the credential form only shows a **Connect my account** button. Anyone who prefers their own OAuth app can still enter a client ID and secret.
+
+**On self-hosted n8n** you register your own OAuth app at [developer.vybit.net](https://developer.vybit.net). Up to three redirect URIs can be registered per app, so a production callback, a staging callback, and `http://localhost` for local development can share one client. The n8n callback path is always `/rest/oauth2-credential/callback` on your n8n host.
+
+### Vybit API
+
+A Developer API key from [developer.vybit.net](https://developer.vybit.net), sent as the `X-API-Key` header. Use it for automating your own account or for backend services. The base URL defaults to `https://api.vybit.net/v1`.
 
 ---
 

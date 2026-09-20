@@ -13,7 +13,7 @@ This guide covers different deployment scenarios for the Vybit n8n community nod
 **Setup:**
 1. Install the node: `npm install @vybit/n8n-nodes-vybit`
 2. Create an OAuth2 app at [developer.vybit.net](https://developer.vybit.net)
-3. Set redirect URL: `http://your-n8n-url/rest/oauth2-credential/callback`
+3. Add a redirect URI: `http://your-n8n-url/rest/oauth2-credential/callback` (up to three redirect URIs may be registered, e.g. production plus `http://localhost` for local development)
 4. In n8n, add Vybit OAuth2 credential with your Client ID and Secret
 5. Connect and authorize your Vybit account
 
@@ -66,28 +66,25 @@ This guide covers different deployment scenarios for the Vybit n8n community nod
 
 ---
 
-<!--
-### 3. n8n Cloud Integration
+### 3. n8n Cloud (Managed OAuth)
 
 **Best for:** n8n Cloud users
 
-**Status:** Coming soon - pending n8n Cloud verification
+**n8n Plan:** Any n8n Cloud plan
 
-**Process:**
-1. Submit `@vybit/n8n-nodes-vybit` to n8n community nodes registry
-2. Apply for verified node status
-3. n8n team configures OAuth2 credentials on their infrastructure
-4. Users get one-click OAuth connection
+**Setup:**
+1. Search for "Vybit" in the nodes panel and install the verified node
+2. Add a Vybit node, Authentication: "OAuth2"
+3. Create a Vybit OAuth2 credential and click "Connect my account"
+4. Sign in to Vybit and approve access
 
-**User Experience (after verification):**
-- ✅ One-click "Connect to Vybit" button
-- ✅ No credential configuration needed
-- ✅ Pre-configured by n8n Cloud
-- ✅ Most streamlined experience
-- ✅ Automatic updates from n8n
+**How it works:** n8n Cloud holds a Vybit OAuth app registered by Flatirontek and injects its client ID and secret into the credential through n8n's Managed OAuth credential overwrite. The credential form therefore shows no client fields. Each user still authorizes with their own Vybit account and receives their own access token.
 
-**To request this:** Submit to n8n community nodes and apply for verification
--->
+**User Experience:**
+- ✅ One-click "Connect my account" button
+- ✅ No OAuth app registration or client secret handling
+- ✅ Each user connects their own Vybit account
+- ✅ Bring-your-own OAuth app remains possible for users who want it
 
 ---
 
@@ -160,13 +157,10 @@ For testing different environments, create separate production Vybit accounts wi
 - ✅ Rotate OAuth2 credentials periodically
 - ⚠️ Never commit credentials to version control
 
-<!--
 ### For n8n Cloud (Scenario 3)
-- ✅ n8n manages all OAuth credentials
-- ✅ Users never see Client Secrets
-- ✅ Most secure option for end users
-- ✅ Automatic security updates from n8n
--->
+- ✅ n8n stores the shared OAuth client secret in its vault
+- ✅ Users never see or handle a Client Secret
+- ✅ Each user's access token is scoped to their own Vybit account
 
 ---
 
