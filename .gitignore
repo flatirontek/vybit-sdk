@@ -8,6 +8,7 @@ yarn-error.log*
 dist/
 *.tsbuildinfo
 *.mcpb
+*.mcpb.zip
 
 # Environment variables
 .env
