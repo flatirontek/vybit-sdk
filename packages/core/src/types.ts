@@ -97,8 +97,10 @@ export interface Profile {
   name: string;
   /** User's email address */
   email: string;
-  /** Subscription tier ID (0=Free, 1=Bronze, 2=Silver, 3=Gold) */
+  /** Subscription tier ID (1=Free, 2=Bronze, 3=Silver, 4=Gold, 6=Pro, 7=Team, 8=Business) */
   tier_id: number;
+  /** Subscription tier name, e.g. "Free" or "Gold"; null when the tier is unknown */
+  tier?: string | null;
 }
 
 /**
@@ -107,6 +109,8 @@ export interface Profile {
 export interface Meter {
   /** Current subscription tier ID */
   tier_id: number;
+  /** Subscription tier name, e.g. "Free" or "Gold"; null when the tier is unknown */
+  tier?: string | null;
   /** Maximum vybits allowed */
   cap_vybits: number;
   /** Maximum daily notifications */

@@ -46,7 +46,7 @@ Vybit provides a hosted remote MCP server at `https://api.vybit.net/v1/mcp` — 
 3. Fill out and submit the New App form setting the MCP Server URL as `https://api.vybit.net/v1/mcp`
 4. You'll be redirected to authorize with your Vybit account via OAuth
 
-Once connected, all 30 MCP tools are available immediately through natural conversation.
+Once connected, all 31 MCP tools are available immediately through natural conversation.
 
 ## Local Installation
 
@@ -225,7 +225,7 @@ Claude: [Unsubscribes successfully]
 
 ## Available Tools
 
-The MCP server exposes **30 tools** to AI assistants, providing full parity with the Vybit Developer API:
+The MCP server exposes **31 tools** to AI assistants, providing full parity with the Vybit Developer API:
 
 ### Vybit Management (6 tools)
 
@@ -263,8 +263,9 @@ The MCP server exposes **30 tools** to AI assistants, providing full parity with
 - `peep_delete` - Remove a peep (revoke access to a vybit)
 - `vybit_peeps_list` - List all peeps for a specific vybit
 
-### Monitoring & Utilities (2 tools)
+### Monitoring & Utilities (3 tools)
 
+- `profile_get` - Get the authenticated user profile (key, name, email, tier)
 - `meter_get` - Get API usage and limits (daily/monthly counts and caps)
 - `get_current_time` - Get the current time (useful for relative time expressions when creating reminders)
 
@@ -280,6 +281,16 @@ The MCP server exposes **30 tools** to AI assistants, providing full parity with
 - `subscription_get` - Get details about a specific subscription
 - `subscription_update` - Update subscription settings (enable/disable, permissions)
 - `subscription_delete` - Unsubscribe from a vybit
+
+### Structured Output
+
+Every tool declares an `outputSchema` and returns matching `structuredContent` (MCP spec 2025-06-18), so clients and models can rely on typed results:
+
+- Tools that return a single object (for example `vybit_get`, `meter_get`, `vybit_trigger`) return that object as `structuredContent`.
+- List tools (for example `vybit_list`, `logs_list`, `peeps_list`) wrap their array as `{ "items": [...] }`, because `structuredContent` must be a JSON object.
+- The `text` content block still carries the unmodified JSON response (a bare array for list tools), so clients that only read text are unaffected.
+
+The entity schemas (`VYBIT_OUTPUT_SCHEMA`, `LOG_OUTPUT_SCHEMA`, and so on) are exported from `@vybit/core`. The server's `jsonResponse(result)` helper applies the wrapping convention, so custom hosts that reuse `TOOLS` get spec-valid output by passing the raw API result.
 
 
 ## Environment Variables

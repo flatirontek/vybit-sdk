@@ -137,6 +137,7 @@ paths:
                 name: "John Doe"
                 email: "john@example.com"
                 tier_id: 1
+                tier: "Free"
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '404':
@@ -177,6 +178,7 @@ paths:
                 $ref: '#/components/schemas/Meter'
               example:
                 tier_id: 1
+                tier: "Free"
                 cap_vybits: 50
                 cap_daily: 500
                 cap_monthly: 7500
@@ -407,14 +409,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  result:
-                    type: integer
-                    example: 1
-                  message:
-                    type: string
-                    example: "Vybit deleted"
+                $ref: '#/components/schemas/DeleteResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '404':
@@ -808,14 +803,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  result:
-                    type: integer
-                    example: 1
-                  message:
-                    type: string
-                    example: "Reminder deleted"
+                $ref: '#/components/schemas/DeleteResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '404':
@@ -1118,13 +1106,28 @@ paths:
                     example: 1
                   message:
                     type: string
+                    description: '"subscribed", "invitation", or "already subscribed"'
                     example: "subscribed"
                   followingKey:
                     type: string
-                    description: Key of the created subscription following record
+                    description: Key of the subscription following record
                     example: "follow123abc"
+                  key:
+                    type: string
+                    description: Same value as followingKey (retained for backward compatibility)
+                    example: "follow123abc"
+                  logKey:
+                    type: string
+                    description: Key of the log entry recording the subscription (omitted when already subscribed)
+                    example: "log123abc"
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Not authorized to subscribe (the vybit is private and no invitation exists)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Vybit not found
           content:
@@ -1316,11 +1319,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "subscription deleted"
+                $ref: '#/components/schemas/DeleteResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '404':
@@ -2029,11 +2028,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "peep removed"
+                $ref: '#/components/schemas/DeleteResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '404':
@@ -2184,8 +2179,13 @@ components:
           example: "john@example.com"
         tier_id:
           type: integer
-          description: Subscription tier ID (0=Free, 1=Bronze, 2=Silver, 3=Gold)
+          description: Subscription tier ID (1=Free, 2=Bronze, 3=Silver, 4=Gold, 6=Pro, 7=Team, 8=Business)
           example: 1
+        tier:
+          type: string
+          nullable: true
+          description: Subscription tier name; null when the tier is unknown
+          example: "Free"
 
     Meter:
       type: object
@@ -2201,8 +2201,13 @@ components:
       properties:
         tier_id:
           type: integer
-          description: Current subscription tier ID (0=Free, 1=Bronze, 2=Silver, 3=Gold)
+          description: Current subscription tier ID (1=Free, 2=Bronze, 3=Silver, 4=Gold, 6=Pro, 7=Team, 8=Business)
           example: 1
+        tier:
+          type: string
+          nullable: true
+          description: Subscription tier name; null when the tier is unknown
+          example: "Free"
         cap_vybits:
           type: integer
           description: Maximum vybits allowed for this tier
@@ -2230,7 +2235,8 @@ components:
         monthly_reset_dts:
           type: string
           format: date-time
-          description: When the monthly count will reset
+          nullable: true
+          description: When the monthly count will reset (null if no monthly period has started)
           example: "2025-12-01T00:00:00Z"
 
     Vybit:
@@ -2238,7 +2244,6 @@ components:
       required:
         - key
         - name
-        - soundKey
         - triggerType
       properties:
         key:
@@ -2256,6 +2261,7 @@ components:
           example: "Notification for critical server errors"
         soundKey:
           type: string
+          nullable: true
           description: Key of the sound to play
           example: "sound123abc"
         status:
@@ -2315,6 +2321,7 @@ components:
         access:
           type: string
           enum: ["public", "private", "unlisted"]
+          nullable: true
           description: Vybit visibility and access control
           example: "private"
         message:
@@ -2427,8 +2434,6 @@ components:
       required:
         - key
         - name
-        - soundKey
-        - ownerName
         - following
       properties:
         key:
@@ -2446,10 +2451,12 @@ components:
           example: "Notification for critical server errors"
         soundKey:
           type: string
+          nullable: true
           description: Key of the sound to play
           example: "sound123abc"
         soundType:
           type: string
+          nullable: true
           description: Type of sound file
           example: "mp3"
         imageUrl:
@@ -2466,6 +2473,7 @@ components:
           example: "https://status.example.com"
         ownerName:
           type: string
+          nullable: true
           description: Name of the vybit owner
           example: "Jane Smith"
         following:
@@ -2487,8 +2495,6 @@ components:
       type: object
       required:
         - key
-        - vybName
-        - ownerName
         - senderName
       properties:
         key:
@@ -2502,7 +2508,7 @@ components:
           example: "vybit123abc"
         vybName:
           type: string
-          description: Name of the vybit
+          description: Name of the vybit (omitted when the log has no associated vybit name)
           example: "Server Alert"
         createdAt:
           type: string
@@ -2511,12 +2517,12 @@ components:
           example: "2024-01-20T15:30:00Z"
         vybDescription:
           type: string
-          description: Description of the vybit
+          description: Description of the vybit (omitted when not recorded on the log)
           example: "Alerts when server CPU exceeds 80%"
         soundKey:
           type: string
           nullable: true
-          description: Key of the sound that was played
+          description: Key of the sound that was played (omitted when not recorded on the log)
           example: "sound123abc"
         vybfollowKey:
           type: string
@@ -2525,11 +2531,12 @@ components:
           example: "follow123abc"
         ownerName:
           type: string
-          description: Name of the user who owns/received the notification
+          description: Name of the user who owns/received the notification (omitted when not recorded on the log)
           example: "John Doe"
         senderName:
           type: string
-          description: Name of the user who sent/triggered the notification
+          nullable: true
+          description: Name of the user who sent/triggered the notification (falls back to ownerName, null if neither is known)
           example: "Jane Smith"
         notification:
           type: string
@@ -2559,9 +2566,7 @@ components:
       required:
         - key
         - name
-        - type
         - status
-        - url
       properties:
         key:
           type: string
@@ -2577,6 +2582,7 @@ components:
           example: "Clean notification sound"
         type:
           type: string
+          nullable: true
           description: Audio file type
           example: "mp3"
         status:
@@ -2615,11 +2621,13 @@ components:
           example: "vybit123abc"
         name:
           type: string
+          nullable: true
           description: Name of the subscriber
           example: "John Doe"
         accessStatus:
           type: string
           enum: ["denied", "public", "invited", "granted"]
+          nullable: true
           description: |
             Access status for this subscription:
             - "denied": access denied
@@ -2658,14 +2666,17 @@ components:
           example: "Critical server notifications"
         soundKey:
           type: string
+          nullable: true
           description: Sound key for this vybit
           example: "sound123abc"
         soundType:
           type: string
+          nullable: true
           description: Type of sound file
           example: "mp3"
         ownerName:
           type: string
+          nullable: true
           description: Name of the vybit owner
           example: "Jane Smith"
         status:
@@ -2692,6 +2703,65 @@ components:
           enum: ["public", "private", "unlisted"]
           description: Access level of the vybit
           example: "public"
+        geofence:
+          type: object
+          description: |
+            Geofence configuration of the followed vybit (null unless it is a geofence vybit).
+
+            Defines a geographic boundary that triggers the vybit when entered or exited.
+          nullable: true
+          properties:
+            id:
+              type: string
+              description: Unique identifier for the geofence
+              example: "6nq1h6h4lj8elimg"
+            lat:
+              type: number
+              format: double
+              description: Latitude of geofence center
+              example: 40.0458744
+            lon:
+              type: number
+              format: double
+              description: Longitude of geofence center
+              example: -105.2654336
+            radius:
+              type: number
+              description: Geofence radius value
+              example: 100
+            radiusUnits:
+              type: string
+              enum: ["meters", "kilometers", "miles"]
+              description: Units for the radius measurement
+              example: "meters"
+            displayRadius:
+              type: string
+              description: Formatted radius for display
+              example: "100"
+            type:
+              type: string
+              enum: ["enter", "exit"]
+              description: Trigger on entry or exit from geofence
+              example: "enter"
+            timeThrottle:
+              type: string
+              description: Minimum seconds between triggers (0 = no throttle)
+              example: "0"
+            subscribable:
+              type: string
+              enum: ["yes", "no"]
+              description: Whether others can subscribe to this geofenced vybit
+              example: "yes"
+          example:
+            id: "6nq1h6h4lj8elimg"
+            lat: 40.0458744
+            lon: -105.2654336
+            radius: 100
+            radiusUnits: "meters"
+            displayRadius: "100"
+            type: "enter"
+            timeThrottle: "0"
+            subscribable: "yes"
         message:
           type: string
           nullable: true
@@ -2776,6 +2846,20 @@ components:
           maxLength: 1024
           description: Log content for the reminder notification (max 1024 characters)
           example: null
+
+    DeleteResponse:
+      type: object
+      required:
+        - message
+      properties:
+        result:
+          type: integer
+          description: Result code (1 = success); omitted by some delete endpoints
+          example: 1
+        message:
+          type: string
+          description: Human-readable confirmation message
+          example: "Vybit deleted"
 
     ErrorResponse:
       type: object

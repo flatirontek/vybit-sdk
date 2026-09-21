@@ -19,6 +19,22 @@ import {
   PAGINATION_SCHEMA,
   TRIGGER_SETTINGS_SCHEMA,
   GEOFENCE_SCHEMA,
+  VYBIT_OUTPUT_SCHEMA,
+  PUBLIC_VYBIT_OUTPUT_SCHEMA,
+  SUBSCRIPTION_OUTPUT_SCHEMA,
+  SOUND_OUTPUT_SCHEMA,
+  LOG_OUTPUT_SCHEMA,
+  PEEP_OUTPUT_SCHEMA,
+  METER_OUTPUT_SCHEMA,
+  PROFILE_OUTPUT_SCHEMA,
+  DELETE_OUTPUT_SCHEMA,
+  TRIGGER_OUTPUT_SCHEMA,
+  REMINDER_RESULT_OUTPUT_SCHEMA,
+  REMINDER_LIST_OUTPUT_SCHEMA,
+  SUBSCRIPTION_CREATE_OUTPUT_SCHEMA,
+  PEEP_CREATE_OUTPUT_SCHEMA,
+  CURRENT_TIME_OUTPUT_SCHEMA,
+  listOutputSchema,
   normalizeGeofence,
 } from '@vybit/core';
 
@@ -36,15 +52,24 @@ if (API_KEY || ACCESS_TOKEN) {
   });
 }
 
-// Wrap a result as an MCP JSON text response
-export function jsonResponse(result: any) {
+// structuredContent must be a JSON object: arrays become { items } (every list
+// tool's outputSchema expects that), objects pass through, anything else is {}
+function toStructuredContent(result: unknown): Record<string, unknown> {
+  if (Array.isArray(result)) return { items: result };
+  if (result !== null && typeof result === 'object') return result as Record<string, unknown>;
+  return {};
+}
+
+// The text block keeps the unmodified JSON so text-only clients see what they always did
+export function jsonResponse(result: unknown) {
   return {
     content: [
       {
         type: 'text' as const,
-        text: JSON.stringify(result),
+        text: JSON.stringify(result ?? null),
       },
     ],
+    structuredContent: toStructuredContent(result),
   };
 }
 
@@ -63,6 +88,7 @@ export const TOOLS: Tool[] = [
       type: 'object',
       properties: { ...PAGINATION_SCHEMA },
     },
+    outputSchema: listOutputSchema(VYBIT_OUTPUT_SCHEMA),
     annotations: READ_ONLY_ANNOTATIONS,
   },
   {
@@ -79,6 +105,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['key'],
     },
+    outputSchema: VYBIT_OUTPUT_SCHEMA,
     annotations: READ_ONLY_ANNOTATIONS,
   },
   {
@@ -132,6 +159,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['name'],
     },
+    outputSchema: VYBIT_OUTPUT_SCHEMA,
     annotations: WRITE_ANNOTATIONS,
   },
   {
@@ -189,6 +217,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['key'],
     },
+    outputSchema: VYBIT_OUTPUT_SCHEMA,
     annotations: WRITE_ANNOTATIONS,
   },
   {
@@ -205,6 +234,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['key'],
     },
+    outputSchema: DELETE_OUTPUT_SCHEMA,
     annotations: DESTRUCTIVE_ANNOTATIONS,
   },
   {
@@ -241,6 +271,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['key'],
     },
+    outputSchema: TRIGGER_OUTPUT_SCHEMA,
     annotations: WRITE_ANNOTATIONS,
   },
   // Reminders
@@ -286,6 +317,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['key', 'cron'],
     },
+    outputSchema: REMINDER_RESULT_OUTPUT_SCHEMA,
     annotations: WRITE_ANNOTATIONS,
   },
   {
@@ -302,6 +334,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['key'],
     },
+    outputSchema: REMINDER_LIST_OUTPUT_SCHEMA,
     annotations: READ_ONLY_ANNOTATIONS,
   },
   {
@@ -346,6 +379,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['key', 'reminderId'],
     },
+    outputSchema: REMINDER_RESULT_OUTPUT_SCHEMA,
     annotations: WRITE_ANNOTATIONS,
   },
   {
@@ -366,6 +400,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['key', 'reminderId'],
     },
+    outputSchema: DELETE_OUTPUT_SCHEMA,
     annotations: DESTRUCTIVE_ANNOTATIONS,
   },
 
@@ -377,6 +412,7 @@ export const TOOLS: Tool[] = [
       type: 'object',
       properties: { ...PAGINATION_SCHEMA },
     },
+    outputSchema: listOutputSchema(SOUND_OUTPUT_SCHEMA),
     annotations: READ_ONLY_ANNOTATIONS,
   },
   {
@@ -393,6 +429,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['soundKey'],
     },
+    outputSchema: SOUND_OUTPUT_SCHEMA,
     annotations: READ_ONLY_ANNOTATIONS,
   },
   {
@@ -403,6 +440,18 @@ export const TOOLS: Tool[] = [
       type: 'object',
       properties: {},
     },
+    outputSchema: METER_OUTPUT_SCHEMA,
+    annotations: READ_ONLY_ANNOTATIONS,
+  },
+  {
+    name: 'profile_get',
+    title: 'Get Profile',
+    description: 'Get the authenticated user profile: account key, display name, email address, and subscription tier.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+    outputSchema: PROFILE_OUTPUT_SCHEMA,
     annotations: READ_ONLY_ANNOTATIONS,
   },
   {
@@ -413,6 +462,7 @@ export const TOOLS: Tool[] = [
       type: 'object',
       properties: {},
     },
+    outputSchema: CURRENT_TIME_OUTPUT_SCHEMA,
     annotations: READ_ONLY_ANNOTATIONS,
   },
 
@@ -425,6 +475,7 @@ export const TOOLS: Tool[] = [
       type: 'object',
       properties: { ...PAGINATION_SCHEMA },
     },
+    outputSchema: listOutputSchema(PUBLIC_VYBIT_OUTPUT_SCHEMA),
     annotations: READ_ONLY_ANNOTATIONS,
   },
   {
@@ -441,6 +492,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['subscriptionKey'],
     },
+    outputSchema: PUBLIC_VYBIT_OUTPUT_SCHEMA,
     annotations: READ_ONLY_ANNOTATIONS,
   },
 
@@ -459,6 +511,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['subscriptionKey'],
     },
+    outputSchema: SUBSCRIPTION_CREATE_OUTPUT_SCHEMA,
     annotations: WRITE_ANNOTATIONS,
   },
   {
@@ -469,6 +522,7 @@ export const TOOLS: Tool[] = [
       type: 'object',
       properties: { ...PAGINATION_SCHEMA },
     },
+    outputSchema: listOutputSchema(SUBSCRIPTION_OUTPUT_SCHEMA),
     annotations: READ_ONLY_ANNOTATIONS,
   },
   {
@@ -485,6 +539,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['followingKey'],
     },
+    outputSchema: SUBSCRIPTION_OUTPUT_SCHEMA,
     annotations: READ_ONLY_ANNOTATIONS,
   },
   {
@@ -523,6 +578,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['followingKey'],
     },
+    outputSchema: SUBSCRIPTION_OUTPUT_SCHEMA,
     annotations: WRITE_ANNOTATIONS,
   },
   {
@@ -539,6 +595,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['followingKey'],
     },
+    outputSchema: DELETE_OUTPUT_SCHEMA,
     annotations: DESTRUCTIVE_ANNOTATIONS,
   },
 
@@ -551,6 +608,7 @@ export const TOOLS: Tool[] = [
       type: 'object',
       properties: { ...PAGINATION_SCHEMA },
     },
+    outputSchema: listOutputSchema(LOG_OUTPUT_SCHEMA),
     annotations: READ_ONLY_ANNOTATIONS,
   },
   {
@@ -567,6 +625,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['logKey'],
     },
+    outputSchema: LOG_OUTPUT_SCHEMA,
     annotations: READ_ONLY_ANNOTATIONS,
   },
   {
@@ -584,6 +643,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['key'],
     },
+    outputSchema: listOutputSchema(LOG_OUTPUT_SCHEMA),
     annotations: READ_ONLY_ANNOTATIONS,
   },
   {
@@ -601,6 +661,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['followingKey'],
     },
+    outputSchema: listOutputSchema(LOG_OUTPUT_SCHEMA),
     annotations: READ_ONLY_ANNOTATIONS,
   },
 
@@ -613,6 +674,7 @@ export const TOOLS: Tool[] = [
       type: 'object',
       properties: { ...PAGINATION_SCHEMA },
     },
+    outputSchema: listOutputSchema(PEEP_OUTPUT_SCHEMA),
     annotations: READ_ONLY_ANNOTATIONS,
   },
   {
@@ -629,6 +691,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['peepKey'],
     },
+    outputSchema: PEEP_OUTPUT_SCHEMA,
     annotations: READ_ONLY_ANNOTATIONS,
   },
   {
@@ -649,6 +712,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['key', 'email'],
     },
+    outputSchema: PEEP_CREATE_OUTPUT_SCHEMA,
     annotations: WRITE_ANNOTATIONS,
   },
   {
@@ -665,6 +729,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['peepKey'],
     },
+    outputSchema: DELETE_OUTPUT_SCHEMA,
     annotations: DESTRUCTIVE_ANNOTATIONS,
   },
   {
@@ -682,6 +747,7 @@ export const TOOLS: Tool[] = [
       },
       required: ['key'],
     },
+    outputSchema: listOutputSchema(PEEP_OUTPUT_SCHEMA),
     annotations: READ_ONLY_ANNOTATIONS,
   },
 ];
@@ -833,6 +899,9 @@ export async function handleToolCall(
     case 'meter_get':
       return jsonResponse(await client.getMeter());
 
+    case 'profile_get':
+      return jsonResponse(await client.getProfile());
+
     case 'get_current_time': {
       const now = new Date();
       return jsonResponse({
@@ -957,7 +1026,7 @@ const VYBIT_ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAA
 const server = new Server(
   {
     name: 'vybit-mcp-server',
-    version: '1.6.0',
+    version: '1.7.0',
     icons: [
       {
         src: VYBIT_ICON,
