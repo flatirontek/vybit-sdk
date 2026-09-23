@@ -2850,12 +2850,18 @@ components:
     DeleteResponse:
       type: object
       required:
+        - result
+        - success
         - message
       properties:
         result:
           type: integer
-          description: Result code (1 = success); omitted by some delete endpoints
+          description: Result code (1 = success)
           example: 1
+        success:
+          type: boolean
+          description: True when the resource was deleted
+          example: true
         message:
           type: string
           description: Human-readable confirmation message
