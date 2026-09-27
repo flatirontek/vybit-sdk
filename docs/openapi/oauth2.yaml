@@ -243,6 +243,13 @@ paths:
                     `code_challenge` was used in the authorization step. Can be used instead of
                     or in addition to `client_secret`.
                   example: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+                redirect_uri:
+                  type: string
+                  format: uri
+                  description: |
+                    The `redirect_uri` sent in the authorization request. Recommended; when sent,
+                    it must match the one the authorization code was issued for.
+                  example: "https://yourapp.com/oauth/callback"
       responses:
         '200':
           description: Successful token exchange
@@ -256,22 +263,51 @@ paths:
                 scope: "openid email rw"
                 id_token: "eyJhbGciOiJSUzI1NiIsImtpZCI6Ii4uLiJ9..."
         '400':
-          description: Invalid request or authorization code
+          description: PKCE verification failed, or the `redirect_uri` does not match the authorization request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OAuthErrorResponse'
+                $ref: '#/components/schemas/TokenErrorResponse'
+              examples:
+                invalid_verifier:
+                  summary: Wrong code_verifier
+                  value:
+                    errors:
+                      - message: "invalid code_verifier"
+                missing_verifier:
+                  summary: Code was issued with a code_challenge
+                  value:
+                    errors:
+                      - message: "code_verifier required"
+                redirect_mismatch:
+                  summary: redirect_uri differs from the authorization request
+                  value:
+                    errors:
+                      - message: "redirect_uri mismatch"
+        '401':
+          description: |
+            Missing parameters, an invalid, expired, or already used authorization code,
+            or invalid client credentials. Authorization codes are single use.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenErrorResponse'
               examples:
                 invalid_code:
-                  summary: Invalid authorization code
+                  summary: Invalid, expired, or already used authorization code
                   value:
-                    error: "invalid_grant"
-                    error_description: "The authorization code is invalid or expired"
+                    errors:
+                      - message: "invalid or expired access code"
                 invalid_client:
                   summary: Invalid client credentials
                   value:
-                    error: "invalid_client"
-                    error_description: "Client authentication failed"
+                    errors:
+                      - message: "invalid parameter value"
+                missing_parameters:
+                  summary: Missing code, client_id, or both client_secret and code_verifier
+                  value:
+                    errors:
+                      - message: "missing required parameters"
 
   /service/test:
     get:
@@ -374,6 +410,7 @@ paths:
                 registration_endpoint: "https://app.vybit.net/oauth/register"
                 scopes_supported: ["openid", "email", "rw"]
                 response_types_supported: ["code"]
+                response_modes_supported: ["query"]
                 grant_types_supported: ["authorization_code"]
                 subject_types_supported: ["public"]
                 id_token_signing_alg_values_supported: ["RS256"]
@@ -635,6 +672,23 @@ components:
           type: string
           description: Human-readable error description
           example: "Missing required parameter: client_id"
+
+    TokenErrorResponse:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          items:
+            type: object
+            required:
+              - message
+            properties:
+              message:
+                type: string
+                description: Human-readable error description
+                example: "invalid or expired access code"
 
     OAuthErrorResponse:
       type: object

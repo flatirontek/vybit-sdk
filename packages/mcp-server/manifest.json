@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "vybit-mcp-server",
   "display_name": "Vybit Notifications",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Send push notifications with personalized sounds via the Vybit platform",
   "long_description": "Integrates Claude with the Vybit notification platform. Create and manage notification endpoints (vybits), trigger push notifications with custom sounds, browse and subscribe to public vybits, manage access permissions, view notification logs, and monitor API usage.",
   "author": {
@@ -59,6 +59,8 @@
     { "name": "subscriptions_list", "description": "List all subscriptions" },
     { "name": "subscription_get", "description": "Get subscription details" },
     { "name": "subscription_update", "description": "Update a subscription" },
+    { "name": "subscription_send_to_owner", "description": "As a subscriber, send a notification to the vybit owner" },
+    { "name": "subscription_send_to_group", "description": "As a subscriber, send a notification to all subscribers of the vybit" },
     { "name": "subscription_delete", "description": "Unsubscribe from a vybit" },
     { "name": "logs_list", "description": "List notification logs" },
     { "name": "log_get", "description": "Get log entry details" },

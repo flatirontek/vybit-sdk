@@ -64,6 +64,6 @@ export function outputSuccess(message: string, quiet?: boolean): void {
  */
 function extractKey(data: any): string | undefined {
   if (data == null || typeof data !== 'object') return String(data);
-  // Try common key fields in order of specificity
-  return data.key ?? data.followingKey ?? data.id ?? data.plk ?? undefined;
+  // Try common key fields in order of specificity; reminder create/update nest the reminder
+  return data.key ?? data.followingKey ?? data.id ?? data.plk ?? data.reminder?.id ?? undefined;
 }

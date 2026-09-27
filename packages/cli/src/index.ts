@@ -12,11 +12,15 @@ import { registerLogsCommands } from './commands/logs';
 import { registerPeepsCommands } from './commands/peeps';
 import { registerMeterCommand } from './commands/meter';
 
+// Resolved at runtime from dist/ so --version always reports the published version
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { version } = require('../package.json');
+
 const program = new Command();
 
 program
   .name('vybit')
-  .version('1.0.0')
+  .version(version)
   .description('Vybit CLI — manage notifications from the command line')
   .option('-q, --quiet', 'Output only essential values (keys/IDs)')
   .option('--api-key <key>', 'API key (overrides env and config)')

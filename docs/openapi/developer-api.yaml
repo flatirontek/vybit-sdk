@@ -262,6 +262,8 @@ paths:
         Perform a partial update of a vybit, modifying only specified fields.
 
         Only include the fields you want to update. All other fields remain unchanged.
+        Only the fields listed in the request body below are accepted; any other field
+        (for example `personKey`, `triggerKey`, or `subscriptionKey`) is refused with a 403.
 
       operationId: updateVybitPartial
       tags:
@@ -374,6 +376,15 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: The request body includes a field that cannot be updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                result: 0
+                message: "Cannot update fields: personKey"
         '404':
           description: Vybit not found
           content:
@@ -823,6 +834,9 @@ paths:
         generates unique keys (key, triggerKey, subscriptionKey) and sets up
         the notification infrastructure.
 
+        Only the fields listed in the request body below are accepted; any other field
+        (for example `key`, `triggerKey`, or `moderationStatus`) is refused with a 403.
+
       operationId: createVybit
       tags:
         - Vybits
@@ -998,6 +1012,25 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: |
+            The request body includes a field that cannot be set on create
+            (`message` is "Cannot set fields: ..."), or the account has reached its
+            tier's vybit limit (`error` is "vybit_limit_reached")
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                restrictedField:
+                  summary: Field that cannot be set
+                  value:
+                    result: 0
+                    message: "Cannot set fields: moderationStatus"
+                vybitLimit:
+                  summary: Tier vybit limit reached
+                  value:
+                    error: "vybit_limit_reached"
         '429':
           $ref: '#/components/responses/RateLimitError'
 
@@ -1177,6 +1210,7 @@ paths:
       summary: Get Subscription Following
       description: |
         Retrieve details for a specific subscription you're following.
+        Only the subscriber can read a subscription; any other key returns 404.
 
       operationId: getSubscription
       tags:
@@ -1202,7 +1236,7 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '404':
-          description: Subscription not found
+          description: Subscription not found (or not one of your subscriptions)
           content:
             application/json:
               schema:
@@ -1285,7 +1319,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: Subscription not found
+          description: Subscription not found (or not one of your subscriptions)
           content:
             application/json:
               schema:
@@ -1323,7 +1357,7 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '404':
-          description: Subscription not found
+          description: Subscription not found (or not one of your subscriptions)
           content:
             application/json:
               schema:
@@ -2087,7 +2121,9 @@ components:
       name: search
       in: query
       required: false
-      description: Text search query (searches name, description, and other relevant fields)
+      description: |
+        Text search query (case-insensitive substring match on name, description, and other
+        relevant fields). The term is matched literally: `%` and `_` are not wildcards.
       schema:
         type: string
         minLength: 1

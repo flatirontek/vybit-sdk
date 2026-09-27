@@ -232,6 +232,8 @@ const SAMPLES: Record<string, unknown[]> = {
       followingKey: 'fol123abc',
     },
   ],
+  subscription_send_to_owner: [{ result: 1, plk: 'log123abc' }, { result: 0, warn: 'Vyb is off and will not be triggered' }],
+  subscription_send_to_group: [{ result: 1, plk: 'log456def' }],
   subscription_delete: [{ success: true, message: 'Unsubscribed successfully' }, { message: 'subscription deleted' }],
   logs_list: [[log, sparseLog], []],
   log_get: [log, sparseLog],

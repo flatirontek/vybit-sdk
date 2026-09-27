@@ -12,6 +12,8 @@ This guide provides comprehensive documentation for integrating with Vybit's OAu
 6. [Testing Your Integration](#testing-your-integration)
 7. [Production Deployment](#production-deployment)
 8. [Troubleshooting](#troubleshooting)
+9. [PKCE for Public Clients](#pkce-for-public-clients)
+10. [OpenID Connect](#openid-connect)
 
 ## Overview
 
@@ -356,24 +358,29 @@ logger.warn('OAuth failure', {
 
 ### Common Issues
 
-#### 1. "Invalid redirect URI"
-- Ensure the redirect URI in your code exactly matches the one configured in the developer portal
+#### 1. "Invalid redirect URI" or "redirect_uri mismatch"
+- Ensure the redirect URI in your code exactly matches one of the URIs registered in the developer portal
 - Check for trailing slashes or protocol mismatches (http vs https)
+- The token exchange must use the same `redirect_uri` as the authorization request (the SDK sends the configured `redirectUri` for you)
 
-#### 2. "Invalid client credentials"
+#### 2. "invalid parameter value"
 - Verify your client ID and secret are correct
 - Ensure you're using credentials from the correct Vybit account
 
-#### 3. "Authorization code expired"
+#### 3. "invalid or expired access code"
 - Exchange authorization codes immediately after receiving them
-- Don't reuse authorization codes (they're single-use)
+- Don't reuse authorization codes (they're single-use; a second exchange of the same code fails)
 
-#### 4. "Token verification failed"
+#### 4. "code_verifier required" or "invalid code_verifier"
+- A code issued with a `code_challenge` must be exchanged with the matching `code_verifier`
+- Store the verifier per authorization attempt (e.g. in the session) and pass it to `exchangeCodeForToken(code, codeVerifier)`
+
+#### 5. "Token verification failed"
 - Check that you're using the correct base URL (app.vybit.net for auth, api.vybit.net/v1 for API)
 - Ensure the access token hasn't expired
 - Verify network connectivity to Vybit's API
 
-#### 5. "CSRF attack detected"
+#### 6. "CSRF attack detected"
 - Implement proper state parameter validation
 - Ensure session storage is working correctly
 - Check for session timeout issues
@@ -459,6 +466,35 @@ const token = await client.exchangeCodeForToken(
 4. **Server verification**: The server hashes the `code_verifier` and verifies it matches the stored `code_challenge`
 
 This prevents authorization code interception attacks because an attacker cannot derive the `code_verifier` from the `code_challenge`.
+
+## OpenID Connect
+
+Vybit is an [OpenID Connect](https://openid.net/specs/openid-connect-core-1_0.html) provider on top of the same authorization code flow, so you can use it for "Sign in with Vybit".
+
+1. Request `scope=openid email rw` (and optionally a `nonce`) at the authorization endpoint
+2. The token response then includes a signed RS256 `id_token`
+3. Call `/oauth/userinfo` with the access token to read `sub`, `email`, and `email_verified`
+
+```typescript
+const authUrl = client.getAuthorizationUrl({
+  state: generateSecureRandomString(),
+  scope: 'openid email rw',
+  nonce: generateSecureRandomString()
+});
+
+// In the callback handler
+const token = await client.exchangeCodeForToken(authorizationCode);
+const user = await client.getUserInfo(token.access_token);
+// user.sub is the stable Vybit account key of the person who authorized your app
+```
+
+**ID token claims:** `iss` (`https://app.vybit.net`), `sub`, `aud` (your client ID), `exp` (1 hour), `iat`, `nonce` (when sent at authorization), and `email` / `email_verified` when the `email` scope was granted. Verify the signature with the keys at `https://app.vybit.net/.well-known/jwks.json`, matching on `kid`.
+
+**Scopes:** `rw` (full account access) is always granted. `openid` adds the `id_token` and UserInfo access; `email` adds the email claims. Unsupported scopes are ignored.
+
+**Discovery:** `https://app.vybit.net/.well-known/openid-configuration` (also served at `/.well-known/oauth-authorization-server`).
+
+`email_verified` is `true` only when the sign in provider verified the address, so check it before trusting `email` for account linking.
 
 ## Advanced Topics
 

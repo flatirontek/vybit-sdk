@@ -58,7 +58,7 @@ vybit trigger <key> --message "$(git log -1 --oneline)" -q
 | `vybit trigger` | Trigger a vybit notification |
 | `vybit reminders` | `list`, `create`, `update`, `delete` |
 | `vybit sounds` | `list`, `get` |
-| `vybit subscriptions` | `list`, `get`, `create`, `update`, `delete` |
+| `vybit subscriptions` | `list`, `get`, `create`, `update`, `delete`, `send-to-owner`, `send-to-group` |
 | `vybit browse` | `list`, `get` (public vybits) |
 | `vybit logs` | `list`, `get`, `vybit`, `subscription` |
 | `vybit peeps` | `list`, `get`, `create`, `delete`, `vybit` |

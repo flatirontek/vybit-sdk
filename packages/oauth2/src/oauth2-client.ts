@@ -9,7 +9,22 @@ import {
   OAuth2Config,
   TokenResponse,
   AuthorizationUrlOptions,
+  UserInfo,
 } from '@vybit/core';
+
+/**
+ * Reads the error message from a failed OAuth response. The token endpoint answers
+ * with `{errors: [{message}]}`; the UserInfo endpoint with `{error, error_description}`.
+ */
+async function readErrorMessage(response: Response): Promise<string> {
+  let data: any = {};
+  try {
+    data = await response.json();
+  } catch {
+    // non-JSON body; fall back to the status text
+  }
+  return data?.errors?.[0]?.message || data?.error_description || data?.error || response.statusText;
+}
 
 /**
  * OAuth2 client for Vybit authentication
@@ -95,7 +110,8 @@ export class VybitOAuth2Client {
    * ```typescript
    * const authUrl = client.getAuthorizationUrl({
    *   state: 'unique-state-value',
-   *   scope: 'read write'
+   *   scope: 'openid email rw', // add openid to receive an id_token
+   *   nonce: 'unique-nonce-value'
    * });
    * // Redirect user to authUrl
    * ```
@@ -115,6 +131,10 @@ export class VybitOAuth2Client {
       params.append('scope', options.scope);
     }
 
+    if (options.nonce) {
+      params.append('nonce', options.nonce);
+    }
+
     if (options.codeChallenge) {
       params.append('code_challenge', options.codeChallenge);
       params.append('code_challenge_method', options.codeChallengeMethod || 'S256');
@@ -130,7 +150,12 @@ export class VybitOAuth2Client {
    * after successful user authorization. The returned access token can be used
    * with {@link VybitAPIClient} for full Developer API access.
    *
+   * The configured redirect URI is sent with the request so the server can check it
+   * against the one used at authorization. When the `openid` scope was granted, the
+   * response also carries an `id_token`.
+   *
    * @param code - Authorization code from the OAuth2 callback
+   * @param codeVerifier - PKCE code verifier, when a code challenge was sent at authorization
    * @returns Promise resolving to token response with access token
    * @throws {VybitAPIError} When token exchange fails
    * @throws {VybitAuthError} When authorization is denied
@@ -150,6 +175,7 @@ export class VybitOAuth2Client {
       grant_type: 'authorization_code',
       code,
       client_id: this.config.clientId,
+      redirect_uri: this.config.redirectUri,
     });
 
     if (this.config.clientSecret) {
@@ -171,7 +197,7 @@ export class VybitOAuth2Client {
 
       if (!response.ok) {
         throw new VybitAPIError(
-          `Token exchange failed: ${response.statusText}`,
+          `Token exchange failed: ${await readErrorMessage(response)}`,
           response.status
         );
       }
@@ -223,6 +249,56 @@ export class VybitOAuth2Client {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Reads OpenID Connect claims for the person who authorized an access token
+   *
+   * Requires a token granted with the `openid` scope; `email` and `email_verified`
+   * are included only when the `email` scope was also granted.
+   *
+   * @param accessToken - Token to use (uses stored token if not provided)
+   * @returns The `sub` (stable Vybit account key) and, with the `email` scope, email claims
+   * @throws {VybitAuthError} When no token is available, or the token is invalid or lacks the `openid` scope
+   * @throws {VybitAPIError} When the request fails for another reason
+   *
+   * @example
+   * ```typescript
+   * const authUrl = client.getAuthorizationUrl({ scope: 'openid email rw' });
+   * // ...after the callback
+   * const token = await client.exchangeCodeForToken(authCode);
+   * const user = await client.getUserInfo();
+   * console.log(user.sub, user.email, user.email_verified);
+   * ```
+   */
+  async getUserInfo(accessToken?: string): Promise<UserInfo> {
+    const token = accessToken || this.accessToken;
+    if (!token) {
+      throw new VybitAuthError('No access token available');
+    }
+
+    const userInfoUrl = `${getAuthDomain()}/oauth/userinfo`;
+
+    let response: Response;
+    try {
+      response = await fetch(userInfoUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      throw new VybitAPIError(`Network error during userinfo request: ${error}`);
+    }
+
+    if (!response.ok) {
+      const message = `UserInfo request failed: ${await readErrorMessage(response)}`;
+      if (response.status === 401 || response.status === 403) {
+        throw new VybitAuthError(message, response.status);
+      }
+      throw new VybitAPIError(message, response.status);
+    }
+
+    return response.json();
   }
 
   /**

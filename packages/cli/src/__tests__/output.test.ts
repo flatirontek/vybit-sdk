@@ -40,6 +40,11 @@ describe('output', () => {
     expect(stdoutData.trim()).toBe('fk-999');
   });
 
+  it('writes the nested reminder id in quiet mode', () => {
+    output({ result: 1, reminder: { id: 'a1b2c3d4e5f6', cron: '0 9 * * *' } }, true);
+    expect(stdoutData.trim()).toBe('a1b2c3d4e5f6');
+  });
+
   it('writes id in quiet mode when no key/followingKey', () => {
     output({ id: 'reminder-abc', cron: '0 9 * * *' }, true);
     expect(stdoutData.trim()).toBe('reminder-abc');

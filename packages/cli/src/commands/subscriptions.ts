@@ -91,6 +91,37 @@ export function registerSubscriptionsCommands(program: Command): void {
       }
     });
 
+  for (const [name, recipient, permission] of [
+    ['send-to-owner', 'the vybit owner', 'subs_owner'],
+    ['send-to-group', 'all subscribers of the vybit', 'subs_group'],
+  ]) {
+    subs
+      .command(name)
+      .description(`As a subscriber, send a notification to ${recipient} (requires vybit send permissions ${permission})`)
+      .argument('<following-key>', 'Following key of the subscription')
+      .option('--message <text>', 'Notification message')
+      .option('--image-url <url>', 'Image URL (must end in .jpg/.png/.gif)')
+      .option('--link-url <url>', 'URL to open when notification is tapped')
+      .action(async (followingKey, opts, cmd) => {
+        const globals = resolveGlobalOpts(cmd);
+        try {
+          const client = createClient(globals);
+          const params: any = {};
+          if (opts.message) params.message = opts.message;
+          if (opts.imageUrl) params.imageUrl = opts.imageUrl;
+          if (opts.linkUrl) params.linkUrl = opts.linkUrl;
+          const body = Object.keys(params).length > 0 ? params : undefined;
+
+          const result = name === 'send-to-owner'
+            ? await client.sendToOwner(followingKey, body)
+            : await client.sendToGroup(followingKey, body);
+          output(result, globals.quiet);
+        } catch (err) {
+          outputError(err);
+        }
+      });
+  }
+
   subs
     .command('delete')
     .description('Unsubscribe from a vybit')

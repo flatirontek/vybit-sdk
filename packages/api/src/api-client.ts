@@ -15,6 +15,7 @@ import {
   VybitTriggerParams,
   VybitTriggerResponse,
   VybitFollow,
+  VybitFollowCreateResponse,
   VybitFollowUpdateParams,
   PublicVybit,
   SubscriberSendParams,
@@ -396,10 +397,10 @@ export class VybitAPIClient {
   /**
    * Subscribe to a vybit using its subscription key
    * @param subscriptionKey - The subscription key of the vybit to subscribe to
-   * @returns Created vybit follow
+   * @returns Subscription result: "subscribed", "invitation", or "already subscribed", with the followingKey
    */
-  async createVybitFollow(subscriptionKey: string): Promise<any> {
-    return this.request<any>(`/subscription/${subscriptionKey}`, {
+  async createVybitFollow(subscriptionKey: string): Promise<VybitFollowCreateResponse> {
+    return this.request<VybitFollowCreateResponse>(`/subscription/${subscriptionKey}`, {
       method: 'POST',
     });
   }

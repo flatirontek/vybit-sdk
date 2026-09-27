@@ -93,6 +93,28 @@ const apiClient = new VybitAPIClient({
 });
 ```
 
+## OpenID Connect (Sign in with Vybit)
+
+Vybit is also an OpenID Connect provider on the same authorization code flow. Request the `openid` scope (and `email` for the email claims) to receive a signed `id_token` and to read the person's claims from the UserInfo endpoint:
+
+```typescript
+const authUrl = oauthClient.getAuthorizationUrl({
+  scope: 'openid email rw',
+  nonce: 'unique-nonce-value' // echoed back in the id_token
+});
+
+// In the callback handler
+const token = await oauthClient.exchangeCodeForToken(code);
+token.id_token; // RS256 JWT: iss, sub, aud (your client_id), exp, iat, nonce, email, email_verified
+
+const user = await oauthClient.getUserInfo();
+user.sub;            // stable Vybit account key
+user.email;          // with the email scope
+user.email_verified; // true only when the sign in provider verified the address
+```
+
+Verify the `id_token` with a JOSE library against the keys at `https://app.vybit.net/.well-known/jwks.json` (issuer `https://app.vybit.net`, audience your client ID). Discovery is published at `https://app.vybit.net/.well-known/openid-configuration`.
+
 ## Environment Management
 
 The SDK uses production Vybit endpoints:
@@ -117,12 +139,19 @@ new VybitOAuth2Client(config: OAuth2Config)
 - Returns complete URL including all required parameters
 
 **`exchangeCodeForToken(code: string, codeVerifier?: string): Promise<TokenResponse>`**
-- Exchanges authorization code for access token
+- Exchanges authorization code for access token (codes are single use)
 - Pass `codeVerifier` for PKCE flow (omits `client_secret` if not configured)
-- Automatically stores token for subsequent `verifyToken()` calls
+- Sends the configured `redirectUri`, which must match the one used at authorization
+- Includes an `id_token` when the `openid` scope was granted
+- Automatically stores token for subsequent `verifyToken()` and `getUserInfo()` calls
 
 **`verifyToken(accessToken?: string): Promise<boolean>`**
 - Verifies if an access token is valid
+- Uses stored token if none provided
+
+**`getUserInfo(accessToken?: string): Promise<UserInfo>`**
+- Reads OpenID Connect claims (`sub`, and `email` / `email_verified` with the `email` scope)
+- Requires a token granted with the `openid` scope; throws `VybitAuthError` otherwise
 - Uses stored token if none provided
 
 **`setAccessToken(token: string): void`**
@@ -165,7 +194,14 @@ interface TokenResponse {
   token_type: string;
   expires_in?: number;
   refresh_token?: string;
-  scope?: string;
+  scope?: string;     // e.g. "openid email rw"
+  id_token?: string;  // present when the openid scope was granted
+}
+
+interface UserInfo {
+  sub: string;
+  email?: string;
+  email_verified?: boolean;
 }
 ```
 

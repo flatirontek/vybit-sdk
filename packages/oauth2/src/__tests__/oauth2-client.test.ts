@@ -82,6 +82,19 @@ describe('VybitOAuth2Client', () => {
       expect(authUrl).toContain('scope=read');
     });
 
+    it('should include nonce when provided', () => {
+      const authUrl = client.getAuthorizationUrl({ scope: 'openid email rw', nonce: 'n-0S6_WzA2Mj' });
+
+      expect(authUrl).toContain('scope=openid+email+rw');
+      expect(authUrl).toContain('nonce=n-0S6_WzA2Mj');
+    });
+
+    it('should not include nonce when not provided', () => {
+      const authUrl = client.getAuthorizationUrl();
+
+      expect(authUrl).not.toContain('nonce=');
+    });
+
     it('should always use production domain', () => {
       const authUrl = client.getAuthorizationUrl();
       expect(authUrl).toContain('https://app.vybit.net');
@@ -128,6 +141,49 @@ describe('VybitOAuth2Client', () => {
       await expect(
         client.exchangeCodeForToken('invalid-code')
       ).rejects.toThrow(VybitAPIError);
+    });
+
+    it('should send the configured redirect_uri', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ access_token: 'token', token_type: 'Bearer' })
+      });
+
+      await client.exchangeCodeForToken('test-code');
+
+      const body = mockFetch.mock.calls[0][1].body as URLSearchParams;
+      expect(body.get('redirect_uri')).toBe('https://example.com/callback');
+    });
+
+    it('should surface the server error message', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        statusText: 'Unauthorized',
+        json: () => Promise.resolve({ errors: [{ message: 'invalid or expired access code' }] })
+      });
+
+      await expect(
+        client.exchangeCodeForToken('used-code')
+      ).rejects.toThrow('Token exchange failed: invalid or expired access code');
+    });
+
+    it('should return the id_token when openid was granted', async () => {
+      const mockTokenResponse = {
+        access_token: 'test-access-token',
+        token_type: 'Bearer',
+        scope: 'openid email rw',
+        id_token: 'eyJhbGciOiJSUzI1NiJ9.e30.sig'
+      };
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockTokenResponse)
+      });
+
+      const result = await client.exchangeCodeForToken('test-code');
+
+      expect(result.id_token).toBe('eyJhbGciOiJSUzI1NiJ9.e30.sig');
+      expect(result.scope).toBe('openid email rw');
     });
 
     it('should handle auth errors in response', async () => {
@@ -189,6 +245,67 @@ describe('VybitOAuth2Client', () => {
       await expect(
         clientWithoutToken.verifyToken()
       ).rejects.toThrow(VybitAuthError);
+    });
+  });
+
+  describe('UserInfo', () => {
+    it('should fetch claims from the userinfo endpoint', async () => {
+      const claims = { sub: 'bbxope6xhryminef', email: 'pat@example.com', email_verified: true };
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(claims)
+      });
+
+      const result = await client.getUserInfo('test-token');
+
+      expect(result).toEqual(claims);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://app.vybit.net/oauth/userinfo',
+        expect.objectContaining({
+          headers: { Authorization: 'Bearer test-token' }
+        })
+      );
+    });
+
+    it('should use the stored token when none is provided', async () => {
+      client.setAccessToken('stored-token');
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ sub: 'abc' })
+      });
+
+      await client.getUserInfo();
+
+      expect(mockFetch.mock.calls[0][1].headers.Authorization).toBe('Bearer stored-token');
+    });
+
+    it('should throw an auth error when the openid scope was not granted', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        statusText: 'Forbidden',
+        json: () => Promise.resolve({ error: 'insufficient_scope', error_description: 'The openid scope is required' })
+      });
+
+      const error = await client.getUserInfo('test-token').catch(e => e);
+      expect(error).toBeInstanceOf(VybitAuthError);
+      expect(error.message).toBe('UserInfo request failed: The openid scope is required');
+      expect(error.statusCode).toBe(403);
+    });
+
+    it('should throw an API error on server errors', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        json: () => Promise.resolve({ error: 'server_error' })
+      });
+
+      await expect(client.getUserInfo('test-token')).rejects.toThrow(VybitAPIError);
+    });
+
+    it('should require access token', async () => {
+      await expect(client.getUserInfo()).rejects.toThrow(VybitAuthError);
     });
   });
 

@@ -46,7 +46,7 @@ Vybit provides a hosted remote MCP server at `https://api.vybit.net/v1/mcp` — 
 3. Fill out and submit the New App form setting the MCP Server URL as `https://api.vybit.net/v1/mcp`
 4. You'll be redirected to authorize with your Vybit account via OAuth
 
-Once connected, all 31 MCP tools are available immediately through natural conversation.
+Once connected, all 33 MCP tools are available immediately through natural conversation.
 
 ## Local Installation
 
@@ -225,14 +225,14 @@ Claude: [Unsubscribes successfully]
 
 ## Available Tools
 
-The MCP server exposes **31 tools** to AI assistants, providing full parity with the Vybit Developer API:
+The MCP server exposes **33 tools** to AI assistants, providing full parity with the Vybit Developer API:
 
 ### Vybit Management (6 tools)
 
 - `vybit_list` - List owned vybits with search and pagination
 - `vybit_get` - Get details about a specific owned vybit
 - `vybit_create` - Create a new vybit
-- `vybit_update` - Update an existing vybit (name, description, status, etc.)
+- `vybit_update` - Update an existing vybit (name, description, status, send permissions, etc.)
 - `vybit_delete` - Delete a vybit
 - `vybit_trigger` - Trigger a notification with optional custom content
 
@@ -274,12 +274,14 @@ The MCP server exposes **31 tools** to AI assistants, providing full parity with
 - `vybits_browse_public` - Browse and search public vybits available for subscription
 - `vybit_get_public` - Get details about a public vybit by subscription key
 
-### Subscription Management (5 tools)
+### Subscription Management (7 tools)
 
 - `subscription_create` - Subscribe to a public vybit using its subscription key
 - `subscriptions_list` - List all vybits you are subscribed to (following)
 - `subscription_get` - Get details about a specific subscription
 - `subscription_update` - Update subscription settings (enable/disable, permissions)
+- `subscription_send_to_owner` - As a subscriber, notify the vybit owner (vybit `sendPermissions` must be `subs_owner`)
+- `subscription_send_to_group` - As a subscriber, notify all subscribers (vybit `sendPermissions` must be `subs_group`)
 - `subscription_delete` - Unsubscribe from a vybit
 
 ### Structured Output

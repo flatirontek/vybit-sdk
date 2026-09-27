@@ -39,8 +39,25 @@ export interface TokenResponse {
   expires_in?: number;
   /** Refresh token for token renewal (optional) */
   refresh_token?: string;
-  /** Granted scopes for this token (optional) */
+  /** Space-separated scopes granted to the access token, e.g. "openid email rw" */
   scope?: string;
+  /**
+   * OpenID Connect ID token (RS256 JWT), present only when the `openid` scope was granted.
+   * Verify it against the keys at https://app.vybit.net/.well-known/jwks.json
+   */
+  id_token?: string;
+}
+
+/**
+ * OpenID Connect UserInfo claims for the person who authorized an access token
+ */
+export interface UserInfo {
+  /** Stable Vybit account key of the person who authorized the app */
+  sub: string;
+  /** Account email address (requires the `email` scope) */
+  email?: string;
+  /** True only when the sign in provider verified this address (requires the `email` scope) */
+  email_verified?: boolean;
 }
 
 /**
@@ -49,8 +66,13 @@ export interface TokenResponse {
 export interface AuthorizationUrlOptions {
   /** Custom state parameter for security (auto-generated if not provided) */
   state?: string;
-  /** Requested OAuth2 scopes (space-separated) */
+  /**
+   * Requested scopes (space-separated). `rw` is always granted; add `openid` to receive an
+   * `id_token` and `email` for the `email` / `email_verified` claims, e.g. "openid email rw"
+   */
   scope?: string;
+  /** OpenID Connect nonce, echoed back in the `id_token` to prevent replay (up to 512 characters) */
+  nonce?: string;
   /** Pre-computed S256 code challenge for PKCE flow */
   codeChallenge?: string;
   /** Code challenge method (default: 'S256') */
@@ -123,8 +145,8 @@ export interface Meter {
   count_daily: number;
   /** Notifications triggered this month */
   count_monthly: number;
-  /** When the monthly count will reset */
-  monthly_reset_dts: string;
+  /** When the monthly count will reset (null if no monthly period has started) */
+  monthly_reset_dts: string | null;
 }
 
 // ==================== Vybits ====================
@@ -276,11 +298,11 @@ export interface VybitFollow {
   /** Description of the vybit */
   description?: string;
   /** Sound key for this vybit */
-  soundKey?: string;
+  soundKey?: string | null;
   /** Type of sound file */
-  soundType?: string;
+  soundType?: string | null;
   /** Name of the vybit owner */
-  ownerName?: string;
+  ownerName?: string | null;
   /** Follow status */
   status?: string;
   /** Access status for this subscription */
@@ -289,18 +311,36 @@ export interface VybitFollow {
   subscriptionKey?: string;
   /** Access level of the vybit */
   access?: 'public' | 'private' | 'unlisted';
+  /** Geofence configuration of the followed vybit (null unless it is a geofence vybit) */
+  geofence?: any | null;
   /** Default message for this vybit */
-  message?: string;
+  message?: string | null;
   /** Default image URL (must be a direct link to a JPG, PNG, or GIF image) */
-  imageUrl?: string;
+  imageUrl?: string | null;
   /** Default link URL */
-  linkUrl?: string;
+  linkUrl?: string | null;
   /** Send permissions for this vybit */
   sendPermissions?: 'owner_subs' | 'subs_owner' | 'subs_group';
   /** When the subscription was created */
   createdAt?: string;
   /** When the subscription was last updated */
   updatedAt?: string;
+}
+
+/**
+ * Response from subscribing to a vybit
+ */
+export interface VybitFollowCreateResponse {
+  /** Result code (1 = success) */
+  result: number;
+  /** "subscribed", "invitation", or "already subscribed" */
+  message: string;
+  /** Key of the subscription following record */
+  followingKey?: string;
+  /** Same value as followingKey (retained for backward compatibility) */
+  key?: string;
+  /** Key of the log entry recording the subscription (omitted when already subscribed) */
+  logKey?: string;
 }
 
 /**
@@ -413,18 +453,18 @@ export interface Sound {
 export interface Log {
   /** Unique log entry identifier */
   key: string;
-  /** Key of the vybit that was triggered */
-  vybKey: string;
-  /** Name of the vybit */
-  vybName: string;
-  /** Description of the vybit */
+  /** Key of the vybit that was triggered (null if the user doesn't own the vybit) */
+  vybKey?: string | null;
+  /** Name of the vybit (omitted when the log has no associated vybit name) */
+  vybName?: string;
+  /** Description of the vybit (omitted when not recorded on the log) */
   vybDescription?: string;
-  /** Name of the user who owns/received the notification */
-  ownerName: string;
-  /** Name of the user who sent/triggered the notification */
-  senderName: string;
+  /** Name of the user who owns/received the notification (omitted when not recorded on the log) */
+  ownerName?: string;
+  /** Name of the user who sent/triggered the notification (falls back to ownerName, null if neither is known) */
+  senderName: string | null;
   /** Notification message */
-  notification?: string;
+  notification?: string | null;
   /** Custom image URL (must be a direct link to a JPG, PNG, or GIF image) */
   imageUrl?: string | null;
   /** Custom link URL */
@@ -579,6 +619,8 @@ export interface ErrorResponse {
 export interface DeleteResponse {
   /** Result code (1 = success) */
   result: number;
-  /** Success message */
+  /** True when the resource was deleted */
+  success?: boolean;
+  /** Human-readable confirmation message */
   message?: string;
 }

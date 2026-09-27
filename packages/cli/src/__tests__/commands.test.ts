@@ -40,6 +40,8 @@ const mockClient = {
   getMeter: jest.fn().mockResolvedValue({ tier_id: 1, count_daily: 5 }),
   getStatus: jest.fn().mockResolvedValue({ status: 'up' }),
   getProfile: jest.fn().mockResolvedValue({ key: 'u1', name: 'Test User' }),
+  sendToOwner: jest.fn().mockResolvedValue({ result: 1, plk: 'log-owner' }),
+  sendToGroup: jest.fn().mockResolvedValue({ result: 1, plk: 'log-group' }),
 };
 
 jest.mock('@vybit/api-sdk', () => ({
@@ -305,6 +307,33 @@ describe('subscriptions create', () => {
   it('calls createVybitFollow', async () => {
     await run(['subscriptions', 'create', 'sub-key-1']);
     expect(mockClient.createVybitFollow).toHaveBeenCalledWith('sub-key-1');
+  });
+});
+
+describe('subscriptions send-to-owner', () => {
+  it('calls sendToOwner with the notification content', async () => {
+    await run(['subscriptions', 'send-to-owner', 'f1', '--message', 'Back online', '--link-url', 'https://example.com']);
+    expect(mockClient.sendToOwner).toHaveBeenCalledWith('f1', { message: 'Back online', linkUrl: 'https://example.com' });
+  });
+
+  it('sends no body when no content is given', async () => {
+    await run(['subscriptions', 'send-to-owner', 'f1']);
+    expect(mockClient.sendToOwner).toHaveBeenCalledWith('f1', undefined);
+  });
+});
+
+describe('subscriptions send-to-group', () => {
+  it('calls sendToGroup and prints the log key in quiet mode', async () => {
+    await run(['-q', 'subs', 'send-to-group', 'f1', '--image-url', 'https://example.com/a.png']);
+    expect(mockClient.sendToGroup).toHaveBeenCalledWith('f1', { imageUrl: 'https://example.com/a.png' });
+    expect(stdoutData.trim()).toBe('log-group');
+  });
+});
+
+describe('reminders create --quiet', () => {
+  it('prints the new reminder id', async () => {
+    await run(['-q', 'reminders', 'create', 'v1', '--cron', '0 9 * * *']);
+    expect(stdoutData.trim()).toBe('r-new');
   });
 });
 

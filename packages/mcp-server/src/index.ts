@@ -78,6 +78,32 @@ const READ_ONLY_ANNOTATIONS = { readOnlyHint: true, destructiveHint: false, open
 const WRITE_ANNOTATIONS = { readOnlyHint: false, destructiveHint: false, openWorldHint: false } as const;
 const DESTRUCTIVE_ANNOTATIONS = { readOnlyHint: false, destructiveHint: true, openWorldHint: false } as const;
 
+const SEND_PERMISSIONS_SCHEMA = {
+  type: 'string',
+  description: 'Who can send notifications: owner_subs (one-way, the owner notifies subscribers; default), subs_owner (two-way, subscribers can also notify the owner), or subs_group (group broadcast, subscribers can notify all subscribers)',
+  enum: ['owner_subs', 'subs_owner', 'subs_group'],
+};
+
+// Inputs shared by subscription_send_to_owner and subscription_send_to_group
+const SUBSCRIBER_SEND_PROPERTIES = {
+  followingKey: {
+    type: 'string',
+    description: 'The unique followingKey of your subscription',
+  },
+  message: {
+    type: 'string',
+    description: 'Optional notification message',
+  },
+  imageUrl: {
+    type: 'string',
+    description: 'Optional image URL. Must be a direct link to a JPG, PNG, or GIF image and the filename in the url must end with .jpg, .jpeg, .png, or .gif',
+  },
+  linkUrl: {
+    type: 'string',
+    description: 'Optional URL to open when the notification is tapped',
+  },
+};
+
 // Define available tools
 export const TOOLS: Tool[] = [
   {
@@ -156,6 +182,7 @@ export const TOOLS: Tool[] = [
         },
         triggerSettings: TRIGGER_SETTINGS_SCHEMA,
         geofence: GEOFENCE_SCHEMA,
+        sendPermissions: SEND_PERMISSIONS_SCHEMA,
       },
       required: ['name'],
     },
@@ -214,6 +241,7 @@ export const TOOLS: Tool[] = [
         },
         triggerSettings: TRIGGER_SETTINGS_SCHEMA,
         geofence: GEOFENCE_SCHEMA,
+        sendPermissions: SEND_PERMISSIONS_SCHEMA,
       },
       required: ['key'],
     },
@@ -582,6 +610,30 @@ export const TOOLS: Tool[] = [
     annotations: WRITE_ANNOTATIONS,
   },
   {
+    name: 'subscription_send_to_owner',
+    title: 'Send Notification to Vybit Owner',
+    description: 'As a subscriber, send a notification to the owner of a vybit you follow. The vybit must have sendPermissions "subs_owner", and your subscription must be on and granted or public.',
+    inputSchema: {
+      type: 'object',
+      properties: SUBSCRIBER_SEND_PROPERTIES,
+      required: ['followingKey'],
+    },
+    outputSchema: TRIGGER_OUTPUT_SCHEMA,
+    annotations: WRITE_ANNOTATIONS,
+  },
+  {
+    name: 'subscription_send_to_group',
+    title: 'Send Notification to Vybit Group',
+    description: 'As a subscriber, send a notification to all subscribers of a vybit you follow. The vybit must have sendPermissions "subs_group", and your subscription must be on and granted or public.',
+    inputSchema: {
+      type: 'object',
+      properties: SUBSCRIBER_SEND_PROPERTIES,
+      required: ['followingKey'],
+    },
+    outputSchema: TRIGGER_OUTPUT_SCHEMA,
+    annotations: WRITE_ANNOTATIONS,
+  },
+  {
     name: 'subscription_delete',
     title: 'Unsubscribe from Vybit',
     description: 'Unsubscribe from a vybit',
@@ -795,6 +847,7 @@ export async function handleToolCall(
       if (args.linkUrl !== undefined) createData.linkUrl = args.linkUrl;
       if (args.triggerSettings) createData.triggerSettings = args.triggerSettings;
       if (args.geofence) createData.geofence = normalizeGeofence(args.geofence);
+      if (args.sendPermissions) createData.sendPermissions = args.sendPermissions;
 
       return jsonResponse(await client.createVybit(createData));
     }
@@ -812,6 +865,7 @@ export async function handleToolCall(
       if (args.linkUrl !== undefined) updateData.linkUrl = args.linkUrl;
       if (args.triggerSettings) updateData.triggerSettings = args.triggerSettings;
       if (args.geofence) updateData.geofence = normalizeGeofence(args.geofence);
+      if (args.sendPermissions) updateData.sendPermissions = args.sendPermissions;
       assertHasFields(updateData, 'Pass null or "" to clear description, message, imageUrl, or linkUrl.');
 
       return jsonResponse(await client.patchVybit(
@@ -953,6 +1007,20 @@ export async function handleToolCall(
       ));
     }
 
+    case 'subscription_send_to_owner':
+    case 'subscription_send_to_group': {
+      const params: any = {};
+      if (args.message) params.message = args.message;
+      if (args.imageUrl) params.imageUrl = args.imageUrl;
+      if (args.linkUrl) params.linkUrl = args.linkUrl;
+      const followingKey = args.followingKey as string;
+      const body = Object.keys(params).length > 0 ? params : undefined;
+
+      return jsonResponse(name === 'subscription_send_to_owner'
+        ? await client.sendToOwner(followingKey, body)
+        : await client.sendToGroup(followingKey, body));
+    }
+
     case 'subscription_delete':
       await client.deleteVybitFollow(args.followingKey as string);
       return jsonResponse({ success: true, message: 'Unsubscribed successfully' });
@@ -1026,7 +1094,7 @@ const VYBIT_ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAA
 const server = new Server(
   {
     name: 'vybit-mcp-server',
-    version: '1.7.0',
+    version: '1.8.0',
     icons: [
       {
         src: VYBIT_ICON,

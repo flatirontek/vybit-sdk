@@ -560,9 +560,11 @@ describe('MCP Server Handler Logic', () => {
     describe('subscription_create handler', () => {
       test('should create subscription with subscriptionKey', async () => {
         const mockFollow = {
+          result: 1,
+          message: 'subscribed',
           followingKey: 'follow123',
-          vybName: 'Weather Updates',
-          status: 'on',
+          key: 'follow123',
+          logKey: 'log123',
         };
 
         mockClient.createVybitFollow.mockResolvedValue(mockFollow);
