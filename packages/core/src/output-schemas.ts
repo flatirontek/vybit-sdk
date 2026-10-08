@@ -227,7 +227,10 @@ export const PEEP_OUTPUT_SCHEMA: ObjectOutputSchema = {
   properties: {
     key: { type: 'string', description: 'Unique peep identifier' },
     vybKey: { type: 'string', description: 'Key of the vybit this person is subscribed to' },
-    name: { type: nullable('string'), description: 'Name of the subscriber' },
+    name: {
+      type: nullable('string'),
+      description: 'Display name of the subscriber; a pending invite without one shows the masked invitee email (j***@example.com)',
+    },
     accessStatus: {
       type: nullable('string'),
       description: 'Access status: denied, public, invited (not yet accepted), or granted',
@@ -255,11 +258,9 @@ export const METER_OUTPUT_SCHEMA: ObjectOutputSchema = {
 
 export const PROFILE_OUTPUT_SCHEMA: ObjectOutputSchema = {
   type: 'object',
-  description: 'The authenticated user profile',
+  description: "The connected account's display name and plan",
   properties: {
-    key: { type: 'string', description: 'Unique user identifier' },
     name: { type: 'string', description: "User's display name" },
-    email: { type: 'string', description: "User's email address" },
     tier_id: { type: 'integer', description: 'Subscription tier ID' },
     tier: { type: nullable('string'), description: 'Subscription tier name (Free, Bronze, Silver, Gold, Pro, Team, Business)' },
   },

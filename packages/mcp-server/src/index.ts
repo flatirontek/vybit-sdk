@@ -60,6 +60,39 @@ function toStructuredContent(result: unknown): Record<string, unknown> {
   return {};
 }
 
+// For a pending invite with no display name, the API reports the invitee's email as the name
+function maskEmail(value: unknown): unknown {
+  if (typeof value !== 'string') return value;
+  const match = /^([^@\s])[^@\s]*@([^@\s]+)$/.exec(value);
+  return match ? `${match[1]}***@${match[2]}` : value;
+}
+
+function maskPeep(peep: unknown): unknown {
+  if (peep === null || typeof peep !== 'object') return peep;
+  const record = peep as Record<string, unknown>;
+  return { ...record, name: maskEmail(record.name) };
+}
+
+/**
+ * Trims a tool result to what the tool needs to return. Both the stdio server and the hosted
+ * server call this, so personal data rules live in one place. Also turns model instances into
+ * plain JSON.
+ */
+export function shapeToolResult(toolName: string, result: unknown): unknown {
+  const plain = JSON.parse(JSON.stringify(result ?? null));
+  switch (toolName) {
+    case 'profile_get':
+      return plain && { name: plain.name, tier_id: plain.tier_id, tier: plain.tier };
+    case 'peeps_list':
+    case 'vybit_peeps_list':
+      return Array.isArray(plain) ? plain.map(maskPeep) : plain;
+    case 'peep_get':
+      return maskPeep(plain);
+    default:
+      return plain;
+  }
+}
+
 // The text block keeps the unmodified JSON so text-only clients see what they always did
 export function jsonResponse(result: unknown) {
   return {
@@ -73,10 +106,18 @@ export function jsonResponse(result: unknown) {
   };
 }
 
-// Tool annotation constants
-const READ_ONLY_ANNOTATIONS = { readOnlyHint: true, destructiveHint: false, openWorldHint: false } as const;
-const WRITE_ANNOTATIONS = { readOnlyHint: false, destructiveHint: false, openWorldHint: false } as const;
-const DESTRUCTIVE_ANNOTATIONS = { readOnlyHint: false, destructiveHint: true, openWorldHint: false } as const;
+// Every hint is set explicitly; clients treat a missing hint as its least safe value.
+// openWorldHint marks effects another person can see (notifications, invites, subscriber-visible changes).
+interface ToolHints {
+  readOnlyHint: boolean;
+  destructiveHint: boolean;
+  idempotentHint: boolean;
+  openWorldHint: boolean;
+}
+const READ_ONLY_ANNOTATIONS: ToolHints = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
+function writeHints(hints: Omit<ToolHints, 'readOnlyHint'>): ToolHints {
+  return { readOnlyHint: false, ...hints };
+}
 
 const SEND_PERMISSIONS_SCHEMA = {
   type: 'string',
@@ -187,7 +228,8 @@ export const TOOLS: Tool[] = [
       required: ['name'],
     },
     outputSchema: VYBIT_OUTPUT_SCHEMA,
-    annotations: WRITE_ANNOTATIONS,
+    // access=public lists it in the public catalog
+    annotations: writeHints({ destructiveHint: false, idempotentHint: false, openWorldHint: true }),
   },
   {
     name: 'vybit_update',
@@ -246,7 +288,8 @@ export const TOOLS: Tool[] = [
       required: ['key'],
     },
     outputSchema: VYBIT_OUTPUT_SCHEMA,
-    annotations: WRITE_ANNOTATIONS,
+    // overwrites fields; going private revokes subscribers
+    annotations: writeHints({ destructiveHint: true, idempotentHint: true, openWorldHint: true }),
   },
   {
     name: 'vybit_delete',
@@ -263,7 +306,8 @@ export const TOOLS: Tool[] = [
       required: ['key'],
     },
     outputSchema: DELETE_OUTPUT_SCHEMA,
-    annotations: DESTRUCTIVE_ANNOTATIONS,
+    // removes subscribers' subscriptions
+    annotations: writeHints({ destructiveHint: true, idempotentHint: true, openWorldHint: true }),
   },
   {
     name: 'vybit_trigger',
@@ -300,7 +344,8 @@ export const TOOLS: Tool[] = [
       required: ['key'],
     },
     outputSchema: TRIGGER_OUTPUT_SCHEMA,
-    annotations: WRITE_ANNOTATIONS,
+    // sends a notification to the vybit and its subscribers
+    annotations: writeHints({ destructiveHint: false, idempotentHint: false, openWorldHint: true }),
   },
   // Reminders
   {
@@ -346,7 +391,8 @@ export const TOOLS: Tool[] = [
       required: ['key', 'cron'],
     },
     outputSchema: REMINDER_RESULT_OUTPUT_SCHEMA,
-    annotations: WRITE_ANNOTATIONS,
+    // schedules a notification to the vybit and its subscribers
+    annotations: writeHints({ destructiveHint: false, idempotentHint: false, openWorldHint: true }),
   },
   {
     name: 'reminder_list',
@@ -408,7 +454,8 @@ export const TOOLS: Tool[] = [
       required: ['key', 'reminderId'],
     },
     outputSchema: REMINDER_RESULT_OUTPUT_SCHEMA,
-    annotations: WRITE_ANNOTATIONS,
+    // overwrites a scheduled notification subscribers will receive
+    annotations: writeHints({ destructiveHint: true, idempotentHint: true, openWorldHint: true }),
   },
   {
     name: 'reminder_delete',
@@ -429,7 +476,7 @@ export const TOOLS: Tool[] = [
       required: ['key', 'reminderId'],
     },
     outputSchema: DELETE_OUTPUT_SCHEMA,
-    annotations: DESTRUCTIVE_ANNOTATIONS,
+    annotations: writeHints({ destructiveHint: true, idempotentHint: true, openWorldHint: false }),
   },
 
   {
@@ -474,7 +521,7 @@ export const TOOLS: Tool[] = [
   {
     name: 'profile_get',
     title: 'Get Profile',
-    description: 'Get the authenticated user profile: account key, display name, email address, and subscription tier.',
+    description: 'Get the connected account\'s display name and subscription plan (tier).',
     inputSchema: {
       type: 'object',
       properties: {},
@@ -540,7 +587,8 @@ export const TOOLS: Tool[] = [
       required: ['subscriptionKey'],
     },
     outputSchema: SUBSCRIPTION_CREATE_OUTPUT_SCHEMA,
-    annotations: WRITE_ANNOTATIONS,
+    // adds the caller to the owner's subscriber list
+    annotations: writeHints({ destructiveHint: false, idempotentHint: true, openWorldHint: true }),
   },
   {
     name: 'subscriptions_list',
@@ -607,7 +655,8 @@ export const TOOLS: Tool[] = [
       required: ['followingKey'],
     },
     outputSchema: SUBSCRIPTION_OUTPUT_SCHEMA,
-    annotations: WRITE_ANNOTATIONS,
+    // declining an invitation is visible to the owner and needs a new invite to undo
+    annotations: writeHints({ destructiveHint: true, idempotentHint: true, openWorldHint: true }),
   },
   {
     name: 'subscription_send_to_owner',
@@ -619,7 +668,8 @@ export const TOOLS: Tool[] = [
       required: ['followingKey'],
     },
     outputSchema: TRIGGER_OUTPUT_SCHEMA,
-    annotations: WRITE_ANNOTATIONS,
+    // notifies the vybit owner
+    annotations: writeHints({ destructiveHint: false, idempotentHint: false, openWorldHint: true }),
   },
   {
     name: 'subscription_send_to_group',
@@ -631,7 +681,8 @@ export const TOOLS: Tool[] = [
       required: ['followingKey'],
     },
     outputSchema: TRIGGER_OUTPUT_SCHEMA,
-    annotations: WRITE_ANNOTATIONS,
+    // notifies the owner and every subscriber
+    annotations: writeHints({ destructiveHint: false, idempotentHint: false, openWorldHint: true }),
   },
   {
     name: 'subscription_delete',
@@ -648,7 +699,8 @@ export const TOOLS: Tool[] = [
       required: ['followingKey'],
     },
     outputSchema: DELETE_OUTPUT_SCHEMA,
-    annotations: DESTRUCTIVE_ANNOTATIONS,
+    // owner sees the unsubscribe; a private vybit needs a new invite
+    annotations: writeHints({ destructiveHint: true, idempotentHint: true, openWorldHint: true }),
   },
 
   // Logs
@@ -765,7 +817,8 @@ export const TOOLS: Tool[] = [
       required: ['key', 'email'],
     },
     outputSchema: PEEP_CREATE_OUTPUT_SCHEMA,
-    annotations: WRITE_ANNOTATIONS,
+    // emails an invitation to another person
+    annotations: writeHints({ destructiveHint: false, idempotentHint: false, openWorldHint: true }),
   },
   {
     name: 'peep_delete',
@@ -782,7 +835,8 @@ export const TOOLS: Tool[] = [
       required: ['peepKey'],
     },
     outputSchema: DELETE_OUTPUT_SCHEMA,
-    annotations: DESTRUCTIVE_ANNOTATIONS,
+    // revokes another person's subscription
+    annotations: writeHints({ destructiveHint: true, idempotentHint: true, openWorldHint: true }),
   },
   {
     name: 'vybit_peeps_list',
@@ -954,7 +1008,7 @@ export async function handleToolCall(
       return jsonResponse(await client.getMeter());
 
     case 'profile_get':
-      return jsonResponse(await client.getProfile());
+      return jsonResponse(shapeToolResult(name, await client.getProfile()));
 
     case 'get_current_time': {
       const now = new Date();
@@ -1052,14 +1106,14 @@ export async function handleToolCall(
 
     // Peeps
     case 'peeps_list':
-      return jsonResponse(await client.listPeeps({
+      return jsonResponse(shapeToolResult(name, await client.listPeeps({
         search: args.search as string | undefined,
         limit: args.limit as number | undefined,
         offset: args.offset as number | undefined,
-      }));
+      })));
 
     case 'peep_get':
-      return jsonResponse(await client.getPeep(args.peepKey as string));
+      return jsonResponse(shapeToolResult(name, await client.getPeep(args.peepKey as string)));
 
     case 'peep_create':
       return jsonResponse(await client.createPeep(
@@ -1072,11 +1126,11 @@ export async function handleToolCall(
       return jsonResponse({ success: true, message: 'Peep removed successfully' });
 
     case 'vybit_peeps_list':
-      return jsonResponse(await client.listVybitPeeps(args.key as string, {
+      return jsonResponse(shapeToolResult(name, await client.listVybitPeeps(args.key as string, {
         search: args.search as string | undefined,
         limit: args.limit as number | undefined,
         offset: args.offset as number | undefined,
-      }));
+      })));
 
     default:
       throw new Error(`Unknown tool: ${name}`);
@@ -1094,7 +1148,7 @@ const VYBIT_ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAA
 const server = new Server(
   {
     name: 'vybit-mcp-server',
-    version: '1.8.0',
+    version: '1.9.0',
     icons: [
       {
         src: VYBIT_ICON,

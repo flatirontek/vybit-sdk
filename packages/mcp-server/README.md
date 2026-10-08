@@ -265,7 +265,7 @@ The MCP server exposes **33 tools** to AI assistants, providing full parity with
 
 ### Monitoring & Utilities (3 tools)
 
-- `profile_get` - Get the authenticated user profile (key, name, email, tier)
+- `profile_get` - Get the connected account display name and plan (tier)
 - `meter_get` - Get API usage and limits (daily/monthly counts and caps)
 - `get_current_time` - Get the current time (useful for relative time expressions when creating reminders)
 

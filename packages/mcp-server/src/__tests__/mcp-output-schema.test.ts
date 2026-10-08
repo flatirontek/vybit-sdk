@@ -184,7 +184,7 @@ const SAMPLES: Record<string, unknown[]> = {
   reminder_delete: [{ success: true, message: 'Reminder deleted successfully' }, { result: 1, message: 'Reminder deleted' }],
   sounds_list: [[sound, freesoundSound], []],
   sound_get: [sound, freesoundSound],
-  profile_get: [{ key: 'abc123def456ghij', name: 'Pat Example', email: 'pat@example.com', tier_id: 1, tier: 'Free' }],
+  profile_get: [{ name: 'Pat Example', tier_id: 1, tier: 'Free' }],
   meter_get: [
     {
       tier_id: 1,
