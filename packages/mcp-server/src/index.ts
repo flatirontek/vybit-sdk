@@ -11,7 +11,9 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
   CallToolRequestSchema,
+  ListResourcesRequestSchema,
   ListToolsRequestSchema,
+  ReadResourceRequestSchema,
   Tool,
 } from '@modelcontextprotocol/sdk/types.js';
 import { VybitAPIClient } from '@vybit/api-sdk';
@@ -36,7 +38,11 @@ import {
   CURRENT_TIME_OUTPUT_SCHEMA,
   listOutputSchema,
   normalizeGeofence,
+  getApiBaseUrl,
 } from '@vybit/core';
+import { SOUND_PICKER_TOOL_META, listUiResources, readUiResource } from './sound-picker.js';
+
+export { SOUND_PICKER_URI, listUiResources, readUiResource } from './sound-picker.js';
 
 // Get credentials and optional base URL from environment
 const API_KEY = process.env.VYBIT_API_KEY;
@@ -125,11 +131,17 @@ const SEND_PERMISSIONS_SCHEMA = {
   enum: ['owner_subs', 'subs_owner', 'subs_group'],
 };
 
+const TRIGGER_TYPE_PROPERTY = {
+  type: 'string',
+  description: 'webhook (default): fired by HTTP, the API, or an integration. schedule: fires on a repeating pattern (daily, weekdays, every Monday, monthly); use it for any recurring alert, including ones the user calls a reminder. reminders: one-off or irregular dated notifications (e.g. Oct 20 at 7 PM); add each one with reminder_create. geofence: fires on entering or leaving a location. integration: fired by a connected platform.',
+  enum: ['webhook', 'schedule', 'geofence', 'integration', 'reminders'],
+};
+
 // Inputs shared by subscription_send_to_owner and subscription_send_to_group
 const SUBSCRIBER_SEND_PROPERTIES = {
   followingKey: {
     type: 'string',
-    description: 'The unique followingKey of your subscription',
+    description: "The subscription's followingKey, a public identifier from subscriptions_list (not a secret or credential)",
   },
   message: {
     type: 'string',
@@ -167,7 +179,7 @@ export const TOOLS: Tool[] = [
       properties: {
         key: {
           type: 'string',
-          description: 'The unique identifier (key) of the vybit',
+          description: "The vybit's key, a public identifier from vybit_list (not a secret or credential)",
         },
       },
       required: ['key'],
@@ -188,18 +200,14 @@ export const TOOLS: Tool[] = [
         },
         soundKey: {
           type: 'string',
-          description: 'Sound key to use for the notification (defaults to a system sound if not provided)',
+          description: 'Key of the sound to play, from sounds_list (an identifier, not a secret). Defaults to a system sound if not provided',
         },
         status: {
           type: 'string',
           description: 'Vybit status (on = active, off = disabled, defaults to "on")',
           enum: ['on', 'off'],
         },
-        triggerType: {
-          type: 'string',
-          description: 'Type of trigger (defaults to "webhook" if not provided)',
-          enum: ['webhook', 'schedule', 'geofence', 'integration', 'reminders'],
-        },
+        triggerType: TRIGGER_TYPE_PROPERTY,
         description: {
           type: 'string',
           description: 'Detailed description of the vybit. Appears internally and on subscription cards',
@@ -240,7 +248,7 @@ export const TOOLS: Tool[] = [
       properties: {
         key: {
           type: 'string',
-          description: 'The unique identifier (key) of the vybit to update',
+          description: "The vybit's key, a public identifier from vybit_list (not a secret or credential)",
         },
         name: {
           type: 'string',
@@ -252,18 +260,14 @@ export const TOOLS: Tool[] = [
         },
         soundKey: {
           type: 'string',
-          description: 'New sound key for the vybit',
+          description: 'Key of the new sound, from sounds_list (an identifier, not a secret)',
         },
         status: {
           type: 'string',
           description: 'Vybit status (on = active, off = disabled)',
           enum: ['on', 'off'],
         },
-        triggerType: {
-          type: 'string',
-          description: 'Type of trigger',
-          enum: ['webhook', 'schedule', 'geofence', 'integration', 'reminders'],
-        },
+        triggerType: TRIGGER_TYPE_PROPERTY,
         access: {
           type: 'string',
           description: 'Vybit subscription visibility and access control',
@@ -300,7 +304,7 @@ export const TOOLS: Tool[] = [
       properties: {
         key: {
           type: 'string',
-          description: 'The unique identifier (key) of the vybit to delete',
+          description: "The vybit's key, a public identifier from vybit_list (not a secret or credential)",
         },
       },
       required: ['key'],
@@ -312,13 +316,13 @@ export const TOOLS: Tool[] = [
   {
     name: 'vybit_trigger',
     title: 'Trigger Vybit Notification',
-    description: 'Trigger a vybit notification using its vybit key',
+    description: 'Send a notification through one of your vybits',
     inputSchema: {
       type: 'object',
       properties: {
         key: {
           type: 'string',
-          description: 'The unique identifier (key) of the vybit to trigger',
+          description: "The vybit's key, a public identifier from vybit_list (not a secret or credential)",
         },
         message: {
           type: 'string',
@@ -351,17 +355,17 @@ export const TOOLS: Tool[] = [
   {
     name: 'reminder_create',
     title: 'Create Reminder',
-    description: 'Create a reminder on a vybit (the vybit must have triggerType=reminders). Each reminder gets its own cron schedule. Reminders must be in the future and will not trigger if the scheduled time has already passed. ',
+    description: 'Add a one-off dated reminder to a vybit with triggerType=reminders. The cron must name a specific day and month (e.g. "0 19 20 10 *" = 7:00 PM on Oct 20), and the time must be in the future. For anything that repeats, create or update a vybit with triggerType=schedule and triggerSettings.crons instead.',
     inputSchema: {
       type: 'object',
       properties: {
         key: {
           type: 'string',
-          description: 'The key of the vybit to add a reminder to',
+          description: "The vybit's key, a public identifier from vybit_list (not a secret or credential)",
         },
         cron: {
           type: 'string',
-          description: 'Cron expression (5 fields): minute hour day month dayOfWeek. Uses 24-hour time. Examples: "0 7 * * *" = 7:00 AM, "0 19 * * *" = 7:00 PM, "30 14 25 12 *" = 2:30 PM on Dec 25',
+          description: 'Cron expression (5 fields) naming one date: minute hour day month dayOfWeek, 24-hour time, with numeric day and month and * for dayOfWeek. Examples: "30 14 25 12 *" = 2:30 PM on Dec 25, "0 19 20 10 *" = 7:00 PM on Oct 20',
         },
         timeZone: {
           type: 'string',
@@ -369,7 +373,7 @@ export const TOOLS: Tool[] = [
         },
         year: {
           type: 'number',
-          description: 'Year for the reminder (defaults to current year). Used for one-time reminders.',
+          description: 'Year of this one-off reminder (defaults to the current year)',
         },
         message: {
           type: ['string', 'null'],
@@ -403,7 +407,7 @@ export const TOOLS: Tool[] = [
       properties: {
         key: {
           type: 'string',
-          description: 'The key of the vybit',
+          description: "The vybit's key, a public identifier from vybit_list (not a secret or credential)",
         },
       },
       required: ['key'],
@@ -420,11 +424,11 @@ export const TOOLS: Tool[] = [
       properties: {
         key: {
           type: 'string',
-          description: 'The key of the vybit',
+          description: "The vybit's key, a public identifier from vybit_list (not a secret or credential)",
         },
         reminderId: {
           type: 'string',
-          description: 'The unique identifier of the reminder to update',
+          description: "The reminder's id, from reminder_list (not a secret or credential)",
         },
         cron: {
           type: 'string',
@@ -466,11 +470,11 @@ export const TOOLS: Tool[] = [
       properties: {
         key: {
           type: 'string',
-          description: 'The key of the vybit',
+          description: "The vybit's key, a public identifier from vybit_list (not a secret or credential)",
         },
         reminderId: {
           type: 'string',
-          description: 'The unique identifier of the reminder to delete',
+          description: "The reminder's id, from reminder_list (not a secret or credential)",
         },
       },
       required: ['key', 'reminderId'],
@@ -482,13 +486,14 @@ export const TOOLS: Tool[] = [
   {
     name: 'sounds_list',
     title: 'List Sounds',
-    description: 'List available sounds with optional search and pagination',
+    description: "List available sounds with optional search and pagination. Call this whenever the user is browsing or choosing sounds: where supported, the result renders as an interactive picker with play buttons, so don't build a separate audio widget.",
     inputSchema: {
       type: 'object',
       properties: { ...PAGINATION_SCHEMA },
     },
     outputSchema: listOutputSchema(SOUND_OUTPUT_SCHEMA),
     annotations: READ_ONLY_ANNOTATIONS,
+    _meta: SOUND_PICKER_TOOL_META,
   },
   {
     name: 'sound_get',
@@ -499,7 +504,7 @@ export const TOOLS: Tool[] = [
       properties: {
         soundKey: {
           type: 'string',
-          description: 'The unique key of the sound',
+          description: "The sound's key, a public identifier from sounds_list (not a secret or credential)",
         },
       },
       required: ['soundKey'],
@@ -556,13 +561,13 @@ export const TOOLS: Tool[] = [
   {
     name: 'vybit_get_public',
     title: 'Get Public Vybit Details',
-    description: 'Get details about a public vybit by subscription key before subscribing',
+    description: 'Get details about a public vybit by its subscription key (share code) before subscribing',
     inputSchema: {
       type: 'object',
       properties: {
         subscriptionKey: {
           type: 'string',
-          description: 'The subscription key of the public vybit',
+          description: "The vybit's subscription key (its share code), from vybits_browse_public or a share link",
         },
       },
       required: ['subscriptionKey'],
@@ -575,13 +580,13 @@ export const TOOLS: Tool[] = [
   {
     name: 'subscription_create',
     title: 'Subscribe to Vybit',
-    description: 'Subscribe to a public vybit using its subscription key',
+    description: 'Subscribe to a public vybit using its subscription key (share code)',
     inputSchema: {
       type: 'object',
       properties: {
         subscriptionKey: {
           type: 'string',
-          description: 'The subscription key of the vybit to subscribe to',
+          description: "The vybit's subscription key (its share code), from vybits_browse_public or a share link",
         },
       },
       required: ['subscriptionKey'],
@@ -610,7 +615,7 @@ export const TOOLS: Tool[] = [
       properties: {
         followingKey: {
           type: 'string',
-          description: 'The unique followingKey of the subscription',
+          description: "The subscription's followingKey, a public identifier from subscriptions_list (not a secret or credential)",
         },
       },
       required: ['followingKey'],
@@ -627,7 +632,7 @@ export const TOOLS: Tool[] = [
       properties: {
         followingKey: {
           type: 'string',
-          description: 'The unique followingKey of the subscription',
+          description: "The subscription's followingKey, a public identifier from subscriptions_list (not a secret or credential)",
         },
         status: {
           type: 'string',
@@ -693,7 +698,7 @@ export const TOOLS: Tool[] = [
       properties: {
         followingKey: {
           type: 'string',
-          description: 'The unique followingKey of the subscription to delete',
+          description: "The subscription's followingKey, a public identifier from subscriptions_list (not a secret or credential)",
         },
       },
       required: ['followingKey'],
@@ -724,7 +729,7 @@ export const TOOLS: Tool[] = [
       properties: {
         logKey: {
           type: 'string',
-          description: 'The unique key of the log entry',
+          description: "The log entry's key, a public identifier from logs_list (not a secret or credential)",
         },
       },
       required: ['logKey'],
@@ -741,7 +746,7 @@ export const TOOLS: Tool[] = [
       properties: {
         key: {
           type: 'string',
-          description: 'The key of the vybit',
+          description: "The vybit's key, a public identifier from vybit_list (not a secret or credential)",
         },
         ...PAGINATION_SCHEMA,
       },
@@ -759,7 +764,7 @@ export const TOOLS: Tool[] = [
       properties: {
         followingKey: {
           type: 'string',
-          description: 'The followingKey of the subscription',
+          description: "The subscription's followingKey, a public identifier from subscriptions_list (not a secret or credential)",
         },
         ...PAGINATION_SCHEMA,
       },
@@ -790,7 +795,7 @@ export const TOOLS: Tool[] = [
       properties: {
         peepKey: {
           type: 'string',
-          description: 'The unique key of the peep',
+          description: "The peep's key, a public identifier from peeps_list (not a secret or credential)",
         },
       },
       required: ['peepKey'],
@@ -807,7 +812,7 @@ export const TOOLS: Tool[] = [
       properties: {
         key: {
           type: 'string',
-          description: 'The key of the vybit to share',
+          description: "The vybit's key, a public identifier from vybit_list (not a secret or credential)",
         },
         email: {
           type: 'string',
@@ -829,7 +834,7 @@ export const TOOLS: Tool[] = [
       properties: {
         peepKey: {
           type: 'string',
-          description: 'The unique key of the peep to delete',
+          description: "The peep's key, a public identifier from peeps_list (not a secret or credential)",
         },
       },
       required: ['peepKey'],
@@ -847,7 +852,7 @@ export const TOOLS: Tool[] = [
       properties: {
         key: {
           type: 'string',
-          description: 'The key of the vybit',
+          description: "The vybit's key, a public identifier from vybit_list (not a secret or credential)",
         },
         ...PAGINATION_SCHEMA,
       },
@@ -1148,7 +1153,7 @@ const VYBIT_ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAA
 const server = new Server(
   {
     name: 'vybit-mcp-server',
-    version: '1.9.0',
+    version: '1.10.0',
     icons: [
       {
         src: VYBIT_ICON,
@@ -1161,9 +1166,13 @@ const server = new Server(
   {
     capabilities: {
       tools: {},
+      resources: {},
     },
   }
 );
+
+// Sound URLs point at the API host, which the sound picker's CSP must allow
+const API_ORIGIN = new URL(API_URL || getApiBaseUrl()).origin;
 
 // Handle list_tools request
 server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -1171,6 +1180,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     tools: TOOLS,
   };
 });
+
+server.setRequestHandler(ListResourcesRequestSchema, async () => listUiResources(API_ORIGIN));
+
+server.setRequestHandler(ReadResourceRequestSchema, async (request) => readUiResource(request.params.uri, API_ORIGIN));
 
 // Handle call_tool request
 server.setRequestHandler(CallToolRequestSchema, async (request) => {

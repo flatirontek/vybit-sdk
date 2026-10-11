@@ -12,7 +12,7 @@ Official n8n community nodes for [Vybit](https://vybit.net) - the personalized a
 - **Full API Access**: 34 operations across 7 resources, available with either auth method
 - **Manage Vybits**: Create, update, trigger, and delete vybits programmatically
 - **Subscriptions & Peeps**: Subscribe to vybits and manage access invitations
-- **Reminders**: Create and manage scheduled reminders on vybits
+- **Reminders**: Create and manage one-off dated reminders on vybits
 - **Sounds & Logs**: Search sounds and view notification history
 - **Zero Dependencies**: Built with zero runtime dependencies
 
@@ -186,7 +186,7 @@ All 34 operations are available with both API Key and OAuth2 authentication.
 | Operation | Description |
 |-----------|-------------|
 | List | List all reminders on a vybit |
-| Create | Create a new scheduled reminder |
+| Create | Create a one-off reminder for a specific date and time (repeating alerts use a Schedule vybit) |
 | Update | Update an existing reminder |
 | Delete | Delete a reminder |
 

@@ -12,6 +12,11 @@ coverage/
 dist/index.js
 dist/index.d.ts
 dist/bundle.js
+dist/sound-picker.js
+dist/sound-picker-data.js
+dist/generated/
+ui/
+scripts/
 *.mcpb
 *.mcpb.zip
 *.zip

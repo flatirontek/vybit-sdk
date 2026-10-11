@@ -307,6 +307,7 @@ paths:
                     Configuration for scheduled triggers. The crons array replaces the
                     existing array entirely — to remove a cron entry, send the array without it.
                     Removed entries have their scheduled jobs automatically deleted.
+                    `reminders` is managed only via the Reminders endpoints and is ignored here.
                   properties:
                     crons:
                       type: array
@@ -539,7 +540,10 @@ paths:
         sends a notification with the reminder's params, then self-destructs
         (the job is deleted and the reminder is removed from the vybit's triggerSettings).
 
-        The vybit must have `triggerType: "reminders"`.
+        The vybit must have `triggerType: "reminders"`. A reminder names one date, so its
+        cron must have a numeric day and month and `*` for day of week. Anything that repeats
+        belongs on a vybit with `triggerType: "schedule"` and `triggerSettings.crons`; a
+        recurring cron here is refused with a 400.
 
       operationId: createReminder
       tags:
@@ -567,9 +571,10 @@ paths:
                 cron:
                   type: string
                   description: |
-                    Cron expression for when the reminder should fire.
-                    Format: minute hour day month dayOfWeek
-                  pattern: '^\S+\s+\S+\s+\S+\s+\S+\s+\S+$'
+                    Cron expression naming the one date the reminder fires.
+                    Format: minute hour day month dayOfWeek, with a numeric day and month
+                    and `*` for dayOfWeek.
+                  pattern: '^\S+\s+\S+\s+\d{1,2}\s+\d{1,2}\s+\*$'
                   example: "30 14 20 2 *"
                 timeZone:
                   type: string
@@ -621,7 +626,7 @@ paths:
                   reminder:
                     $ref: '#/components/schemas/Reminder'
         '400':
-          description: Invalid request (missing cron, invalid cron format, wrong triggerType, invalid URL, or field exceeds max length)
+          description: Invalid request (missing cron, invalid cron format, recurring cron, wrong triggerType, invalid URL, or field exceeds max length)
           content:
             application/json:
               schema:
@@ -720,8 +725,8 @@ paths:
               properties:
                 cron:
                   type: string
-                  description: "Updated cron expression (5 fields: minute hour day month dayOfWeek)"
-                  pattern: '^\S+\s+\S+\s+\S+\s+\S+\s+\S+$'
+                  description: "Updated cron expression naming one date (minute hour day month dayOfWeek, with a numeric day and month and * for dayOfWeek)"
+                  pattern: '^\S+\s+\S+\s+\d{1,2}\s+\d{1,2}\s+\*$'
                   example: "0 15 20 2 *"
                 timeZone:
                   type: string
@@ -765,7 +770,7 @@ paths:
                   reminder:
                     $ref: '#/components/schemas/Reminder'
         '400':
-          description: Invalid request (invalid cron format, invalid imageUrl — must be a direct link to a JPG, PNG, or GIF image, or field exceeds max length)
+          description: Invalid request (invalid or recurring cron, invalid imageUrl — must be a direct link to a JPG, PNG, or GIF image, or field exceeds max length)
           content:
             application/json:
               schema:
@@ -884,7 +889,7 @@ paths:
                   description: |
                     Configuration for scheduled triggers.
                     Required when triggerType is "schedule", null otherwise.
-                    For triggerType "reminders", reminders are managed via the Reminders endpoints.
+                    For triggerType "reminders", reminders are managed only via the Reminders endpoints; any sent here are ignored.
                   nullable: true
                   properties:
                     crons:
@@ -2347,7 +2352,7 @@ components:
                     example: "America/Denver"
             reminders:
               type: array
-              description: Array of one-off scheduled reminders (for triggerType="reminders"). Managed via the Reminders endpoints.
+              description: Array of one-off scheduled reminders (for triggerType="reminders"). Managed only via the Reminders endpoints; vybit create and update keep the stored list and ignore any reminders sent.
               items:
                 $ref: '#/components/schemas/Reminder'
           example:

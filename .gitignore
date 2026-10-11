@@ -6,6 +6,7 @@ yarn-error.log*
 
 # Build outputs
 dist/
+packages/mcp-server/src/generated/
 *.tsbuildinfo
 *.mcpb
 *.mcpb.zip

@@ -872,7 +872,7 @@ async function testRemindersCreate() {
   try {
     const workflow = await createTestWorkflow('Test: Reminders Create', 'reminders', 'create', {
       vybitKey: 'test-vybit-key',
-      cron: '0 9 * * *',
+      cron: '0 9 20 10 *',
       optionalFields: {
         timeZone: 'America/New_York',
         message: 'Reminder message',
@@ -894,7 +894,7 @@ async function testRemindersUpdate() {
       vybitKey: 'test-vybit-key',
       reminderId: 'test-reminder-id',
       optionalFields: {
-        cron: '0 10 * * *',
+        cron: '0 10 20 10 *',
         timeZone: 'America/Denver',
         message: 'Updated reminder',
         year: 2027,

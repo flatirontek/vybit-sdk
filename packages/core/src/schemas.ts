@@ -22,11 +22,11 @@ export const PAGINATION_SCHEMA = {
 
 export const TRIGGER_SETTINGS_SCHEMA = {
   type: 'object',
-  description: 'Configuration specific to the trigger type. For schedule and reminder triggers, contains crons array. Example: {"crons": [{"cron": "5 14 * * 0", "timeZone": "America/Denver"}]}. Cron format: minute hour day month dayOfWeek (0=Sunday).',
+  description: 'Configuration specific to the trigger type. For schedule: a crons array of recurring patterns, e.g. {"crons": [{"cron": "45 16 * * 1-5", "timeZone": "America/Denver"}]} for weekdays at 4:45 PM. For reminders: leave it empty and add each dated entry with reminder_create. Cron format: minute hour day month dayOfWeek (0=Sunday).',
   properties: {
     crons: {
       type: 'array',
-      description: 'Array of cron schedule definitions (for triggerType="schedule and triggerType="reminders)',
+      description: 'Recurring cron patterns for triggerType="schedule"',
       items: {
         type: 'object',
         properties: {

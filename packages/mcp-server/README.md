@@ -188,23 +188,25 @@ Claude: [Lists all peeps for that vybit]
 **Browse Sounds and Check Usage:**
 ```
 You: What alert sounds are available?
-Claude: [Lists sounds matching "alert"]
+Claude: [Lists sounds matching "alert"; hosts that render MCP Apps show them as a picker with play buttons]
 
 You: How much of my API quota have I used today?
 Claude: [Shows current usage and limits]
 ```
-**Set Up Reminders:**
+**Schedules and Reminders:**
+
+Anything that repeats is a `schedule` vybit; `reminders` are one-off dated notifications.
 ```
-You: Create a vybit called "Daily Standup" with trigger type reminders
-Claude: [Creates the vybit with triggerType=reminders]
+You: Remind me every weekday at 9am Denver time to join standup
+Claude: [Creates a vybit with triggerType=schedule and triggerSettings.crons [{"cron": "0 9 * * 1-5", "timeZone": "America/Denver"}]]
 
-You: Add a reminder to fire every weekday at 9am Denver time
-Claude: [Creates reminder with cron "0 9 * * 1-5" and timezone "America/Denver"]
+You: Remind me Oct 20 at 7 PM to put the recycling out
+Claude: [Creates a vybit with triggerType=reminders, then a reminder with cron "0 19 20 10 *"]
 
-You: Change it to 9:30am instead
-Claude: [Updates the reminder's cron to "30 9 * * 1-5"]
+You: Move it to 7:30 PM
+Claude: [Updates the reminder's cron to "30 19 20 10 *"]
 
-You: What reminders are set on my Daily Standup vybit?
+You: What reminders are set on that vybit?
 Claude: [Lists all reminders on that vybit]
 ```
 
@@ -238,14 +240,14 @@ The MCP server exposes **33 tools** to AI assistants, providing full parity with
 
 ### Reminder Management (4 tools)
 
-- `reminder_create` - Create a scheduled reminder on a vybit (must have triggerType=reminders)
+- `reminder_create` - Add a one-off dated reminder to a vybit with triggerType=reminders (repeating alerts use a schedule vybit)
 - `reminder_list` - List all reminders on a vybit
 - `reminder_update` - Update an existing reminder (cron, timezone, message, etc.)
 - `reminder_delete` - Delete a reminder
 
 ### Sound Management (2 tools)
 
-- `sounds_list` - List and search available notification sounds
+- `sounds_list` - List and search available notification sounds (renders as a sound picker with play buttons in hosts that support MCP Apps)
 - `sound_get` - Get details about a specific sound
 
 ### Notification Logs (4 tools)

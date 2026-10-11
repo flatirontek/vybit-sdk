@@ -108,13 +108,13 @@ export const VYBIT_OUTPUT_SCHEMA: ObjectOutputSchema = {
   type: 'object',
   description: 'A vybit (notification endpoint) owned by the authenticated user',
   properties: {
-    key: { type: 'string', description: 'Unique vybit identifier' },
+    key: { type: 'string', description: 'Public vybit identifier (not a secret or credential)' },
     name: { type: 'string', description: 'Vybit display name' },
     description: { type: nullable('string'), description: 'Detailed vybit description' },
     soundKey: { type: nullable('string'), description: 'Key of the sound to play' },
     status: { type: 'string', description: 'Vybit status: "on" (active) or "off" (disabled)' },
-    triggerKey: { type: 'string', description: 'Unique key for triggering this vybit via webhook' },
-    subscriptionKey: { type: 'string', description: 'Unique key for subscribing to this vybit' },
+    triggerKey: { type: 'string', description: 'Secret webhook key. Anyone who has it can trigger this vybit through its webhook URL, so treat it like a password and share it only with the vybit owner.' },
+    subscriptionKey: { type: 'string', description: 'Share code for subscribing to this vybit. For a public or unlisted vybit, anyone who has it can subscribe.' },
     triggerType: {
       type: 'string',
       description: 'How this vybit is triggered: webhook, schedule, geofence, integration, or reminders',
@@ -157,7 +157,7 @@ export const SUBSCRIPTION_OUTPUT_SCHEMA: ObjectOutputSchema = {
   type: 'object',
   description: 'A subscription (follow) to a vybit',
   properties: {
-    followingKey: { type: 'string', description: 'Unique subscription identifier' },
+    followingKey: { type: 'string', description: 'Public subscription identifier (not a secret or credential)' },
     vybName: { type: 'string', description: 'Name of the vybit being followed' },
     description: { type: nullable('string'), description: 'Description of the vybit' },
     soundKey: { type: nullable('string'), description: 'Sound key for this vybit' },
@@ -187,7 +187,7 @@ export const SOUND_OUTPUT_SCHEMA: ObjectOutputSchema = {
   type: 'object',
   description: 'A sound that can be used for vybit notifications',
   properties: {
-    key: { type: 'string', description: 'Unique sound identifier' },
+    key: { type: 'string', description: 'Public sound identifier (not a secret or credential)' },
     name: { type: 'string', description: 'Sound name' },
     description: { type: nullable('string'), description: 'Sound description' },
     type: { type: nullable('string'), description: 'Audio file type' },
@@ -204,7 +204,7 @@ export const LOG_OUTPUT_SCHEMA: ObjectOutputSchema = {
   type: 'object',
   description: 'A notification log entry',
   properties: {
-    key: { type: 'string', description: 'Unique log entry identifier' },
+    key: { type: 'string', description: 'Public log entry identifier (not a secret or credential)' },
     vybKey: { type: nullable('string'), description: 'Key of the triggered vybit (null if the user does not own it)' },
     vybName: { type: nullable('string'), description: 'Name of the vybit' },
     vybDescription: { type: nullable('string'), description: 'Description of the vybit' },
@@ -225,7 +225,7 @@ export const PEEP_OUTPUT_SCHEMA: ObjectOutputSchema = {
   type: 'object',
   description: 'A peep: a person invited to or subscribed to one of your vybits',
   properties: {
-    key: { type: 'string', description: 'Unique peep identifier' },
+    key: { type: 'string', description: 'Public peep identifier (not a secret or credential)' },
     vybKey: { type: 'string', description: 'Key of the vybit this person is subscribed to' },
     name: {
       type: nullable('string'),

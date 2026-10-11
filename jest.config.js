@@ -25,6 +25,8 @@ module.exports = {
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   moduleNameMapper: {
+    // ESM sources import siblings as ./x.js; the CommonJS test build resolves ./x.ts
+    '^(\\.{1,2}/.*)\\.js$': '$1',
     '^@vybit/core$': '<rootDir>/packages/core/src',
     '^@vybit/oauth2-sdk$': '<rootDir>/packages/oauth2/src',
     '^@vybit/api-sdk$': '<rootDir>/packages/api/src',

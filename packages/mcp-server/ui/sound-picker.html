@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vybit sounds</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: var(--color-background-primary, #fff);
+    --card: var(--color-background-secondary, #f6f6f4);
+    --text: var(--color-text-primary, #1f1f1d);
+    --muted: var(--color-text-secondary, #6b6b66);
+    --danger: var(--color-text-danger, #b42318);
+    --border: var(--color-border-tertiary, rgba(0, 0, 0, 0.1));
+    --ring: var(--color-ring-primary, #2f6feb);
+    --accent-bg: var(--color-background-inverse, #1f1f1d);
+    --accent-text: var(--color-text-inverse, #fff);
+    --radius: var(--border-radius-lg, 12px);
+  }
+  /* the host's theme (data-theme, set by applyDocumentTheme) wins; the OS setting is the fallback */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: var(--color-background-primary, #1f1f1d);
+      --card: var(--color-background-secondary, #2a2a27);
+      --text: var(--color-text-primary, #f2f1ec);
+      --muted: var(--color-text-secondary, #a5a49d);
+      --danger: var(--color-text-danger, #f97066);
+      --border: var(--color-border-tertiary, rgba(255, 255, 255, 0.12));
+      --accent-bg: var(--color-background-inverse, #f2f1ec);
+      --accent-text: var(--color-text-inverse, #1f1f1d);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: var(--color-background-primary, #1f1f1d);
+    --card: var(--color-background-secondary, #2a2a27);
+    --text: var(--color-text-primary, #f2f1ec);
+    --muted: var(--color-text-secondary, #a5a49d);
+    --danger: var(--color-text-danger, #f97066);
+    --border: var(--color-border-tertiary, rgba(255, 255, 255, 0.12));
+    --accent-bg: var(--color-background-inverse, #f2f1ec);
+    --accent-text: var(--color-text-inverse, #1f1f1d);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body {
+    font-family: var(--font-sans, system-ui, -apple-system, "Segoe UI", sans-serif);
+    font-size: var(--font-text-sm-size, 14px);
+    line-height: var(--font-text-sm-line-height, 1.45);
+    padding: 4px;
+  }
+  #status { margin: 8px 4px; color: var(--muted); }
+  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--card);
+    border: var(--border-width-regular, 1px) solid var(--border);
+    border-radius: var(--radius);
+  }
+  .body { min-width: 0; }
+  .name {
+    margin: 0;
+    font-size: var(--font-text-md-size, 15px);
+    font-weight: var(--font-weight-semibold, 600);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .description {
+    margin: 2px 0 0;
+    color: var(--muted);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .credit, .error { margin: 4px 0 0; font-size: var(--font-text-xs-size, 12px); color: var(--muted); }
+  .error { display: none; color: var(--danger); }
+  .card.failed .error { display: block; }
+  button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    border: var(--border-width-regular, 1px) solid var(--border);
+    background: var(--bg);
+    border-radius: var(--border-radius-full, 999px);
+  }
+  button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  button:disabled { cursor: default; opacity: 0.55; }
+  .play {
+    width: 40px; height: 40px;
+    display: grid; place-items: center;
+    font-size: 14px;
+  }
+  .play[aria-pressed="true"] { background: var(--accent-bg); color: var(--accent-text); border-color: transparent; }
+  .use {
+    padding: 8px 14px;
+    font-weight: var(--font-weight-medium, 500);
+    background: var(--accent-bg); color: var(--accent-text); border-color: transparent;
+    white-space: nowrap;
+  }
+  .link { padding: 0; border: 0; background: none; border-radius: 0; text-decoration: underline; }
+  .sound-key { font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--font-text-xs-size, 12px); color: var(--muted); }
+  @media (max-width: 420px) {
+    .card { grid-template-columns: auto 1fr; }
+    .use, .sound-key { grid-column: 1 / -1; justify-self: stretch; text-align: center; }
+  }
+</style>
+</head>
+<body>
+<p id="status" role="status">Finding sounds…</p>
+<ul id="sounds" aria-label="Sounds"></ul>
+<!-- APP_SCRIPT -->
+</body>
+</html>

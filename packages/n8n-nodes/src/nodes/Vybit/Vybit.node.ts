@@ -150,7 +150,7 @@ export class Vybit implements INodeType {
 					{
 						name: 'Reminders',
 						value: 'reminders',
-						description: 'Manage scheduled reminders on vybits',
+						description: 'Manage one-off dated reminders on vybits',
 						action: 'Manage reminders',
 					},
 					{
@@ -434,7 +434,7 @@ export class Vybit implements INodeType {
 					{
 						name: 'Create',
 						value: 'create',
-						description: 'Create a new scheduled reminder',
+						description: 'Create a one-off reminder for a specific date and time',
 					},
 					{
 						name: 'Update',
@@ -644,7 +644,7 @@ export class Vybit implements INodeType {
 					},
 				},
 				default: '',
-				description: "Cron expression: minute hour day month dayOfWeek. Example: '0 9 * * *' = every day at 9:00 AM",
+				description: "Cron expression naming one date: minute hour day month dayOfWeek, with a numeric day and month and * for dayOfWeek. Example: '0 19 20 10 *' = Oct 20 at 7:00 PM. For a repeating alert, use a vybit with the Schedule trigger type instead",
 			},
 			// Optional fields for reminder create/update
 			{
@@ -665,7 +665,7 @@ export class Vybit implements INodeType {
 						name: 'cron',
 						type: 'string',
 						default: '',
-						description: "Updated cron expression (for update only). Example: '0 9 * * *' = every day at 9:00 AM",
+						description: "Updated cron expression naming one date (for update only). Example: '30 19 20 10 *' = Oct 20 at 7:30 PM",
 					},
 					{
 						displayName: 'Time Zone',
@@ -707,7 +707,7 @@ export class Vybit implements INodeType {
 						name: 'year',
 						type: 'number',
 						default: 0,
-						description: 'Year for the reminder (defaults to current year). Used for one-time future reminders.',
+						description: 'Year of this one-off reminder (defaults to the current year)',
 					},
 				],
 			},

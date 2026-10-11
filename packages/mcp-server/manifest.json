@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "vybit-mcp-server",
   "display_name": "Vybit Notifications",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "Send push notifications with personalized sounds via the Vybit platform",
   "long_description": "Integrates Claude with the Vybit notification platform. Create and manage notification endpoints (vybits), trigger push notifications with custom sounds, browse and subscribe to public vybits, manage access permissions, view notification logs, and monitor API usage.",
   "author": {
@@ -48,7 +48,7 @@
     { "name": "vybit_update", "description": "Update an existing vybit" },
     { "name": "vybit_delete", "description": "Delete a vybit" },
     { "name": "vybit_trigger", "description": "Trigger a vybit notification" },
-    { "name": "sounds_list", "description": "List available notification sounds" },
+    { "name": "sounds_list", "description": "List available notification sounds, shown as a sound picker where supported" },
     { "name": "sound_get", "description": "Get details about a specific sound" },
     { "name": "profile_get", "description": "Get the authenticated user profile (key, name, email, tier)" },
     { "name": "meter_get", "description": "Get current API usage and limits" },
@@ -71,7 +71,7 @@
     { "name": "peep_create", "description": "Invite someone to a private vybit by email" },
     { "name": "peep_delete", "description": "Revoke access from a peep" },
     { "name": "vybit_peeps_list", "description": "List peeps for a specific vybit" },
-    { "name": "reminder_create", "description": "Create a scheduled reminder on a vybit" },
+    { "name": "reminder_create", "description": "Add a one-off dated reminder to a vybit" },
     { "name": "reminder_list", "description": "List all reminders on a vybit" },
     { "name": "reminder_update", "description": "Update an existing reminder" },
     { "name": "reminder_delete", "description": "Delete a reminder" }
