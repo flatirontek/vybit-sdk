@@ -1153,7 +1153,7 @@ const VYBIT_ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAA
 const server = new Server(
   {
     name: 'vybit-mcp-server',
-    version: '1.10.0',
+    version: '1.10.1',
     icons: [
       {
         src: VYBIT_ICON,

@@ -1,7 +1,7 @@
 {
   "name": "@vybit/mcp-server",
-  "version": "1.10.0",
-  "description": "Model Context Protocol (MCP) server for Vybit Developer API",
+  "version": "1.10.1",
+  "description": "Model Context Protocol (MCP) server for Vybit Developer API (mcprush.com-08c42b50fc0ba98e59aa18e1)",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
