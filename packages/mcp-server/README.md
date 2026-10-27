@@ -5,6 +5,8 @@ Model Context Protocol (MCP) server for the Vybit Developer API. Enables AI assi
 [![npm version](https://badge.fury.io/js/%40vybit%2Fmcp-server.svg)](https://www.npmjs.com/package/@vybit/mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+[![Vybit MCP server](https://mcprush.com/badge/vybit-mcp/card.svg)](https://mcprush.com/to/vybit-mcp?ref=badge)
+
 ## What is MCP?
 
 [Model Context Protocol (MCP)](https://modelcontextprotocol.io) is an open protocol that standardizes how AI applications integrate with external data sources and tools. Think of it as a universal connector between AI assistants and your services.

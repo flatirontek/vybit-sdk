@@ -333,6 +333,8 @@ vybit meter
 
 The [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server enables AI assistants to manage your Vybit notifications through natural conversation. It provides **full parity** with the Developer API, giving AI assistants access to all Vybit features.
 
+[![Vybit MCP server](https://mcprush.com/badge/vybit-mcp/card.svg)](https://mcprush.com/to/vybit-mcp?ref=badge)
+
 ### Installation
 
 ```bash

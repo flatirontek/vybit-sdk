@@ -377,7 +377,7 @@ export const TOOLS: Tool[] = [
         },
         message: {
           type: ['string', 'null'],
-          description: 'Notification message for this reminder (max 256 characters)',
+          description: 'Notification message for this reminder (max 1024 characters)',
         },
         imageUrl: {
           type: ['string', 'null'],
@@ -389,7 +389,7 @@ export const TOOLS: Tool[] = [
         },
         log: {
           type: ['string', 'null'],
-          description: 'Log content sent with the notification that will be appended to the notification log (max 1024 characters)',
+          description: 'Log content sent with the notification that will be appended to the notification log (max 10,000 characters)',
         },
       },
       required: ['key', 'cron'],
@@ -440,7 +440,7 @@ export const TOOLS: Tool[] = [
         },
         message: {
           type: ['string', 'null'],
-          description: 'Notification message for this reminder (max 256 characters). Pass null or an empty string to clear it.',
+          description: 'Notification message for this reminder (max 1024 characters). Pass null or an empty string to clear it.',
         },
         imageUrl: {
           type: ['string', 'null'],
@@ -452,7 +452,7 @@ export const TOOLS: Tool[] = [
         },
         log: {
           type: ['string', 'null'],
-          description: 'Log content for the notification (max 1024 characters). Pass null or an empty string to clear it.',
+          description: 'Log content for the notification (max 10,000 characters). Pass null or an empty string to clear it.',
         },
       },
       required: ['key', 'reminderId'],

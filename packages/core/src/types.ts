@@ -551,13 +551,13 @@ export interface ReminderCreateParams {
   timeZone?: string;
   /** Year for the reminder (defaults to current year). Used for one-time reminders. */
   year?: number;
-  /** Notification message (max 256 characters) */
+  /** Notification message (max 1024 characters) */
   message?: string | null;
   /** Image URL for the notification (must be a direct link to a JPG, PNG, or GIF image, max 512 characters) */
   imageUrl?: string | null;
   /** Link URL for the notification (max 512 characters, must be a valid URL) */
   linkUrl?: string | null;
-  /** Log content for the notification (max 1024 characters) */
+  /** Log content for the notification (max 10,000 characters) */
   log?: string | null;
 }
 
@@ -569,13 +569,13 @@ export interface ReminderUpdateParams {
   cron?: string;
   /** Updated IANA timezone */
   timeZone?: string;
-  /** Updated notification message (max 256 characters) */
+  /** Updated notification message (max 1024 characters) */
   message?: string | null;
   /** Updated image URL (must be a direct link to a JPG, PNG, or GIF image, max 512 characters) */
   imageUrl?: string | null;
   /** Updated link URL (max 512 characters, must be a valid URL) */
   linkUrl?: string | null;
-  /** Updated log content (max 1024 characters) */
+  /** Updated log content (max 10,000 characters) */
   log?: string | null;
 }
 
