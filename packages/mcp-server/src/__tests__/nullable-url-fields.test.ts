@@ -33,8 +33,8 @@ const toolsByName: Record<string, any> = Object.fromEntries(
 
 describe('clearable fields accept null in tool schemas (bug 3)', () => {
   const cases: Array<[string, string[]]> = [
-    ['vybit_create', ['message', 'imageUrl', 'linkUrl']],
-    ['vybit_update', ['description', 'message', 'imageUrl', 'linkUrl']],
+    ['vybit_create', ['message', 'log', 'imageUrl', 'linkUrl']],
+    ['vybit_update', ['description', 'message', 'log', 'imageUrl', 'linkUrl']],
     ['subscription_update', ['message', 'imageUrl', 'linkUrl']],
     ['reminder_create', ['message', 'imageUrl', 'linkUrl', 'log']],
     ['reminder_update', ['message', 'imageUrl', 'linkUrl', 'log']],
@@ -72,6 +72,19 @@ describe('vybit_create forwards linkUrl and returns the API response (bug 1)', (
     const body = JSON.parse(res.content[0].text);
     expect(body.linkUrl).toBe('https://api.example/stored');
   });
+
+  test('default log is sent to the API', async () => {
+    const client = mockClient();
+    await handleToolCall(
+      'vybit_create',
+      { name: 'test', log: 'Runbook: https://example.com/runbook' },
+      client
+    );
+    expect(client.createVybit).toHaveBeenCalledWith({
+      name: 'test',
+      log: 'Runbook: https://example.com/runbook',
+    });
+  });
 });
 
 describe('vybit_update clearing semantics (bugs 2 & 3)', () => {
@@ -85,13 +98,14 @@ describe('vybit_update clearing semantics (bugs 2 & 3)', () => {
     const client = mockClient();
     await handleToolCall(
       'vybit_update',
-      { key: 'k1', linkUrl: null, imageUrl: null, message: null, description: null },
+      { key: 'k1', linkUrl: null, imageUrl: null, message: null, log: null, description: null },
       client
     );
     expect(client.patchVybit).toHaveBeenCalledWith('k1', {
       linkUrl: null,
       imageUrl: null,
       message: null,
+      log: null,
       description: null,
     });
   });

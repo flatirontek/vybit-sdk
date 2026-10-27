@@ -219,7 +219,11 @@ export const TOOLS: Tool[] = [
         },
         message: {
           type: ['string', 'null'],
-          description: 'Default message included when a notification is triggered',
+          description: 'Default message included when a notification is triggered (max 1024 characters)',
+        },
+        log: {
+          type: ['string', 'null'],
+          description: "Default plain-text log saved with each notification (max 10,000 characters). Line breaks are kept and http(s) URLs are linked. A trigger's own log replaces it.",
         },
         imageUrl: {
           type: ['string', 'null'],
@@ -275,7 +279,11 @@ export const TOOLS: Tool[] = [
         },
         message: {
           type: ['string', 'null'],
-          description: 'Default message included when a notification is triggered. Pass null or an empty string to clear it.',
+          description: 'Default message included when a notification is triggered (max 1024 characters). Pass null or an empty string to clear it.',
+        },
+        log: {
+          type: ['string', 'null'],
+          description: "Default plain-text log saved with each notification (max 10,000 characters). Line breaks are kept and http(s) URLs are linked. A trigger's own log replaces it. Pass null or an empty string to clear it.",
         },
         imageUrl: {
           type: ['string', 'null'],
@@ -342,7 +350,7 @@ export const TOOLS: Tool[] = [
         },
         log: {
           type: 'string',
-          description: 'Optional log entry to append to the vybit log',
+          description: "Optional log saved with this notification, replacing the vybit's default log. Over 10,000 characters is truncated.",
         },
       },
       required: ['key'],
@@ -894,7 +902,7 @@ export async function handleToolCall(
       const createData: any = {
         name: args.name as string,
       };
-      // Clearable fields (description, message, imageUrl, linkUrl) forward "" and
+      // Clearable fields (description, message, log, imageUrl, linkUrl) forward "" and
       // null rather than silently dropping them — the API accepts both.
       if (args.description !== undefined) createData.description = args.description;
       if (args.soundKey) createData.soundKey = args.soundKey;
@@ -902,6 +910,7 @@ export async function handleToolCall(
       if (args.triggerType) createData.triggerType = args.triggerType;
       if (args.access) createData.access = args.access;
       if (args.message !== undefined) createData.message = args.message;
+      if (args.log !== undefined) createData.log = args.log;
       if (args.imageUrl !== undefined) createData.imageUrl = args.imageUrl;
       if (args.linkUrl !== undefined) createData.linkUrl = args.linkUrl;
       if (args.triggerSettings) createData.triggerSettings = args.triggerSettings;
@@ -920,12 +929,13 @@ export async function handleToolCall(
       if (args.triggerType) updateData.triggerType = args.triggerType;
       if (args.access) updateData.access = args.access;
       if (args.message !== undefined) updateData.message = args.message;
+      if (args.log !== undefined) updateData.log = args.log;
       if (args.imageUrl !== undefined) updateData.imageUrl = args.imageUrl;
       if (args.linkUrl !== undefined) updateData.linkUrl = args.linkUrl;
       if (args.triggerSettings) updateData.triggerSettings = args.triggerSettings;
       if (args.geofence) updateData.geofence = normalizeGeofence(args.geofence);
       if (args.sendPermissions) updateData.sendPermissions = args.sendPermissions;
-      assertHasFields(updateData, 'Pass null or "" to clear description, message, imageUrl, or linkUrl.');
+      assertHasFields(updateData, 'Pass null or "" to clear description, message, log, imageUrl, or linkUrl.');
 
       return jsonResponse(await client.patchVybit(
         args.key as string,
@@ -1153,7 +1163,7 @@ const VYBIT_ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAA
 const server = new Server(
   {
     name: 'vybit-mcp-server',
-    version: '1.10.1',
+    version: '1.11.0',
     icons: [
       {
         src: VYBIT_ICON,

@@ -177,8 +177,10 @@ export interface Vybit {
   triggerSettings?: any;
   /** Vybit visibility and access control */
   access?: 'public' | 'private' | 'unlisted';
-  /** Default message displayed with notifications */
+  /** Default message displayed with notifications (max 1024 characters) */
   message?: string;
+  /** Default plain-text log saved with each notification (max 10,000 characters); a trigger's own log replaces it */
+  log?: string;
   /** Default image URL for notifications (must be a direct link to a JPG, PNG, or GIF image) */
   imageUrl?: string;
   /** Default URL to open when notification is tapped */
@@ -215,8 +217,10 @@ export interface VybitCreateParams {
   triggerSettings?: any;
   /** Vybit visibility and access control (defaults to "private") */
   access?: 'public' | 'private' | 'unlisted';
-  /** Default message displayed with notifications (null or "" leaves the field empty) */
+  /** Default message displayed with notifications (max 1024 characters; null or "" leaves the field empty) */
   message?: string | null;
+  /** Default plain-text log saved with each notification (max 10,000 characters; null or "" leaves the field empty) */
+  log?: string | null;
   /** Default image URL for notifications (must be a direct link to a JPG, PNG, or GIF image; null or "" leaves the field empty) */
   imageUrl?: string | null;
   /** Default URL to open when notification is tapped (null or "" leaves the field empty) */
@@ -245,8 +249,10 @@ export interface VybitUpdateParams {
   triggerSettings?: any;
   /** Vybit visibility and access control */
   access?: 'public' | 'private' | 'unlisted';
-  /** Default message displayed with notifications (null or "" clears the field) */
+  /** Default message displayed with notifications (max 1024 characters; null or "" clears the field) */
   message?: string | null;
+  /** Default plain-text log saved with each notification (max 10,000 characters; null or "" clears the field) */
+  log?: string | null;
   /** Default image URL for notifications (must be a direct link to a JPG, PNG, or GIF image; null or "" clears the field) */
   imageUrl?: string | null;
   /** Default URL to open when notification is tapped (null or "" clears the field) */
@@ -267,7 +273,7 @@ export interface VybitTriggerParams {
   imageUrl?: string;
   /** Custom link URL */
   linkUrl?: string;
-  /** Log entry to append to the vybit log */
+  /** Log saved with this notification, replacing the vybit's default log (over 10,000 characters is truncated) */
   log?: string;
   /** If true, the vybit is automatically disabled (status set to "off") after this trigger fires */
   runOnce?: boolean;

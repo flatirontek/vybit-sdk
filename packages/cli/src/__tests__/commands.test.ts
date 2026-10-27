@@ -173,6 +173,7 @@ describe('vybits create', () => {
       '--description', 'desc',
       '--access', 'public',
       '--message', 'hello',
+      '--log', 'Runbook: https://example.com/runbook',
       '--image-url', 'https://example.com/img.png',
       '--link-url', 'https://example.com',
     ]);
@@ -185,6 +186,7 @@ describe('vybits create', () => {
         description: 'desc',
         access: 'public',
         message: 'hello',
+        log: 'Runbook: https://example.com/runbook',
         imageUrl: 'https://example.com/img.png',
         linkUrl: 'https://example.com',
       })
@@ -472,9 +474,10 @@ describe('clearing fields with ""', () => {
   });
 
   it('vybits update forwards empty strings instead of dropping them', async () => {
-    await run(['vybits', 'update', 'v1', '--description', '', '--image-url', '', '--link-url', '']);
+    await run(['vybits', 'update', 'v1', '--description', '', '--log', '', '--image-url', '', '--link-url', '']);
     expect(mockClient.patchVybit).toHaveBeenCalledWith('v1', {
       description: '',
+      log: '',
       imageUrl: '',
       linkUrl: '',
     });

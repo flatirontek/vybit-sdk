@@ -28,6 +28,7 @@ const vybit = {
   imageUrl: null,
   linkUrl: 'https://status.example.com',
   message: 'Server is down!',
+  log: 'Runbook: https://example.com/runbook',
   geofence: null,
   triggerType: 'webhook',
   triggerSettings: null,

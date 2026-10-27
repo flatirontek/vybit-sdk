@@ -53,7 +53,8 @@ export function registerVybitsCommands(program: Command): void {
     .option('--trigger-type <type>', 'Trigger type (webhook/schedule/geofence/integration/reminders)', 'webhook')
     .option('--description <text>', 'Vybit description')
     .option('--access <access>', 'Visibility (public/private/unlisted)', 'private')
-    .option('--message <text>', 'Default notification message')
+    .option('--message <text>', 'Default notification message (max 1024 characters)')
+    .option('--log <text>', 'Default plain-text log saved with each notification (max 10,000 characters)')
     .option('--image-url <url>', 'Default image URL (must end in .jpg/.png/.gif)')
     .option('--link-url <url>', 'Default link URL')
     .option('--trigger-settings <json>', 'Trigger settings as JSON')
@@ -70,6 +71,7 @@ export function registerVybitsCommands(program: Command): void {
         if (opts.description !== undefined) params.description = opts.description;
         if (opts.access) params.access = opts.access;
         if (opts.message !== undefined) params.message = opts.message;
+        if (opts.log !== undefined) params.log = opts.log;
         if (opts.imageUrl !== undefined) params.imageUrl = opts.imageUrl;
         if (opts.linkUrl !== undefined) params.linkUrl = opts.linkUrl;
         if (opts.sendPermissions) params.sendPermissions = opts.sendPermissions;
@@ -93,7 +95,8 @@ export function registerVybitsCommands(program: Command): void {
     .option('--trigger-type <type>', 'Trigger type')
     .option('--description <text>', 'New description (pass "" to clear)')
     .option('--access <access>', 'Visibility (public/private/unlisted)')
-    .option('--message <text>', 'Default notification message (pass "" to clear)')
+    .option('--message <text>', 'Default notification message, max 1024 characters (pass "" to clear)')
+    .option('--log <text>', 'Default plain-text log, max 10,000 characters (pass "" to clear)')
     .option('--image-url <url>', 'Default image URL, must end in .jpg/.png/.gif (pass "" to clear)')
     .option('--link-url <url>', 'Default link URL (pass "" to clear)')
     .option('--trigger-settings <json>', 'Trigger settings as JSON')
@@ -111,6 +114,7 @@ export function registerVybitsCommands(program: Command): void {
         if (opts.description !== undefined) params.description = opts.description;
         if (opts.access) params.access = opts.access;
         if (opts.message !== undefined) params.message = opts.message;
+        if (opts.log !== undefined) params.log = opts.log;
         if (opts.imageUrl !== undefined) params.imageUrl = opts.imageUrl;
         if (opts.linkUrl !== undefined) params.linkUrl = opts.linkUrl;
         if (opts.sendPermissions) params.sendPermissions = opts.sendPermissions;
@@ -119,7 +123,7 @@ export function registerVybitsCommands(program: Command): void {
 
         // An empty PATCH body draws an opaque 500 from the API — fail here instead.
         if (Object.keys(params).length === 0) {
-          throw new Error('No updatable fields provided. Pass "" to clear description, message, image-url, or link-url.');
+          throw new Error('No updatable fields provided. Pass "" to clear description, message, log, image-url, or link-url.');
         }
 
         const result = await client.patchVybit(key, params);

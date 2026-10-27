@@ -10,7 +10,7 @@ export function registerTriggerCommand(program: Command): void {
     .option('--message <text>', 'Notification message')
     .option('--image-url <url>', 'Image URL (must end in .jpg/.png/.gif)')
     .option('--link-url <url>', 'URL to open when notification is tapped')
-    .option('--log <text>', 'Log entry to append')
+    .option('--log <text>', "Log saved with this notification (replaces the vybit's default log)")
     .option('--run-once', 'Auto-disable vybit after this trigger')
     .action(async (key, opts, cmd) => {
       const globals = resolveGlobalOpts(cmd);

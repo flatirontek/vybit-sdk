@@ -679,7 +679,7 @@ export class Vybit implements INodeType {
 						name: 'message',
 						type: 'string',
 						default: '',
-						description: 'Message to display with the reminder notification (max 256 characters)',
+						description: 'Message to display with the reminder notification (max 1024 characters)',
 					},
 					{
 						displayName: 'Image URL',
@@ -700,7 +700,7 @@ export class Vybit implements INodeType {
 						name: 'log',
 						type: 'string',
 						default: '',
-						description: 'Content to append to the vybit log (max 1024 characters)',
+						description: 'Log content saved with the reminder notification (max 10,000 characters)',
 					},
 					{
 						displayName: 'Year',
@@ -959,7 +959,7 @@ export class Vybit implements INodeType {
 						name: 'log',
 						type: 'string',
 						default: '',
-						description: 'Optional content to append to the vybit log',
+						description: "Optional log saved with this notification, replacing the vybit's default log (over 10,000 characters is truncated)",
 					},
 					{
 						displayName: 'Run Once',
@@ -1169,7 +1169,15 @@ export class Vybit implements INodeType {
 						name: 'message',
 						type: 'string',
 						default: '',
-						description: 'Default message displayed with notifications (max 500 characters)',
+						description: 'Default message displayed with notifications (max 1024 characters)',
+					},
+					{
+						displayName: 'Log',
+						name: 'log',
+						type: 'string',
+						typeOptions: { rows: 4 },
+						default: '',
+						description: "Default plain-text log saved with each notification (max 10,000 characters). Line breaks are kept and http(s) URLs are linked. A trigger's own log replaces it.",
 					},
 					{
 						displayName: 'Image URL',
@@ -1276,7 +1284,15 @@ export class Vybit implements INodeType {
 						name: 'message',
 						type: 'string',
 						default: '',
-						description: 'Default message displayed with notifications (max 500 characters)',
+						description: 'Default message displayed with notifications (max 1024 characters)',
+					},
+					{
+						displayName: 'Log',
+						name: 'log',
+						type: 'string',
+						typeOptions: { rows: 4 },
+						default: '',
+						description: "Default plain-text log saved with each notification (max 10,000 characters). Line breaks are kept and http(s) URLs are linked. A trigger's own log replaces it.",
 					},
 					{
 						displayName: 'Image URL',
@@ -1323,6 +1339,7 @@ export class Vybit implements INodeType {
 					{ name: 'Description', value: 'description' },
 					{ name: 'Image URL', value: 'imageUrl' },
 					{ name: 'Link URL', value: 'linkUrl' },
+					{ name: 'Log', value: 'log' },
 					{ name: 'Message', value: 'message' },
 				],
 			},

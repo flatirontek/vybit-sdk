@@ -52,7 +52,7 @@ describe('Fields to Clear parameters exist with correct scoping', () => {
       (p) => (p.displayOptions?.show?.actionType as string[])[0] === 'vybits'
     )!;
     const values = (vybitClear.options as any[]).map((o) => o.value).sort();
-    expect(values).toEqual(['description', 'imageUrl', 'linkUrl', 'message']);
+    expect(values).toEqual(['description', 'imageUrl', 'linkUrl', 'log', 'message']);
   });
 });
 
@@ -66,14 +66,31 @@ describe('vybit update', () => {
         apiOperation: 'update',
         vybitKey: 'v1',
         updateFields: { name: 'renamed' },
-        fieldsToClear: ['linkUrl', 'imageUrl'],
+        fieldsToClear: ['linkUrl', 'imageUrl', 'log'],
       },
       captured
     );
     await node.execute.call(ctx);
     expect(captured[0].method).toBe('PATCH');
     expect(captured[0].url).toContain('/vybit/v1');
-    expect(captured[0].body).toEqual({ name: 'renamed', linkUrl: null, imageUrl: null });
+    expect(captured[0].body).toEqual({ name: 'renamed', linkUrl: null, imageUrl: null, log: null });
+  });
+
+  test('sends a default log set in Update Fields', async () => {
+    const captured: Captured[] = [];
+    const ctx = makeContext(
+      {
+        actionType: 'vybits',
+        authentication: 'apiKey',
+        apiOperation: 'update',
+        vybitKey: 'v1',
+        updateFields: { log: 'Runbook: https://example.com/runbook' },
+        fieldsToClear: [],
+      },
+      captured
+    );
+    await node.execute.call(ctx);
+    expect(captured[0].body).toEqual({ log: 'Runbook: https://example.com/runbook' });
   });
 
   test('clear wins when a field is both set and cleared', async () => {
@@ -108,6 +125,29 @@ describe('vybit update', () => {
     );
     await expect(node.execute.call(ctx)).rejects.toThrow('No updatable fields provided');
     expect(captured).toHaveLength(0);
+  });
+});
+
+describe('vybit create', () => {
+  test('sends a default log set in Create Fields', async () => {
+    const captured: Captured[] = [];
+    const ctx = makeContext(
+      {
+        actionType: 'vybits',
+        authentication: 'apiKey',
+        apiOperation: 'create',
+        vybitName: 'Deploys',
+        createFields: { message: 'Deploy finished', log: 'Runbook: https://example.com/runbook' },
+      },
+      captured
+    );
+    await node.execute.call(ctx);
+    expect(captured[0].method).toBe('POST');
+    expect(captured[0].body).toEqual({
+      name: 'Deploys',
+      message: 'Deploy finished',
+      log: 'Runbook: https://example.com/runbook',
+    });
   });
 });
 

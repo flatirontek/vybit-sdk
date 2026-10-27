@@ -122,6 +122,7 @@ export const VYBIT_OUTPUT_SCHEMA: ObjectOutputSchema = {
     triggerSettings: TRIGGER_SETTINGS_OUTPUT_PROPERTY,
     access: { type: nullable('string'), description: 'Visibility and access control: public, private, or unlisted' },
     message: { type: nullable('string'), description: 'Default message displayed with notifications' },
+    log: { type: nullable('string'), description: 'Default plain-text log saved with each notification' },
     imageUrl: { type: nullable('string'), description: 'Default image URL for notifications' },
     linkUrl: { type: nullable('string'), description: 'Default URL to open when a notification is tapped' },
     geofence: GEOFENCE_OUTPUT_PROPERTY,
