@@ -115,7 +115,7 @@ describe('VybitAPIClient Unit Tests', () => {
         key: 'user123',
         name: 'Test User',
         email: 'test@example.com',
-        tier_id: 1,
+        tier: 'Free',
       };
 
       mockFetch.mockResolvedValueOnce({
@@ -137,7 +137,7 @@ describe('VybitAPIClient Unit Tests', () => {
   describe('getMeter', () => {
     test('should return meter with all correct fields', async () => {
       const mockMeter = {
-        tier_id: 1,
+        tier: 'Free',
         cap_vybits: 50,
         cap_daily: 500,
         cap_monthly: 7500,

@@ -27,7 +27,7 @@ async function main() {
     // ========== Example 2: Get Usage Metrics ==========
     console.log('2. Getting usage metrics...');
     const meter = await client.getMeter();
-    console.log(`   📊 Tier: ${meter.tier_id}`);
+    console.log(`   📊 Plan: ${meter.tier}`);
     console.log(`   📈 Usage: ${meter.count_daily}/${meter.cap_daily} daily`);
     console.log(`   📈 Monthly: ${meter.count_monthly}/${meter.cap_monthly}\n`);
 

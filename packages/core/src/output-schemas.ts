@@ -245,8 +245,7 @@ export const METER_OUTPUT_SCHEMA: ObjectOutputSchema = {
   type: 'object',
   description: 'Current usage counts and tier limits',
   properties: {
-    tier_id: { type: 'integer', description: 'Current subscription tier ID' },
-    tier: { type: nullable('string'), description: 'Subscription tier name (Free, Bronze, Silver, Gold, Pro, Team, Business)' },
+    tier: { type: nullable('string'), description: 'Plan name, e.g. Free or Pro; null when the plan is unknown' },
     cap_vybits: { type: 'integer', description: 'Maximum vybits allowed for this tier' },
     cap_daily: { type: 'integer', description: 'Maximum daily notifications for this tier' },
     cap_monthly: { type: 'integer', description: 'Maximum monthly notifications for this tier' },
@@ -262,8 +261,7 @@ export const PROFILE_OUTPUT_SCHEMA: ObjectOutputSchema = {
   description: "The connected account's display name and plan",
   properties: {
     name: { type: 'string', description: "User's display name" },
-    tier_id: { type: 'integer', description: 'Subscription tier ID' },
-    tier: { type: nullable('string'), description: 'Subscription tier name (Free, Bronze, Silver, Gold, Pro, Team, Business)' },
+    tier: { type: nullable('string'), description: 'Plan name, e.g. Free or Pro; null when the plan is unknown' },
   },
 };
 
@@ -285,6 +283,10 @@ export const TRIGGER_OUTPUT_SCHEMA: ObjectOutputSchema = {
   properties: {
     result: RESULT_CODE,
     plk: { type: 'string', description: 'Primary log key for the triggered notification' },
+    reason: {
+      type: 'string',
+      description: 'Why the notification was not sent when result is 0: monthly_limit, daily_limit, or vybit_off',
+    },
     warn: { type: 'string', description: 'Warning when the notification was not sent (for example, the vybit is off)' },
   },
 };

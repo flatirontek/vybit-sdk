@@ -119,20 +119,16 @@ export interface Profile {
   name: string;
   /** User's email address */
   email: string;
-  /** Subscription tier ID (1=Free, 2=Bronze, 3=Silver, 4=Gold, 6=Pro, 7=Team, 8=Business) */
-  tier_id: number;
-  /** Subscription tier name, e.g. "Free" or "Gold"; null when the tier is unknown */
-  tier?: string | null;
+  /** Plan name, e.g. "Free" or "Pro"; null when the plan is unknown */
+  tier: string | null;
 }
 
 /**
  * Usage metrics and tier limits
  */
 export interface Meter {
-  /** Current subscription tier ID */
-  tier_id: number;
-  /** Subscription tier name, e.g. "Free" or "Gold"; null when the tier is unknown */
-  tier?: string | null;
+  /** Plan name, e.g. "Free" or "Pro"; null when the plan is unknown */
+  tier: string | null;
   /** Maximum vybits allowed */
   cap_vybits: number;
   /** Maximum daily notifications */
@@ -282,12 +278,19 @@ export interface VybitTriggerParams {
 /**
  * Response from triggering a vybit
  */
+/**
+ * Why a send was received but not sent (result 0). When both limits are reached, monthly_limit is reported.
+ */
+export type NotSentReason = 'monthly_limit' | 'daily_limit' | 'vybit_off';
+
 export interface VybitTriggerResponse {
-  /** Result code (1 = success) */
+  /** Result code (1 = sent, 0 = received but not sent) */
   result: number;
-  /** Primary log key for the triggered notification */
+  /** Primary log key for the triggered notification (when result is 1) */
   plk?: string;
-  /** Warning message if vybit is off */
+  /** Why the notification was not sent (when result is 0) */
+  reason?: NotSentReason;
+  /** Human-readable explanation when the notification was not sent */
   warn?: string;
 }
 
@@ -417,10 +420,14 @@ export interface SubscriberSendParams {
  * Response from subscriber send operations
  */
 export interface SubscriberSendResponse {
-  /** Result code (1 = success) */
+  /** Result code (1 = sent, 0 = received but not sent) */
   result: number;
-  /** Primary log key for the triggered notification */
+  /** Primary log key for the triggered notification (when result is 1) */
   plk?: string;
+  /** Why the notification was not sent (when result is 0) */
+  reason?: NotSentReason;
+  /** Human-readable explanation when the notification was not sent */
+  warn?: string;
 }
 
 // ==================== Sounds ====================

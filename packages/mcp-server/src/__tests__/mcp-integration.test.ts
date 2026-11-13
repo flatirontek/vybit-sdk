@@ -169,7 +169,7 @@ describeWithCredentials('MCP Server Integration Tests (Real API)', () => {
       const meter = await client.getMeter();
 
       // Check all fields from our fixed Meter interface
-      expect(meter).toHaveProperty('tier_id');
+      expect(meter).toHaveProperty('tier');
       expect(meter).toHaveProperty('cap_vybits');
       expect(meter).toHaveProperty('cap_daily');
       expect(meter).toHaveProperty('cap_monthly');
@@ -182,7 +182,7 @@ describeWithCredentials('MCP Server Integration Tests (Real API)', () => {
       expect(meter).not.toHaveProperty('count_total');
 
       // Validate types
-      expect(typeof meter.tier_id).toBe('number');
+      expect(meter).not.toHaveProperty('tier_id');
       expect(typeof meter.number_vybits).toBe('number');
       expect(typeof meter.monthly_reset_dts).toBe('string');
     });

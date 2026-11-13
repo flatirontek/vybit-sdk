@@ -185,10 +185,9 @@ const SAMPLES: Record<string, unknown[]> = {
   reminder_delete: [{ success: true, message: 'Reminder deleted successfully' }, { result: 1, message: 'Reminder deleted' }],
   sounds_list: [[sound, freesoundSound], []],
   sound_get: [sound, freesoundSound],
-  profile_get: [{ name: 'Pat Example', tier_id: 1, tier: 'Free' }],
+  profile_get: [{ name: 'Pat Example', tier: 'Free' }],
   meter_get: [
     {
-      tier_id: 1,
       tier: 'Free',
       cap_vybits: 50,
       cap_daily: 500,
@@ -199,7 +198,6 @@ const SAMPLES: Record<string, unknown[]> = {
       monthly_reset_dts: '2026-10-01T00:00:00.000Z',
     },
     {
-      tier_id: 0,
       tier: null,
       cap_vybits: 10,
       cap_daily: 100,

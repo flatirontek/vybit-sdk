@@ -119,13 +119,13 @@ describeWithCredentials('API Client Integration Tests (Real API)', () => {
       expect(result).toHaveProperty('key');
       expect(result).toHaveProperty('name');
       expect(result).toHaveProperty('email');
-      expect(result).toHaveProperty('tier_id');
+      expect(result).toHaveProperty('tier');
     });
 
     test('getMeter should return correct meter fields', async () => {
       const result = await client.getMeter();
 
-      expect(result).toHaveProperty('tier_id');
+      expect(result).toHaveProperty('tier');
       expect(result).toHaveProperty('cap_vybits');
       expect(result).toHaveProperty('cap_daily');
       expect(result).toHaveProperty('cap_monthly');

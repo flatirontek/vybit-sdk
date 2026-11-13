@@ -88,7 +88,7 @@ export function shapeToolResult(toolName: string, result: unknown): unknown {
   const plain = JSON.parse(JSON.stringify(result ?? null));
   switch (toolName) {
     case 'profile_get':
-      return plain && { name: plain.name, tier_id: plain.tier_id, tier: plain.tier };
+      return plain && { name: plain.name, tier: plain.tier };
     case 'peeps_list':
     case 'vybit_peeps_list':
       return Array.isArray(plain) ? plain.map(maskPeep) : plain;
@@ -1163,7 +1163,7 @@ const VYBIT_ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAA
 const server = new Server(
   {
     name: 'vybit-mcp-server',
-    version: '1.11.0',
+    version: '1.11.1',
     icons: [
       {
         src: VYBIT_ICON,

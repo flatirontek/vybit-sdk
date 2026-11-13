@@ -267,7 +267,8 @@ export class VybitAPIClient {
    * Trigger a vybit notification as the owner
    * @param key - Vybit key
    * @param params - Optional notification content to override defaults
-   * @returns Trigger response with log key
+   * @returns Trigger response with log key; result 0 with a reason (monthly_limit,
+   *   daily_limit, vybit_off) when the notification was received but not sent
    *
    * @example
    * ```typescript
@@ -275,7 +276,8 @@ export class VybitAPIClient {
    *   message: 'Server maintenance complete',
    *   imageUrl: 'https://example.com/status-ok.jpg'
    * });
-   * console.log('Notification triggered, log key:', result.plk);
+   * if (result.result === 1) console.log('Notification triggered, log key:', result.plk);
+   * else console.log('Not sent:', result.reason, result.warn);
    * ```
    */
   async triggerVybit(key: string, params?: VybitTriggerParams): Promise<VybitTriggerResponse> {
@@ -440,7 +442,8 @@ export class VybitAPIClient {
    *
    * @param followingKey - Vybit following key
    * @param params - Notification content
-   * @returns Send response with log key
+   * @returns Send response with log key; result 0 with a reason (monthly_limit,
+   *   daily_limit, vybit_off) when the notification was received but not sent
    * @throws {VybitAPIError} 403 if vybit doesn't allow subscriber-to-owner sends
    *
    * @example
@@ -467,7 +470,8 @@ export class VybitAPIClient {
    *
    * @param followingKey - Vybit following key
    * @param params - Notification content
-   * @returns Send response with log key
+   * @returns Send response with log key; result 0 with a reason (monthly_limit,
+   *   daily_limit, vybit_off) when the notification was received but not sent
    * @throws {VybitAPIError} 403 if vybit doesn't allow subscriber-to-group sends
    *
    * @example

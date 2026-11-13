@@ -37,7 +37,7 @@ const mockClient = {
   createPeep: jest.fn().mockResolvedValue({ key: 'p-new' }),
   deletePeep: jest.fn().mockResolvedValue(undefined),
   listVybitPeeps: jest.fn().mockResolvedValue([{ key: 'p2' }]),
-  getMeter: jest.fn().mockResolvedValue({ tier_id: 1, count_daily: 5 }),
+  getMeter: jest.fn().mockResolvedValue({ tier: 'Free', count_daily: 5 }),
   getStatus: jest.fn().mockResolvedValue({ status: 'up' }),
   getProfile: jest.fn().mockResolvedValue({ key: 'u1', name: 'Test User' }),
   sendToOwner: jest.fn().mockResolvedValue({ result: 1, plk: 'log-owner' }),

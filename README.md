@@ -105,6 +105,18 @@ await client.triggerVybit('vybit-key', {
 });
 ```
 
+A trigger that is received but not sent (the account's monthly or daily limit is reached, or the
+vybit is off) does not throw. It resolves with `result: 0` and a `reason`:
+
+```typescript
+const result = await client.triggerVybit('vybit123abc');
+if (result.result === 0) {
+  console.log(result.reason); // 'monthly_limit', 'daily_limit', or 'vybit_off'
+}
+```
+
+`sendToOwner` and `sendToGroup` answer the same way.
+
 #### Manage Sounds
 
 ```typescript
@@ -149,7 +161,7 @@ await client.deleteVybitFollow(follow.followingKey);
 const meter = await client.getMeter();
 console.log(`Daily: ${meter.count_daily} / ${meter.cap_daily}`);
 console.log(`Monthly: ${meter.count_monthly} / ${meter.cap_monthly}`);
-console.log(`Tier: ${meter.tier_id}`);
+console.log(`Plan: ${meter.tier}`);
 ```
 
 ### API Reference

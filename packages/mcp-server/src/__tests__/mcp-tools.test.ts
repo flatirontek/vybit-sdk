@@ -484,7 +484,7 @@ describe('MCP Server Handler Logic', () => {
   describe('meter handler', () => {
     test('should return meter data with all required fields', async () => {
       const mockMeter = {
-        tier_id: 1,
+        tier: 'Free',
         cap_vybits: 50,
         cap_daily: 500,
         cap_monthly: 7500,
@@ -498,7 +498,7 @@ describe('MCP Server Handler Logic', () => {
 
       const result = await mockClient.getMeter();
 
-      expect(result).toHaveProperty('tier_id');
+      expect(result).toHaveProperty('tier');
       expect(result).toHaveProperty('cap_vybits');
       expect(result).toHaveProperty('number_vybits');
       expect(result).toHaveProperty('monthly_reset_dts');
@@ -992,7 +992,7 @@ describe('SDK Type Alignment', () => {
 
   test('Meter interface should have correct fields', () => {
     const meter = {
-      tier_id: 0,
+      tier: 'Free',
       cap_vybits: 10,
       cap_daily: 100,
       cap_monthly: 1500,

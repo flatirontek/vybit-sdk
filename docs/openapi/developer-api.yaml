@@ -136,7 +136,6 @@ paths:
                 key: "abc123def456"
                 name: "John Doe"
                 email: "john@example.com"
-                tier_id: 1
                 tier: "Free"
         '401':
           $ref: '#/components/responses/UnauthorizedError'
@@ -151,17 +150,10 @@ paths:
     get:
       summary: Get Usage Metrics
       description: |
-        Retrieve current usage statistics and tier limits for the authenticated user.
+        Retrieve current usage statistics and plan limits for the authenticated user.
 
-        Returns notification counts (daily, monthly, total) and tier-specific
-        capacity limits for vybits and notifications.
-
-        Tier Map:
-        - 1 - Free
-        - 2 - Bronze
-        - 3 - Silver
-        - 4 - Gold
-
+        Returns notification counts (daily and monthly), the plan name, and the
+        plan's limits for vybits and notifications.
 
       operationId: getMeter
       tags:
@@ -177,14 +169,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Meter'
               example:
-                tier_id: 1
                 tier: "Free"
-                cap_vybits: 50
-                cap_daily: 500
-                cap_monthly: 7500
-                number_vybits: 12
-                count_daily: 127
-                count_monthly: 3421
+                cap_vybits: 10
+                cap_daily: 100
+                cap_monthly: 1500
+                number_vybits: 4
+                count_daily: 27
+                count_monthly: 421
                 monthly_reset_dts: "2025-12-01T00:00:00Z"
         '401':
           $ref: '#/components/responses/UnauthorizedError'
@@ -452,6 +443,8 @@ paths:
         image, and link settings.
 
         **Usage limits:** This endpoint is subject to your account's usage tier limits.
+        When a limit is reached, or the vybit is off, the response is still 200, with
+        `result: 0` and a `reason` (`monthly_limit`, `daily_limit`, or `vybit_off`).
 
       operationId: triggerVybit
       tags:
@@ -502,40 +495,9 @@ paths:
                   example: false
       responses:
         '200':
-          description: Notification sent successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  result:
-                    type: integer
-                    example: 1
-                  plk:
-                    type: string
-                    description: Primary log key for the triggered notification
-                    example: "log123abc456"
-        '201':
-          description: Vybit is off - notification not sent
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  result:
-                    type: integer
-                    example: 0
-                  warn:
-                    type: string
-                    example: "Vybit is off and will not be triggered"
+          $ref: '#/components/responses/SendResult'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          description: Account suspended or usage limits exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Vybit not found
           content:
@@ -1446,19 +1408,7 @@ paths:
                   example: "https://example.com/dashboard"
       responses:
         '200':
-          description: Notification sent successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  result:
-                    type: integer
-                    example: 1
-                  plk:
-                    type: string
-                    description: Primary log key for the triggered notification
-                    example: "log123abc456"
+          $ref: '#/components/responses/SendResult'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
@@ -1530,19 +1480,7 @@ paths:
                   example: "https://example.com/chat"
       responses:
         '200':
-          description: Notification sent successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  result:
-                    type: integer
-                    example: 1
-                  plk:
-                    type: string
-                    description: Primary log key for the triggered notification
-                    example: "log123abc456"
+          $ref: '#/components/responses/SendResult'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
@@ -2176,6 +2114,40 @@ components:
                 error: "unauthorized"
                 message: "Invalid API key"
 
+    SendResult:
+      description: |
+        The request was received. `result` is 1 when the notification was sent and 0 when it was
+        not; `reason` says why, and `warn` says it in words. A notification that is not sent still
+        answers 200, so webhook senders and retrying clients don't treat it as a failed delivery.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SendResult'
+          examples:
+            sent:
+              summary: Notification sent
+              value:
+                result: 1
+                plk: "log123abc456"
+            monthlyLimit:
+              summary: Monthly notification limit reached
+              value:
+                result: 0
+                reason: monthly_limit
+                warn: "Monthly notification limit reached; this vybit was not sent. Sending resumes when the limit resets."
+            dailyLimit:
+              summary: Daily safety limit reached
+              value:
+                result: 0
+                reason: daily_limit
+                warn: "Daily safety limit reached; this vybit was not sent. Sending resumes tomorrow."
+            vybitOff:
+              summary: Vybit is off
+              value:
+                result: 0
+                reason: vybit_off
+                warn: "Vybit is off and will not be triggered"
+
     RateLimitError:
       description: Rate limit exceeded
       headers:
@@ -2225,7 +2197,7 @@ components:
         - key
         - name
         - email
-        - tier_id
+        - tier
       properties:
         key:
           type: string
@@ -2240,20 +2212,16 @@ components:
           format: email
           description: User's email address
           example: "john@example.com"
-        tier_id:
-          type: integer
-          description: Subscription tier ID (1=Free, 2=Bronze, 3=Silver, 4=Gold, 6=Pro, 7=Team, 8=Business)
-          example: 1
         tier:
           type: string
           nullable: true
-          description: Subscription tier name; null when the tier is unknown
+          description: Plan name, e.g. Free or Pro; null when the plan is unknown
           example: "Free"
 
     Meter:
       type: object
       required:
-        - tier_id
+        - tier
         - cap_vybits
         - cap_daily
         - cap_monthly
@@ -2262,14 +2230,10 @@ components:
         - count_monthly
         - monthly_reset_dts
       properties:
-        tier_id:
-          type: integer
-          description: Current subscription tier ID (1=Free, 2=Bronze, 3=Silver, 4=Gold, 6=Pro, 7=Team, 8=Business)
-          example: 1
         tier:
           type: string
           nullable: true
-          description: Subscription tier name; null when the tier is unknown
+          description: Plan name, e.g. Free or Pro; null when the plan is unknown
           example: "Free"
         cap_vybits:
           type: integer
@@ -2938,6 +2902,34 @@ components:
           type: string
           description: Human-readable confirmation message
           example: "Vybit deleted"
+
+    SendResult:
+      type: object
+      required:
+        - result
+      properties:
+        result:
+          type: integer
+          description: 1 when the notification was sent, 0 when it was received but not sent
+          example: 1
+        plk:
+          type: string
+          description: Primary log key for the sent notification (present when result is 1)
+          example: "log123abc456"
+        reason:
+          type: string
+          enum: [monthly_limit, daily_limit, vybit_off]
+          description: |
+            Why the notification was not sent (present when result is 0):
+            - `monthly_limit`: the account's monthly notification limit is reached; sending resumes at the monthly reset
+            - `daily_limit`: the account's daily safety limit is reached; sending resumes tomorrow (UTC)
+            - `vybit_off`: the vybit is switched off
+            When both limits are reached, `monthly_limit` is reported.
+          example: monthly_limit
+        warn:
+          type: string
+          description: Human-readable explanation when the notification was not sent
+          example: "Monthly notification limit reached; this vybit was not sent. Sending resumes when the limit resets."
 
     ErrorResponse:
       type: object

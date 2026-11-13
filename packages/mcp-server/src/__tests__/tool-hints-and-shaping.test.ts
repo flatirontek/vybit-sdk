@@ -44,7 +44,7 @@ describe('tool annotations', () => {
 describe('shapeToolResult', () => {
   it('returns only display name and plan for profile_get', () => {
     const profile = { key: 'abc123', name: 'Pat', email: 'pat@example.com', tier_id: 1, tier: 'Free' };
-    expect(shapeToolResult('profile_get', profile)).toEqual({ name: 'Pat', tier_id: 1, tier: 'Free' });
+    expect(shapeToolResult('profile_get', profile)).toEqual({ name: 'Pat', tier: 'Free' });
   });
 
   it('masks an invitee email shown in place of a peep name', () => {
